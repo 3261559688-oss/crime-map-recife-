@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🇧🇷 Brasil Crime Map · RSS Live</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#000;color:#fff;height:100vh;display:flex;flex-direction:column}
+header{padding:14px 18px;background:linear-gradient(135deg,#dc2626,#7f1d1d);box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:1000}
+header h1{font-size:18px;letter-spacing:.5px}
+header p{font-size:11px;opacity:.85;margin-top:3px}
+header .stat{display:flex;gap:14px;margin-top:8px;font-size:11px}
+header .stat span{background:rgba(255,255,255,.15);padding:3px 8px;border-radius:6px}
+
+.layout{flex:1;display:flex;min-height:0}
+#map{flex:1;background:#1a1a1a}
+aside{width:380px;background:#0a0a0a;overflow-y:auto;border-left:1px solid #222}
+aside::-webkit-scrollbar{width:6px}
+aside::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+.filter-bar{position:sticky;top:0;background:#0a0a0a;padding:12px 14px;border-bottom:1px solid #222;display:flex;gap:6px;flex-wrap:wrap;z-index:10}
+.chip{padding:6px 11px;border-radius:14px;background:#1a1a1a;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #2a2a2a;transition:.15s;white-space:nowrap}
+.chip.act{background:#dc2626;border-color:#dc2626}
+.chip:hover{background:#2a2a2a}
+.chip.act:hover{background:#b91c1c}
+
+.item{padding:14px;border-bottom:1px solid #1a1a1a;cursor:pointer;transition:.15s}
+.item:hover,.item.active{background:#1a1a1a}
+.item.active{border-left:3px solid #dc2626;padding-left:11px}
+.item .row1{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.tag{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase}
+.tag.homicidio{background:#7f1d1d;color:#fecaca}
+.tag.roubo{background:#dc2626}
+.tag.furto{background:#d97706}
+.tag.estupro{background:#831843;color:#fbcfe8}
+.tag.trafico{background:#581c87;color:#e9d5ff}
+.tag.outros{background:#374151;color:#d1d5db}
+.city-tag{background:#1e3a8a;color:#bfdbfe;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
+.title{font-size:13px;line-height:1.35;color:#fff;font-weight:600;margin-bottom:6px}
+.meta{font-size:10px;color:#888;display:flex;gap:6px;flex-wrap:wrap}
+.meta a{color:#60a5fa;text-decoration:none}
+.meta a:hover{text-decoration:underline}
+
+/* Markers */
+.pm{width:30px;height:30px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.5);font-weight:800}
+.pm.homicidio{background:#7f1d1d}
+.pm.roubo{background:#dc2626}
+.pm.furto{background:#d97706}
+.pm.estupro{background:#be185d}
+.pm.trafico{background:#7e22ce}
+.pm.outros{background:#525252}
+
+.leaflet-popup-content-wrapper{background:#0a0a0a;color:#fff;border-radius:10px;border:1px solid #333}
+.leaflet-popup-content{margin:10px 14px;font-size:12px;line-height:1.45;width:240px!important}
+.leaflet-popup-content a{color:#60a5fa}
+.leaflet-popup-tip{background:#0a0a0a}
+.leaflet-popup-close-button{color:#888!important}
+
+.loading{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:99;font-size:14px;color:#dc2626;font-weight:700}
+.loading.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🇧🇷 Brasil Crime Map · RSS Live</h1>
+  <p>Dados em tempo real de G1 RSS · 5 estados · Geocode automático</p>
+  <div class="stat">
+    <span id="totalCnt">⏳ Loading...</span>
+    <span id="updTime"></span>
+  </div>
+</header>
+
+<div class="layout">
+  <div id="map"></div>
+  <aside>
+    <div class="filter-bar" id="filterBar">
+      <div class="chip act" data-f="all">Tudo <span id="cAll"></span></div>
+      <div class="chip" data-f="city:Recife">📍 Recife</div>
+      <div class="chip" data-f="city:São Paulo">📍 SP</div>
+      <div class="chip" data-f="city:Rio de Janeiro">📍 Rio</div>
+      <div class="chip" data-f="city:Salvador">📍 Salvador</div>
+      <div class="chip" data-f="city:Fortaleza">📍 Fortaleza</div>
+      <div class="chip" data-f="type:homicidio">🩸 Homicídio</div>
+      <div class="chip" data-f="type:roubo">🔫 Roubo</div>
+      <div class="chip" data-f="type:trafico">💊 Tráfico</div>
+      <div class="chip" data-f="type:estupro">⚠️ Estupro</div>
+    </div>
+    <div id="list"></div>
+  </aside>
+</div>
+
+<div class="loading" id="loading">⏳ Carregando dados RSS...</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TYPE_NAME = {homicidio:'HOMICÍDIO',roubo:'ROUBO',furto:'FURTO',estupro:'ESTUPRO',trafico:'TRÁFICO',outros:'OUTROS'};
+const TYPE_EMOJI= {homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠',trafico:'💊',outros:'❗'};
+
+let allData = [];
+let curFilter = 'all';
+let markers = [];
+let map;
+
+async function load(){
+  try{
+    const r = await fetch('rss_incidents.json?_=' + Date.now());
+    allData = await r.json();
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('totalCnt').textContent = `📊 ${allData.length} ocorrências`;
+    document.getElementById('updTime').textContent = `🕐 ${new Date().toLocaleString('pt-BR')}`;
+    document.getElementById('cAll').textContent = '(' + allData.length + ')';
+    initMap();
+    render();
+  }catch(e){
+    document.getElementById('loading').textContent = '❌ Falha: ' + e.message;
+  }
+}
+
+function initMap(){
+  map = L.map('map').setView([-14.235, -51.925], 4);  // Brasil center
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    subdomains:'abcd', maxZoom:19
+  }).addTo(map);
+}
+
+function filterData(){
+  if(curFilter === 'all') return allData;
+  const [k,v] = curFilter.split(':');
+  return allData.filter(d => d[k] === v);
+}
+
+function render(){
+  // 清旧 markers
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  
+  const data = filterData();
+  
+  // markers
+  const bounds = [];
+  data.forEach((d,i) => {
+    const ic = L.divIcon({
+      className: '',
+      html: `<div class="pm ${d.type}">${TYPE_EMOJI[d.type]}</div>`,
+      iconSize: [30,30], iconAnchor:[15,15]
+    });
+    const m = L.marker([d.lat, d.lng], {icon:ic}).addTo(map);
+    m.bindPopup(`
+      <div style="font-weight:700;color:#fca5a5;margin-bottom:4px">${TYPE_NAME[d.type]} · ${d.city}</div>
+      <div style="margin-bottom:6px">${d.title}</div>
+      <a href="${d.link}" target="_blank">📰 Ver notícia →</a>
+    `);
+    m.on('click', () => {
+      document.querySelectorAll('.item').forEach(el => el.classList.remove('active'));
+      const el = document.querySelector('[data-id="'+d.id+'"]');
+      if(el){
+        el.classList.add('active');
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    });
+    markers.push(m);
+    bounds.push([d.lat, d.lng]);
+  });
+  
+  if(bounds.length){
+    map.fitBounds(bounds, {padding:[40,40], maxZoom:12});
+  }
+  
+  // list
+  const list = document.getElementById('list');
+  if(data.length === 0){
+    list.innerHTML = '<div style="padding:30px;text-align:center;color:#666">Nenhum resultado</div>';
+    return;
+  }
+  list.innerHTML = data.map(d => `
+    <div class="item" data-id="${d.id}">
+      <div class="row1">
+        <span class="tag ${d.type}">${TYPE_EMOJI[d.type]} ${TYPE_NAME[d.type]}</span>
+        <span class="city-tag">📍 ${d.city}</span>
+      </div>
+      <div class="title">${escapeHtml(d.title)}</div>
+      <div class="meta">
+        <span>📰 ${d.source}</span>
+        <span>·</span>
+        <a href="${d.link}" target="_blank">Ver notícia →</a>
+      </div>
+    </div>
+  `).join('');
+  
+  document.querySelectorAll('.item').forEach(el => {
+    el.onclick = (e) => {
+      if(e.target.tagName === 'A') return;
+      const id = el.dataset.id;
+      const d = allData.find(x => x.id === id);
+      if(!d) return;
+      document.querySelectorAll('.item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      map.flyTo([d.lat, d.lng], 13, {duration:.6});
+      const m = markers.find(mk => {
+        const ll = mk.getLatLng();
+        return Math.abs(ll.lat - d.lat) < 0.0001 && Math.abs(ll.lng - d.lng) < 0.0001;
+      });
+      if(m) setTimeout(() => m.openPopup(), 650);
+    };
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.querySelectorAll('.chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('act'));
+    c.classList.add('act');
+    curFilter = c.dataset.f;
+    render();
+  };
+});
+
+load();
+</script>
+</body>
+</html>

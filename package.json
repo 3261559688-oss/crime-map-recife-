@@ -1,0 +1,16 @@
+{
+  "name": "crime-map-recife",
+  "version": "1.0.0",
+  "description": "Local crime map H5 for Recife - solo deployment",
+  "scripts": {
+    "dev": "npx serve public -p 3000",
+    "build": "echo 'Static site, no build needed'",
+    "deploy:vercel": "vercel --prod",
+    "deploy:cloudflare": "wrangler pages deploy public",
+    "fetch-data": "node scripts/fetch-news.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
