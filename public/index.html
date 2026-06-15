@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0e1a" id="themeMeta">
+<meta name="theme-color" content="#f9fafb">
 <title>Mapa do Crime · Brasil</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -79,6 +79,191 @@
   --tile-style:light_all;
   --filter-tile:none;
   --theme-meta:#f9fafb;
+}
+
+/* 🌊 蓝色海洋（深色） */
+[data-theme="ocean"]{
+  --bg-page:#0c1f3a;
+  --bg-phone:#0a1929;
+  --bg-desktop-grad:radial-gradient(ellipse at center,#1e3a8a 0%,#0c1f3a 100%);
+  --bg-card:rgba(96,165,250,.07);
+  --bg-card-hover:rgba(96,165,250,.12);
+  --bg-chip:rgba(96,165,250,.08);
+  --bg-chip-active:rgba(96,165,250,.25);
+  --bg-modal:#0f2847;
+  --bg-popup:#0f2847;
+  --bg-sheet:#0a1929;
+  --bg-sheet-handle:#1e40af;
+  --bg-sheet-handle-active:#60a5fa;
+  --bg-input:rgba(96,165,250,.1);
+  --bg-loading:#0a1929;
+  --bg-statusbar:rgba(10,25,41,.95);
+  --bg-statusbar-fade:rgba(10,25,41,.7);
+  --bg-attr:rgba(0,0,0,.4);
+  --text-main:#dbeafe;
+  --text-strong:#fff;
+  --text-muted:#93c5fd;
+  --text-faint:#64748b;
+  --text-clock:#fff;
+  --border:rgba(96,165,250,.15);
+  --border-strong:rgba(96,165,250,.4);
+  --border-soft:rgba(96,165,250,.08);
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.6);
+  --shadow-popup:0 2px 10px rgba(0,0,0,.6);
+  --phone-frame-1:#1e3a8a;
+  --phone-frame-2:#3b82f6;
+  --phone-shadow:0 30px 80px rgba(30,58,138,.5);
+  --tile-style:dark_all;
+  --filter-tile:hue-rotate(20deg);
+  --theme-meta:#0a1929;
+}
+
+/* 🌅 日落（橙色温暖） */
+[data-theme="sunset"]{
+  --bg-page:#2d1810;
+  --bg-phone:#1a0e08;
+  --bg-desktop-grad:radial-gradient(ellipse at center,#9a3412 0%,#451a03 100%);
+  --bg-card:rgba(251,146,60,.08);
+  --bg-card-hover:rgba(251,146,60,.14);
+  --bg-chip:rgba(251,146,60,.08);
+  --bg-chip-active:rgba(251,146,60,.25);
+  --bg-modal:#291109;
+  --bg-popup:#291109;
+  --bg-sheet:#1a0e08;
+  --bg-sheet-handle:#7c2d12;
+  --bg-sheet-handle-active:#fb923c;
+  --bg-input:rgba(251,146,60,.1);
+  --bg-loading:#1a0e08;
+  --bg-statusbar:rgba(26,14,8,.95);
+  --bg-statusbar-fade:rgba(26,14,8,.7);
+  --bg-attr:rgba(0,0,0,.4);
+  --text-main:#fed7aa;
+  --text-strong:#fff;
+  --text-muted:#fb923c;
+  --text-faint:#a16207;
+  --text-clock:#fff;
+  --border:rgba(251,146,60,.15);
+  --border-strong:rgba(251,146,60,.4);
+  --border-soft:rgba(251,146,60,.08);
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.6);
+  --shadow-popup:0 2px 10px rgba(0,0,0,.6);
+  --phone-frame-1:#7c2d12;
+  --phone-frame-2:#ea580c;
+  --phone-shadow:0 30px 80px rgba(234,88,12,.4);
+  --tile-style:dark_all;
+  --filter-tile:hue-rotate(-20deg) saturate(.8);
+  --theme-meta:#1a0e08;
+}
+
+/* 💚 森林（绿色） */
+[data-theme="forest"]{
+  --bg-page:#0a1f14;
+  --bg-phone:#06150c;
+  --bg-desktop-grad:radial-gradient(ellipse at center,#14532d 0%,#06150c 100%);
+  --bg-card:rgba(74,222,128,.08);
+  --bg-card-hover:rgba(74,222,128,.14);
+  --bg-chip:rgba(74,222,128,.08);
+  --bg-chip-active:rgba(74,222,128,.25);
+  --bg-modal:#0d2818;
+  --bg-popup:#0d2818;
+  --bg-sheet:#06150c;
+  --bg-sheet-handle:#166534;
+  --bg-sheet-handle-active:#4ade80;
+  --bg-input:rgba(74,222,128,.1);
+  --bg-loading:#06150c;
+  --bg-statusbar:rgba(6,21,12,.95);
+  --bg-statusbar-fade:rgba(6,21,12,.7);
+  --bg-attr:rgba(0,0,0,.4);
+  --text-main:#bbf7d0;
+  --text-strong:#fff;
+  --text-muted:#4ade80;
+  --text-faint:#65a30d;
+  --text-clock:#fff;
+  --border:rgba(74,222,128,.15);
+  --border-strong:rgba(74,222,128,.4);
+  --border-soft:rgba(74,222,128,.08);
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.6);
+  --shadow-popup:0 2px 10px rgba(0,0,0,.6);
+  --phone-frame-1:#14532d;
+  --phone-frame-2:#22c55e;
+  --phone-shadow:0 30px 80px rgba(34,197,94,.4);
+  --tile-style:dark_all;
+  --filter-tile:hue-rotate(80deg) saturate(.7);
+  --theme-meta:#06150c;
+}
+
+/* 💜 紫夜（霓虹） */
+[data-theme="neon"]{
+  --bg-page:#1a0a2e;
+  --bg-phone:#0f0518;
+  --bg-desktop-grad:radial-gradient(ellipse at center,#581c87 0%,#1a0a2e 100%);
+  --bg-card:rgba(192,132,252,.08);
+  --bg-card-hover:rgba(192,132,252,.14);
+  --bg-chip:rgba(192,132,252,.08);
+  --bg-chip-active:rgba(192,132,252,.25);
+  --bg-modal:#1f0d33;
+  --bg-popup:#1f0d33;
+  --bg-sheet:#0f0518;
+  --bg-sheet-handle:#7e22ce;
+  --bg-sheet-handle-active:#c084fc;
+  --bg-input:rgba(192,132,252,.1);
+  --bg-loading:#0f0518;
+  --bg-statusbar:rgba(15,5,24,.95);
+  --bg-statusbar-fade:rgba(15,5,24,.7);
+  --bg-attr:rgba(0,0,0,.4);
+  --text-main:#e9d5ff;
+  --text-strong:#fff;
+  --text-muted:#c084fc;
+  --text-faint:#7e22ce;
+  --text-clock:#fff;
+  --border:rgba(192,132,252,.15);
+  --border-strong:rgba(192,132,252,.4);
+  --border-soft:rgba(192,132,252,.08);
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.6);
+  --shadow-popup:0 2px 10px rgba(192,132,252,.3);
+  --phone-frame-1:#581c87;
+  --phone-frame-2:#a855f7;
+  --phone-shadow:0 30px 80px rgba(168,85,247,.4);
+  --tile-style:dark_all;
+  --filter-tile:hue-rotate(280deg) saturate(.9);
+  --theme-meta:#0f0518;
+}
+
+/* 🩷 樱花（粉色少女） */
+[data-theme="sakura"]{
+  --bg-page:#fdf2f8;
+  --bg-phone:#fff1f5;
+  --bg-desktop-grad:radial-gradient(ellipse at center,#fce7f3 0%,#fbcfe8 100%);
+  --bg-card:rgba(236,72,153,.06);
+  --bg-card-hover:rgba(236,72,153,.10);
+  --bg-chip:rgba(236,72,153,.06);
+  --bg-chip-active:rgba(236,72,153,.18);
+  --bg-modal:#fff;
+  --bg-popup:#fff;
+  --bg-sheet:#fff;
+  --bg-sheet-handle:#f9a8d4;
+  --bg-sheet-handle-active:#db2777;
+  --bg-input:rgba(236,72,153,.06);
+  --bg-loading:#fff1f5;
+  --bg-statusbar:rgba(255,241,245,.95);
+  --bg-statusbar-fade:rgba(255,241,245,.7);
+  --bg-attr:rgba(255,255,255,.7);
+  --text-main:#831843;
+  --text-strong:#500724;
+  --text-muted:#be185d;
+  --text-faint:#db2777;
+  --text-clock:#500724;
+  --border:rgba(236,72,153,.15);
+  --border-strong:rgba(236,72,153,.4);
+  --border-soft:rgba(236,72,153,.08);
+  --shadow-sheet:0 -8px 32px rgba(236,72,153,.15);
+  --shadow-popup:0 2px 10px rgba(236,72,153,.2);
+  --phone-frame-1:#fbcfe8;
+  --phone-frame-2:#f9a8d4;
+  --phone-shadow:0 30px 80px rgba(236,72,153,.2);
+  --tile-style:light_all;
+  --filter-tile:hue-rotate(-30deg) saturate(.85);
+  --theme-meta:#fff1f5;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
@@ -360,27 +545,8 @@ function getTileUrl(){
   const style=theme==='light'?'light_all':'dark_all';
   return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
 }
-function applyTheme(theme){
-  document.documentElement.setAttribute('data-theme',theme);
-  localStorage.setItem('theme',theme);
-  // 切换地图瓦片
-  if(tileLayer && map){
-    map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19,subdomains:'abcd'}).addTo(map);
-  }
-  // 切换 theme-color meta
-  const meta=document.getElementById('themeMeta');
-  if(meta) meta.setAttribute('content', theme==='light'?'#f9fafb':'#0a0e1a');
-  // 切换按钮图标
-  const btn=document.getElementById('themeBtn');
-  if(btn) btn.textContent = theme==='light'?'☀':'☾';
-}
-function toggleTheme(){
-  const cur=document.documentElement.getAttribute('data-theme')||'dark';
-  applyTheme(cur==='dark'?'light':'dark');
-}
-// 初始化（读 localStorage 或默认 dark）
-applyTheme(localStorage.getItem('theme')||'dark');
+// 固定浅色主题
+document.documentElement.setAttribute('data-theme','light');
 
 // 城市统计
 function getCityStats(){
@@ -623,7 +789,6 @@ sheetHandle.addEventListener('click',e=>{
 // ========== 城市按钮 ==========
 document.getElementById('cityBtn').addEventListener('click',openCityModal);
 document.getElementById('cityClose').addEventListener('click',closeCityModal);
-document.getElementById('themeBtn').addEventListener('click',toggleTheme);
 document.getElementById('cityModal').addEventListener('click',e=>{
   if(e.target.id==='cityModal')closeCityModal();
 });
