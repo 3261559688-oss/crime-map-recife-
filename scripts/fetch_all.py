@@ -16,6 +16,7 @@ from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 时效阈值：只保留最近 N 天
 MAX_AGE_DAYS = 7
@@ -89,6 +90,128 @@ RSS_FEEDS = [
 
     # === 圣保罗本地 ===
     ("Diário SP", "https://www.diariosp.com.br/feed/", "SP", "São Paulo"),
+
+    # ========================================
+    # 🆕 G1 城市级 RSS（更细！每个城市单独抓）
+    # ========================================
+    ("G1 Recife", "https://g1.globo.com/rss/g1/pe/pernambuco/recife/", "PE", "Recife"),
+    ("G1 Caruaru", "https://g1.globo.com/rss/g1/pe/caruaru-regiao/", "PE", "Caruaru"),
+    ("G1 Petrolina", "https://g1.globo.com/rss/g1/pe/petrolina-regiao/", "PE", "Petrolina"),
+    ("G1 Campinas", "https://g1.globo.com/rss/g1/sp/campinas-regiao/", "SP", "Campinas"),
+    ("G1 Santos", "https://g1.globo.com/rss/g1/sp/santos-regiao/", "SP", "Santos"),
+    ("G1 Ribeirão Preto", "https://g1.globo.com/rss/g1/sp/ribeirao-preto-franca/", "SP", "Ribeirão Preto"),
+    ("G1 São José do Rio Preto", "https://g1.globo.com/rss/g1/sp/sao-jose-do-rio-preto-aracatuba/", "SP", "São José do Rio Preto"),
+    ("G1 Sorocaba", "https://g1.globo.com/rss/g1/sp/sorocaba-jundiai/", "SP", "Sorocaba"),
+    ("G1 Bauru", "https://g1.globo.com/rss/g1/sp/bauru-marilia/", "SP", "Bauru"),
+    ("G1 Vale do Paraíba", "https://g1.globo.com/rss/g1/sp/vale-do-paraiba-regiao/", "SP", "São José dos Campos"),
+    ("G1 Presidente Prudente", "https://g1.globo.com/rss/g1/sp/presidente-prudente-regiao/", "SP", "Presidente Prudente"),
+    ("G1 Itapetininga", "https://g1.globo.com/rss/g1/sp/itapetininga-regiao/", "SP", "Itapetininga"),
+    ("G1 Norte SP", "https://g1.globo.com/rss/g1/sp/sao-carlos-regiao/", "SP", "São Carlos"),
+
+    ("G1 Rio Norte/Sul", "https://g1.globo.com/rss/g1/rj/regiao-dos-lagos/", "RJ", "Cabo Frio"),
+    ("G1 Norte Fluminense", "https://g1.globo.com/rss/g1/rj/norte-fluminense/", "RJ", "Campos dos Goytacazes"),
+    ("G1 Sul do RJ", "https://g1.globo.com/rss/g1/rj/sul-do-rio-costa-verde/", "RJ", "Volta Redonda"),
+    ("G1 Serra RJ", "https://g1.globo.com/rss/g1/rj/regiao-serrana/", "RJ", "Petrópolis"),
+
+    ("G1 Triângulo Mineiro", "https://g1.globo.com/rss/g1/mg/triangulo-mineiro/", "MG", "Uberlândia"),
+    ("G1 Sul de MG", "https://g1.globo.com/rss/g1/mg/sul-de-minas/", "MG", "Pouso Alegre"),
+    ("G1 Zona da Mata", "https://g1.globo.com/rss/g1/mg/zona-da-mata/", "MG", "Juiz de Fora"),
+    ("G1 Vales MG", "https://g1.globo.com/rss/g1/mg/vales-mg/", "MG", "Governador Valadares"),
+    ("G1 Centro-Oeste MG", "https://g1.globo.com/rss/g1/mg/centro-oeste/", "MG", "Divinópolis"),
+
+    ("G1 Norte BA", "https://g1.globo.com/rss/g1/ba/petrolina-juazeiro/", "BA", "Juazeiro"),
+    ("G1 Sul BA", "https://g1.globo.com/rss/g1/ba/sul-da-bahia/", "BA", "Itabuna"),
+    ("G1 Sudoeste BA", "https://g1.globo.com/rss/g1/ba/sudoeste/", "BA", "Vitória da Conquista"),
+
+    ("G1 Norte e Noroeste PR", "https://g1.globo.com/rss/g1/pr/norte-noroeste/", "PR", "Maringá"),
+    ("G1 Oeste PR", "https://g1.globo.com/rss/g1/pr/oeste-sudoeste/", "PR", "Cascavel"),
+    ("G1 Campos Gerais", "https://g1.globo.com/rss/g1/pr/campos-gerais-sul/", "PR", "Ponta Grossa"),
+    ("G1 Londrina", "https://g1.globo.com/rss/g1/pr/norte-noroeste/", "PR", "Londrina"),
+
+    # === SC 城市 ===
+    ("G1 SC Vale do Itajaí", "https://g1.globo.com/rss/g1/sc/santa-catarina/", "SC", "Blumenau"),
+
+    # === RS 城市 ===
+    ("G1 RS Centro Oeste", "https://g1.globo.com/rss/g1/rs/rio-grande-do-sul/", "RS", "Santa Maria"),
+
+    # ========================================
+    # 🆕 R7 各州（之前缺）
+    # ========================================
+    ("R7 MG", "https://noticias.r7.com/minas-gerais/feed.xml", "MG", "Belo Horizonte"),
+    ("R7 BA", "https://noticias.r7.com/bahia/feed.xml", "BA", "Salvador"),
+    ("R7 PR", "https://noticias.r7.com/parana/feed.xml", "PR", "Curitiba"),
+    ("R7 PE", "https://noticias.r7.com/pernambuco/feed.xml", "PE", "Recife"),
+    ("R7 RS", "https://noticias.r7.com/rio-grande-do-sul/feed.xml", "RS", "Porto Alegre"),
+    ("R7 GO", "https://noticias.r7.com/goias/feed.xml", "GO", "Goiânia"),
+    ("R7 DF", "https://noticias.r7.com/distrito-federal/feed.xml", "DF", "Brasília"),
+
+    # ========================================
+    # 🆕 大型综合媒体
+    # ========================================
+    ("BBC Brasil", "https://feeds.bbci.co.uk/portuguese/rss.xml", "BR", "São Paulo"),
+    ("CNN Brasil Nacional", "https://www.cnnbrasil.com.br/nacional/feed/", "BR", "São Paulo"),
+    ("Carta Capital", "https://www.cartacapital.com.br/feed/", "BR", "São Paulo"),
+    ("Veja Brasil", "https://veja.abril.com.br/feed/", "BR", "São Paulo"),
+    ("ISTOÉ", "https://istoe.com.br/feed/", "BR", "São Paulo"),
+    ("Exame Brasil", "https://exame.com/feed/", "BR", "São Paulo"),
+    ("Poder360", "https://www.poder360.com.br/feed/", "DF", "Brasília"),
+    ("Agência Brasil", "https://agenciabrasil.ebc.com.br/rss.xml", "BR", "Brasília"),
+
+    # ========================================
+    # 🆕 Folha 各版块
+    # ========================================
+    ("Folha São Paulo", "https://feeds.folha.uol.com.br/saopaulo/rss091.xml", "SP", "São Paulo"),
+    ("Folha Brasil", "https://feeds.folha.uol.com.br/poder/rss091.xml", "BR", "Brasília"),
+
+    # ========================================
+    # 🆕 各州地方报纸
+    # ========================================
+    # PE
+    ("Folha PE", "https://www.folhape.com.br/rss/", "PE", "Recife"),
+    ("Diário PE", "https://www.diariodepernambuco.com.br/rss/diariodepernambuco.xml", "PE", "Recife"),
+    # CE
+    ("OPovo CE", "https://www.opovo.com.br/rss/feed/", "CE", "Fortaleza"),
+    ("Diário do Nordeste", "https://diariodonordeste.verdesmares.com.br/rss/", "CE", "Fortaleza"),
+    # RJ
+    ("O Dia RJ", "https://odia.ig.com.br/rss/", "RJ", "Rio de Janeiro"),
+    ("O Globo RJ", "https://oglobo.globo.com/rss/rio", "RJ", "Rio de Janeiro"),
+    ("Extra RJ", "https://extra.globo.com/rss.xml", "RJ", "Rio de Janeiro"),
+    # SP
+    ("Diário Região", "https://www.diarioregiao.com.br/rss/", "SP", "São José do Rio Preto"),
+    # PR
+    ("Gazeta do Povo", "https://www.gazetadopovo.com.br/rss/parana", "PR", "Curitiba"),
+    ("Bem Paraná", "https://www.bemparana.com.br/rss/", "PR", "Curitiba"),
+    # SC
+    ("NSC Total", "https://www.nsctotal.com.br/feed/", "SC", "Florianópolis"),
+    # ES
+    ("A Gazeta ES", "https://www.agazeta.com.br/rss/", "ES", "Vitória"),
+    # GO
+    ("Jornal Opção GO", "https://www.jornalopcao.com.br/feed/", "GO", "Goiânia"),
+    # AM
+    ("Em Tempo AM", "https://d24am.com/rss.xml", "AM", "Manaus"),
+    ("Portal Amazônia", "https://portalamazonia.com/feed/", "AM", "Manaus"),
+    # PA
+    ("Diário do Pará", "https://www.diariodopara.com.br/rss/", "PA", "Belém"),
+    ("Liberal PA", "https://www.oliberal.com/feed/", "PA", "Belém"),
+    # MA
+    ("Imirante MA", "https://imirante.com/rss/", "MA", "São Luís"),
+    # RN
+    ("Tribuna do Norte", "https://www.tribunadonorte.com.br/rss.xml", "RN", "Natal"),
+    # AL
+    ("Gazeta de Alagoas", "https://d.gazetadealagoas.com.br/feed/", "AL", "Maceió"),
+    ("Cada Minuto AL", "https://www.cadaminuto.com.br/rss/", "AL", "Maceió"),
+    # MT
+    ("Gazeta Digital MT", "https://www.gazetadigital.com.br/rss/", "MT", "Cuiabá"),
+    # MS
+    ("Campo Grande News", "https://www.campograndenews.com.br/rss/", "MS", "Campo Grande"),
+    # AC/RO
+    ("Gente de Opinião", "https://www.gentedeopiniao.com.br/feed/", "RO", "Porto Velho"),
+    
+    # === 全国警务/犯罪类专栏 ===
+    ("UOL Cidades", "https://rss.uol.com.br/feed/cotidiano.xml", "BR", "São Paulo"),
+    ("UOL Polícia", "https://noticias.uol.com.br/cotidiano/index.rss", "BR", "São Paulo"),
+    ("Terra Brasil", "https://rss.terra.com.br/0,,EI306,00.xml", "BR", "São Paulo"),
+    ("Yahoo Brasil", "https://br.noticias.yahoo.com/rss/brasil", "BR", "São Paulo"),
 ]
 
 # ============================================================
@@ -120,6 +243,18 @@ CITY_COORDS = {
     'Maringá': (-23.4205, -51.9333), 'Joinville': (-26.3045, -48.8487),
     'Blumenau': (-26.9194, -49.0661), 'Caxias do Sul': (-29.1685, -51.1796),
     'Pelotas': (-31.7654, -52.3376), 'Santa Maria': (-29.6914, -53.8008),
+    # 🆕 新增城市
+    'Petrolina': (-9.3891, -40.5030), 'Juazeiro': (-9.4163, -40.4986),
+    'Santos': (-23.9608, -46.3331), 'Ribeirão Preto': (-21.1775, -47.8103),
+    'São José do Rio Preto': (-20.8113, -49.3758), 'Sorocaba': (-23.5018, -47.4581),
+    'Bauru': (-22.3145, -49.0581), 'São José dos Campos': (-23.2237, -45.9009),
+    'Presidente Prudente': (-22.1208, -51.3889), 'Itapetininga': (-23.5915, -48.0535),
+    'São Carlos': (-22.0087, -47.8909), 'Cabo Frio': (-22.8894, -42.0286),
+    'Campos dos Goytacazes': (-21.7545, -41.3244), 'Volta Redonda': (-22.5202, -44.0996),
+    'Petrópolis': (-22.5050, -43.1786), 'Pouso Alegre': (-22.2299, -45.9358),
+    'Governador Valadares': (-18.8512, -41.9494), 'Divinópolis': (-20.1446, -44.8912),
+    'Itabuna': (-14.7853, -39.2803), 'Cascavel': (-24.9555, -53.4552),
+    'Ponta Grossa': (-25.0916, -50.1668),
     'Brasil': (-14.235, -51.925),
 }
 
@@ -158,13 +293,18 @@ CRIME_TYPES = {
 # ============================================================
 # 工具函数
 # ============================================================
-def fetch_url(url, timeout=15):
+def fetch_url(url, timeout=10):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read().decode('utf-8', errors='ignore')
     except Exception as e:
         return None
+
+def fetch_one_feed(feed):
+    """并行任务：抓单个 feed → 返回 (feed, xml)"""
+    source, url, state, default_city = feed
+    return feed, fetch_url(url)
 
 def parse_rss(xml):
     if not xml: return []
@@ -253,8 +393,18 @@ def main():
     seen_links = set()
     feed_stats = {}
     
-    for source, url, state, default_city in RSS_FEEDS:
-        xml = fetch_url(url)
+    # 🚀 并行抓取所有 RSS（20 线程）
+    fetched = {}
+    with ThreadPoolExecutor(max_workers=20) as ex:
+        futures = {ex.submit(fetch_one_feed, f): f for f in RSS_FEEDS}
+        for fut in as_completed(futures):
+            feed, xml = fut.result()
+            fetched[feed] = xml
+    
+    # 串行处理（解析 + 去重）
+    for feed in RSS_FEEDS:
+        source, url, state, default_city = feed
+        xml = fetched.get(feed)
         items = parse_rss(xml) if xml else []
         crime_count = 0
         
