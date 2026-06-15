@@ -298,10 +298,10 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 
 #map{position:absolute;inset:0;z-index:1;background:var(--bg-phone)}
 
-.statusbar{position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top);min-height:44px;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:600;color:var(--text-clock);pointer-events:none}
+.statusbar{display:none;position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top);min-height:44px;z-index:200;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:600;color:var(--text-clock);pointer-events:none}
 .statusbar .time{font-size:15px}
 @media (min-width:768px){
-  .statusbar{padding-top:18px;padding-left:32px;padding-right:32px}
+  .statusbar{display:flex;padding-top:18px;padding-left:32px;padding-right:32px}
 }
 
 /* 顶部 */
