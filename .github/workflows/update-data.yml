@@ -1,0 +1,61 @@
+name: 🚨 Auto Update Crime Data (30min)
+
+on:
+  # 每 30 分钟跑一次
+  schedule:
+    - cron: '*/30 * * * *'
+  
+  # 手动触发
+  workflow_dispatch:
+  
+  # push 抓取脚本时也跑
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fetch_all.py'
+      - '.github/workflows/update-data.yml'
+
+# 防并发：同一个 workflow 不重复跑
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: 📡 Fetch RSS data
+        run: python3 scripts/fetch_all.py
+      
+      - name: 📊 Show summary
+        run: |
+          echo "=== meta.json ==="
+          cat public/meta.json
+          echo ""
+          echo "=== File sizes ==="
+          ls -la public/rss_incidents.json public/meta.json
+      
+      - name: 💾 Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/rss_incidents.json public/meta.json
+          
+          if git diff --staged --quiet; then
+            echo "📭 数据无变化，跳过 commit"
+          else
+            COUNT=$(python3 -c "import json; print(json.load(open('public/meta.json'))['total'])")
+            git commit -m "🤖 auto-update: ${COUNT} incidents at $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "✅ 已推送，Vercel 自动重新部署"
+          fi

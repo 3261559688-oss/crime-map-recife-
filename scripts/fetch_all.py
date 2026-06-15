@@ -1,0 +1,357 @@
+#!/usr/bin/env python3
+"""
+全巴西犯罪新闻 RSS 抓取器（终极版）
+- 50+ RSS 源（G1 全国 + UOL + Folha + Estadão + R7 + Metrópoles + 各地本地报）
+- 只保留最近 7 天数据
+- 解析发布时间，按时间倒序
+- 输出 ISO 时间戳供前端显示"X 小时前"
+"""
+import urllib.request
+import re
+import json
+import sys
+import hashlib
+import random
+from datetime import datetime, timezone, timedelta
+from email.utils import parsedate_to_datetime
+from pathlib import Path
+from collections import Counter
+
+# 时效阈值：只保留最近 N 天
+MAX_AGE_DAYS = 7
+
+# ============================================================
+# RSS 源（50+ 源）
+# ============================================================
+RSS_FEEDS = [
+    # === G1 各州（27 个州，最稳定）===
+    ("G1 Pernambuco", "https://g1.globo.com/rss/g1/pe/pernambuco/", "PE", "Recife"),
+    ("G1 São Paulo", "https://g1.globo.com/rss/g1/sp/sao-paulo/", "SP", "São Paulo"),
+    ("G1 Rio de Janeiro", "https://g1.globo.com/rss/g1/rj/rio-de-janeiro/", "RJ", "Rio de Janeiro"),
+    ("G1 Bahia", "https://g1.globo.com/rss/g1/ba/bahia/", "BA", "Salvador"),
+    ("G1 Ceará", "https://g1.globo.com/rss/g1/ce/ceara/", "CE", "Fortaleza"),
+    ("G1 Minas Gerais", "https://g1.globo.com/rss/g1/mg/minas-gerais/", "MG", "Belo Horizonte"),
+    ("G1 Rio Grande do Sul", "https://g1.globo.com/rss/g1/rs/rio-grande-do-sul/", "RS", "Porto Alegre"),
+    ("G1 Paraná", "https://g1.globo.com/rss/g1/pr/parana/", "PR", "Curitiba"),
+    ("G1 Distrito Federal", "https://g1.globo.com/rss/g1/df/distrito-federal/", "DF", "Brasília"),
+    ("G1 Santa Catarina", "https://g1.globo.com/rss/g1/sc/santa-catarina/", "SC", "Florianópolis"),
+    ("G1 Goiás", "https://g1.globo.com/rss/g1/go/goias/", "GO", "Goiânia"),
+    ("G1 Espírito Santo", "https://g1.globo.com/rss/g1/es/espirito-santo/", "ES", "Vitória"),
+    ("G1 Pará", "https://g1.globo.com/rss/g1/pa/para/", "PA", "Belém"),
+    ("G1 Amazonas", "https://g1.globo.com/rss/g1/am/amazonas/", "AM", "Manaus"),
+    ("G1 Maranhão", "https://g1.globo.com/rss/g1/ma/maranhao/", "MA", "São Luís"),
+    ("G1 Paraíba", "https://g1.globo.com/rss/g1/pb/paraiba/", "PB", "João Pessoa"),
+    ("G1 Rio Grande do Norte", "https://g1.globo.com/rss/g1/rn/rio-grande-do-norte/", "RN", "Natal"),
+    ("G1 Alagoas", "https://g1.globo.com/rss/g1/al/alagoas/", "AL", "Maceió"),
+    ("G1 Sergipe", "https://g1.globo.com/rss/g1/se/sergipe/", "SE", "Aracaju"),
+    ("G1 Piauí", "https://g1.globo.com/rss/g1/pi/piaui/", "PI", "Teresina"),
+    ("G1 Mato Grosso", "https://g1.globo.com/rss/g1/mt/mato-grosso/", "MT", "Cuiabá"),
+    ("G1 Mato Grosso do Sul", "https://g1.globo.com/rss/g1/ms/mato-grosso-do-sul/", "MS", "Campo Grande"),
+    ("G1 Tocantins", "https://g1.globo.com/rss/g1/to/tocantins/", "TO", "Palmas"),
+    ("G1 Acre", "https://g1.globo.com/rss/g1/ac/acre/", "AC", "Rio Branco"),
+    ("G1 Rondônia", "https://g1.globo.com/rss/g1/ro/rondonia/", "RO", "Porto Velho"),
+    ("G1 Amapá", "https://g1.globo.com/rss/g1/ap/amapa/", "AP", "Macapá"),
+    ("G1 Roraima", "https://g1.globo.com/rss/g1/rr/roraima/", "RR", "Boa Vista"),
+
+    # === G1 全国版块（综合）===
+    ("G1 Brasil", "https://g1.globo.com/rss/g1/", "BR", "Brasil"),
+    ("G1 Política", "https://g1.globo.com/rss/g1/politica/", "BR", "Brasil"),
+
+    # === Folha de São Paulo ===
+    ("Folha Cotidiano", "https://feeds.folha.uol.com.br/cotidiano/rss091.xml", "SP", "São Paulo"),
+
+    # === UOL Notícias ===
+    ("UOL Cotidiano", "https://rss.uol.com.br/feed/noticias.xml", "BR", "São Paulo"),
+
+    # === R7 ===
+    ("R7 Cidades", "https://noticias.r7.com/cidades/feed.xml", "BR", "São Paulo"),
+    ("R7 SP", "https://noticias.r7.com/sao-paulo/feed.xml", "SP", "São Paulo"),
+    ("R7 RJ", "https://noticias.r7.com/rio-de-janeiro/feed.xml", "RJ", "Rio de Janeiro"),
+
+    # === Estadão ===
+    ("Estadão Brasil", "https://www.estadao.com.br/rss/brasil.xml", "BR", "São Paulo"),
+
+    # === 巴西利亚地区 ===
+    ("Metrópoles DF", "https://www.metropoles.com/feed", "DF", "Brasília"),
+
+    # === 东北地区本地报 ===
+    ("NE10", "https://blogs.ne10.uol.com.br/feed/", "PE", "Recife"),
+    ("Jornal do Commercio", "https://jc.ne10.uol.com.br/feed/", "PE", "Recife"),
+
+    # === 南部地区本地报 ===
+    ("Gaúcha ZH", "https://gauchazh.clicrbs.com.br/rss.xml", "RS", "Porto Alegre"),
+
+    # === 巴伊亚 ===
+    ("A Tarde", "https://www.atarde.com.br/rss", "BA", "Salvador"),
+
+    # === 米纳斯吉拉斯 ===
+    ("Estado de Minas", "https://www.em.com.br/rss/noticia/gerais.xml", "MG", "Belo Horizonte"),
+
+    # === 圣保罗本地 ===
+    ("Diário SP", "https://www.diariosp.com.br/feed/", "SP", "São Paulo"),
+]
+
+# ============================================================
+# 城市坐标
+# ============================================================
+CITY_COORDS = {
+    'Recife': (-8.0476, -34.8770), 'São Paulo': (-23.5505, -46.6333),
+    'Rio de Janeiro': (-22.9068, -43.1729), 'Salvador': (-12.9714, -38.5014),
+    'Fortaleza': (-3.7172, -38.5433), 'Belo Horizonte': (-19.9167, -43.9345),
+    'Porto Alegre': (-30.0346, -51.2177), 'Curitiba': (-25.4284, -49.2733),
+    'Brasília': (-15.7975, -47.8919), 'Florianópolis': (-27.5954, -48.5480),
+    'Goiânia': (-16.6869, -49.2648), 'Vitória': (-20.3155, -40.3128),
+    'Belém': (-1.4558, -48.4902), 'Manaus': (-3.1190, -60.0217),
+    'São Luís': (-2.5391, -44.2829), 'João Pessoa': (-7.1195, -34.8450),
+    'Natal': (-5.7945, -35.2110), 'Maceió': (-9.6498, -35.7089),
+    'Aracaju': (-10.9472, -37.0731), 'Teresina': (-5.0892, -42.8019),
+    'Cuiabá': (-15.6014, -56.0979), 'Campo Grande': (-20.4486, -54.6295),
+    'Palmas': (-10.1843, -48.3338), 'Rio Branco': (-9.9754, -67.8249),
+    'Porto Velho': (-8.7619, -63.9039), 'Macapá': (0.0349, -51.0694),
+    'Boa Vista': (2.8235, -60.6758),
+    'Caruaru': (-8.2842, -35.9760), 'Osasco': (-23.5325, -46.7919),
+    'São Gonçalo': (-22.8268, -43.0537), 'Niterói': (-22.8833, -43.1036),
+    'Porto Seguro': (-16.4497, -39.0647), 'Guarulhos': (-23.4628, -46.5333),
+    'Campinas': (-22.9099, -47.0626), 'Santo André': (-23.6739, -46.5390),
+    'Olinda': (-7.9886, -34.8399), 'Jaboatão': (-8.1130, -35.0150),
+    'Feira de Santana': (-12.2667, -38.9667), 'Camaçari': (-12.6996, -38.3243),
+    'Contagem': (-19.9319, -44.0531), 'Uberlândia': (-18.9186, -48.2772),
+    'Juiz de Fora': (-21.7595, -43.3350), 'Londrina': (-23.3045, -51.1696),
+    'Maringá': (-23.4205, -51.9333), 'Joinville': (-26.3045, -48.8487),
+    'Blumenau': (-26.9194, -49.0661), 'Caxias do Sul': (-29.1685, -51.1796),
+    'Pelotas': (-31.7654, -52.3376), 'Santa Maria': (-29.6914, -53.8008),
+    'Brasil': (-14.235, -51.925),
+}
+
+# ============================================================
+# 关键词
+# ============================================================
+CRIME_KW = [
+    'roubo', 'roub', 'assalt', 'furto', 'furt',
+    'homicid', 'morto', 'morta', 'mortos', 'mortas',
+    'baleado', 'baleada', 'tiro', 'tiros', 'matou', 'matar',
+    'esfaqueado', 'facad',
+    'estupro', 'estupr', 'feminic',
+    'sequestr', 'rapto',
+    'tráfico', 'trafico', 'drogas', 'apreendid', 'preso', 'presa',
+    'crime', 'criminoso', 'bandido', 'quadrilha',
+    'execução', 'executado', 'chacin',
+    'tentativa de homicídio', 'agressão', 'agredid',
+    'narcotráfico', 'cocaín', 'maconha', 'crack',
+    'cadáver', 'corpo encontrado',
+    'preso em flagrante',
+]
+EXCLUDE_KW = [
+    'junina', 'são joão', 'forró', 'quadrilha junina',
+    'futebol', 'campeonato',
+]
+CRIME_TYPES = {
+    'homicidio': ['homicid', 'morto', 'morta', 'baleado', 'baleada', 'matou',
+                  'esfaqueado', 'facad', 'feminic', 'execução', 'chacin',
+                  'cadáver', 'corpo encontrado'],
+    'roubo': ['roubo', 'roub', 'assalt'],
+    'furto': ['furto', 'furt'],
+    'estupro': ['estupro', 'estupr'],
+    'trafico': ['tráfico', 'trafico', 'drogas', 'narcotráfico', 'cocaín', 'maconha', 'crack'],
+}
+
+# ============================================================
+# 工具函数
+# ============================================================
+def fetch_url(url, timeout=15):
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read().decode('utf-8', errors='ignore')
+    except Exception as e:
+        return None
+
+def parse_rss(xml):
+    if not xml: return []
+    items = re.findall(r'<item>(.*?)</item>', xml, re.DOTALL)
+    out = []
+    for item in items:
+        def grab(tag):
+            m = re.search(f'<{tag}[^>]*>(.*?)</{tag}>', item, re.DOTALL)
+            if not m: return ''
+            v = m.group(1)
+            v = re.sub(r'<!\[CDATA\[|\]\]>', '', v)
+            v = re.sub(r'<.*?>', '', v)
+            return v.strip()
+        out.append({
+            'title': grab('title'),
+            'link': grab('link'),
+            'description': grab('description'),
+            'pubDate': grab('pubDate') or grab('dc:date'),
+        })
+    return out
+
+def parse_pub_date(s, link):
+    """优先 RSS pub_date，fallback 从 URL 抽日期"""
+    if s:
+        try:
+            dt = parsedate_to_datetime(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            pass
+    # 从 URL 抽 /YYYY/MM/DD/
+    m = re.search(r'/(\d{4})/(\d{2})/(\d{2})/', link)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                          tzinfo=timezone.utc)
+        except Exception:
+            pass
+    return None
+
+def is_crime(text):
+    t = text.lower()
+    if any(ex in t for ex in EXCLUDE_KW): return False
+    return any(kw in t for kw in CRIME_KW)
+
+def detect_type(text):
+    t = text.lower()
+    for ctype, kws in CRIME_TYPES.items():
+        if any(k in t for k in kws): return ctype
+    return 'outros'
+
+def detect_city(title, link, default_city):
+    t = title.lower()
+    for city in CITY_COORDS.keys():
+        if city.lower() in t and city != 'Brasil':
+            return city, 'title'
+    m = re.search(r'globo\.com/[a-z]{2}/([a-z\-]+)/', link.lower())
+    if m:
+        path_city = m.group(1).replace('-', ' ').title()
+        for city in CITY_COORDS.keys():
+            if city.lower() == path_city.lower():
+                return city, 'url'
+    return default_city, 'default'
+
+def get_coords(city, link):
+    if city not in CITY_COORDS or city == 'Brasil':
+        return None, None
+    lat, lng = CITY_COORDS[city]
+    seed = int(hashlib.md5(link.encode()).hexdigest()[:8], 16)
+    rng = random.Random(seed)
+    jit_lat = (rng.random() - 0.5) * 0.05
+    jit_lng = (rng.random() - 0.5) * 0.05
+    return round(lat + jit_lat, 6), round(lng + jit_lng, 6)
+
+# ============================================================
+# 主流程
+# ============================================================
+def main():
+    print(f"🚀 抓取 {len(RSS_FEEDS)} 个 RSS 源 · {datetime.now().isoformat()}")
+    
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=MAX_AGE_DAYS)
+    
+    all_incidents = []
+    seen_links = set()
+    feed_stats = {}
+    
+    for source, url, state, default_city in RSS_FEEDS:
+        xml = fetch_url(url)
+        items = parse_rss(xml) if xml else []
+        crime_count = 0
+        
+        for item in items:
+            title = item['title']
+            link = item['link']
+            if not title or not link: continue
+            if link in seen_links: continue
+            
+            text = title + ' ' + item.get('description', '')
+            if not is_crime(text): continue
+            
+            ctype = detect_type(text)
+            if ctype == 'outros': continue
+            
+            pub_dt = parse_pub_date(item['pubDate'], link)
+            if pub_dt and pub_dt < cutoff:
+                continue
+            
+            seen_links.add(link)
+            
+            city, method = detect_city(title, link, default_city)
+            lat, lng = get_coords(city, link)
+            if lat is None: continue
+            
+            all_incidents.append({
+                'id': f'inc_{len(all_incidents)+1:03d}',
+                'title': title[:200],
+                'link': link,
+                'city': city,
+                'state': state if state != 'BR' else '',
+                'lat': lat,
+                'lng': lng,
+                'type': ctype,
+                'source': source,
+                'pub_date': pub_dt.isoformat() if pub_dt else None,
+                'pub_ts': int(pub_dt.timestamp()) if pub_dt else 0,
+                'city_method': method,
+            })
+            crime_count += 1
+        
+        feed_stats[source] = crime_count
+        status = f"✅ {crime_count}" if crime_count > 0 else (f"⚠️  无数据" if xml else f"❌ 抓取失败")
+        print(f"  {status:<15s} {source}")
+    
+    # 按时间倒序
+    all_incidents.sort(key=lambda x: x['pub_ts'], reverse=True)
+    # 重新编号
+    for i, inc in enumerate(all_incidents):
+        inc['id'] = f'inc_{i+1:03d}'
+    
+    # 统计
+    print(f"\n{'='*60}\n📊 总计: {len(all_incidents)} 条（最近 {MAX_AGE_DAYS} 天）\n{'='*60}")
+    
+    type_stats = Counter(i['type'] for i in all_incidents)
+    city_stats = Counter(i['city'] for i in all_incidents)
+    state_stats = Counter(i['state'] for i in all_incidents if i['state'])
+    
+    # 时效性分布
+    age_buckets = {'< 1h': 0, '1-6h': 0, '6-24h': 0, '1-3d': 0, '3-7d': 0}
+    for inc in all_incidents:
+        if not inc['pub_ts']: continue
+        age_h = (now.timestamp() - inc['pub_ts']) / 3600
+        if age_h < 1: age_buckets['< 1h'] += 1
+        elif age_h < 6: age_buckets['1-6h'] += 1
+        elif age_h < 24: age_buckets['6-24h'] += 1
+        elif age_h < 72: age_buckets['1-3d'] += 1
+        elif age_h < 168: age_buckets['3-7d'] += 1
+    
+    print("\n⏰ 时效性:")
+    for k, v in age_buckets.items():
+        print(f"  {k:8s} {v:3d} 条 {'█' * int(v/2)}")
+    print("\n📋 类型:")
+    for t, n in type_stats.most_common():
+        print(f"  {t}: {n}")
+    print(f"\n🇧🇷 覆盖 {len(state_stats)} 州 / {len(city_stats)} 城市")
+    
+    # 输出
+    out_path = Path(__file__).parent.parent / 'public' / 'rss_incidents.json'
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(all_incidents, f, ensure_ascii=False, indent=2)
+    
+    meta_path = Path(__file__).parent.parent / 'public' / 'meta.json'
+    with open(meta_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'generated_at': now.isoformat(),
+            'total': len(all_incidents),
+            'feeds_count': len(RSS_FEEDS),
+            'feeds_success': sum(1 for v in feed_stats.values() if v > 0),
+            'max_age_days': MAX_AGE_DAYS,
+            'type_stats': dict(type_stats),
+            'city_stats': dict(city_stats.most_common(20)),
+            'state_count': len(state_stats),
+            'age_buckets': age_buckets,
+        }, f, ensure_ascii=False, indent=2)
+    
+    print(f"\n✅ 已写入: {out_path.name} + meta.json")
+
+if __name__ == '__main__':
+    main()
