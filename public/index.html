@@ -8,8 +8,6 @@
 <meta name="theme-color" content="#f9fafb">
 <title>Mapa do Crime · Brasil</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <style>
 /* === 主题变量 === */
 :root,[data-theme="dark"]{
@@ -485,7 +483,6 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 const TYPE_EMOJI={homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',trafico:'💊',sequestro:'🔗',violencia:'👊',policia:'👮',faccao:'🔥',fraude:'💳',veiculo:'🚗',menor:'👦',outros:'❗'};
 const TYPE_LABEL={homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',sequestro:'Sequestro',violencia:'Violência',policia:'Polícia',faccao:'Facção',fraude:'Fraude',veiculo:'Veículo',menor:'Menor',outros:'Outros'};
@@ -662,19 +659,12 @@ function getFilteredData(){
 }
 
 function renderMarkers(){
-  if(window._cluster){map.removeLayer(window._cluster);}
-  const cluster = L.markerClusterGroup({
-    chunkedLoading: true,
-    chunkInterval: 100,
-    maxClusterRadius: 60,
-    spiderfyOnMaxZoom: true,
-    showCoverageOnHover: false,
-  });
+  markers.forEach(m=>map.removeLayer(m));
   markers=[];
   const data=getFilteredData();
   data.forEach((d,idx)=>{
     const icon=L.divIcon({className:'',html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,iconSize:[32,32],iconAnchor:[16,16]});
-    const m=L.marker([d.lat,d.lng],{icon});
+    const m=L.marker([d.lat,d.lng],{icon}).addTo(map);
     const html=`
       <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
       <div class="pop-title">${escapeHtml(d.title)}</div>
@@ -683,11 +673,8 @@ function renderMarkers(){
     `;
     m.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-8]});
     m.on('click',()=>highlightItem(idx));
-    cluster.addLayer(m);
     markers.push(m);
   });
-  map.addLayer(cluster);
-  window._cluster = cluster;
 }
 
 function renderList(){
@@ -820,13 +807,9 @@ document.getElementById('citySearch').addEventListener('input',e=>{
 async function init(){
   try{
     initMap();
-    document.querySelector('.loading-text').textContent='Carregando 2000+ ocorrências...';
     const res=await fetch('/rss_incidents.json?_='+Date.now());
     allData=await res.json();
-    document.querySelector('.loading-text').textContent=`Renderizando ${allData.length} pontos...`;
     renderTypeBar();
-    // 让 loading 文字先渲染，再干重活
-    await new Promise(r=>setTimeout(r,30));
     renderMarkers();
     renderList();
     document.getElementById('loading').style.display='none';
