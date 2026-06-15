@@ -3,449 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="description" content="Mapa interativo de ocorrências em Recife. Acompanhe roubos e furtos registrados na sua cidade.">
-<meta name="theme-color" content="#dc2626">
-<title>Mapa de Ocorrências · Recife</title>
-
-<!-- SEO -->
-<meta property="og:title" content="Mapa de Ocorrências · Recife">
-<meta property="og:description" content="Roubos e furtos registrados em Recife - últimos 7 dias">
-<meta property="og:type" content="website">
-<meta property="og:image" content="/og-image.png">
-
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-
-<!-- Google Analytics 4 (替换 G-XXXXXXXXXX 为你自己的 Measurement ID) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-</script>
-
+<title>Mapa do Crime · Brasil</title>
+<meta name="description" content="Mapa interativo de ocorrências em cidades brasileiras. Acompanhe roubos, furtos e homicídios.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#000;height:100%;overflow:hidden}
-.app{width:100vw;height:100vh;max-width:430px;margin:0 auto;position:relative;background:#fff;overflow:hidden}
-#map{position:absolute;inset:0;background:#e8e6df}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#0a0e1a;color:#e5e7eb;overflow:hidden}
+#map{position:absolute;inset:0;z-index:1;background:#0a0e1a}
+
+/* 顶部 */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;padding:env(safe-area-inset-top) 12px 8px;background:linear-gradient(180deg,rgba(10,14,26,.95) 0%,rgba(10,14,26,.85) 70%,transparent 100%);backdrop-filter:blur(8px)}
+.title{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;padding:8px 4px 6px}
+.title .dot{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.subtitle{font-size:11px;color:#9ca3af;padding-left:18px;margin-top:-4px;margin-bottom:6px}
+
+/* 城市选择器 */
+.city-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 4px 8px;scrollbar-width:none}
+.city-bar::-webkit-scrollbar{display:none}
+.city-chip{flex-shrink:0;padding:7px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:18px;font-size:13px;color:#cbd5e1;cursor:pointer;transition:.2s;white-space:nowrap;font-weight:500}
+.city-chip:active{transform:scale(.94)}
+.city-chip.active{background:#dc2626;border-color:#dc2626;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.4)}
+.city-chip .count{display:inline-block;margin-left:6px;padding:1px 7px;background:rgba(0,0,0,.25);border-radius:10px;font-size:11px;font-weight:600}
+.city-chip.active .count{background:rgba(255,255,255,.25)}
+
+/* 类型筛选 */
+.type-bar{display:flex;gap:5px;overflow-x:auto;padding:0 4px 8px;scrollbar-width:none}
+.type-bar::-webkit-scrollbar{display:none}
+.type-chip{flex-shrink:0;padding:5px 11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;font-size:12px;color:#9ca3af;cursor:pointer;transition:.2s;white-space:nowrap}
+.type-chip.active{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)}
+
+/* Marker */
+.pm{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);font-weight:700}
+.pm.homicidio{background:#7f1d1d}
+.pm.roubo{background:#dc2626}
+.pm.furto{background:#d97706}
+.pm.estupro{background:#be185d}
+.pm.trafico{background:#7e22ce}
+.pm.outros{background:#475569}
+
+/* 弹窗 */
+.leaflet-popup-content-wrapper{background:#1f2937;color:#e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.6);padding:0}
+.leaflet-popup-content{margin:12px 14px;line-height:1.5;width:240px!important}
+.leaflet-popup-tip{background:#1f2937}
+.pop-type{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;color:#fff}
+.pop-title{font-size:13px;font-weight:600;color:#f3f4f6;margin-bottom:6px;line-height:1.4}
+.pop-meta{font-size:11px;color:#9ca3af;margin-bottom:8px}
+.pop-link{display:block;padding:7px;background:#dc2626;color:#fff;text-align:center;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600}
+.pop-link:active{background:#b91c1c}
+
+/* 底部 sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#111827;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.5);max-height:55vh;display:flex;flex-direction:column;transition:transform .3s;padding-bottom:env(safe-area-inset-bottom)}
+.sheet.collapsed{transform:translateY(calc(100% - 50px))}
+.sheet-handle{display:flex;justify-content:center;padding:10px;cursor:pointer}
+.sheet-handle::after{content:"";width:36px;height:4px;background:#4b5563;border-radius:2px}
+.sheet-header{padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center}
+.sheet-title{font-size:14px;font-weight:700;color:#fff}
+.sheet-count{font-size:12px;color:#9ca3af}
+.sheet-body{flex:1;overflow-y:auto;padding:0 12px 16px;-webkit-overflow-scrolling:touch}
+
+/* 列表项 */
+.it{padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid transparent;transition:.2s}
+.it:active{transform:scale(.98);background:rgba(255,255,255,.06)}
+.it.active{background:rgba(220,38,38,.12);border-left-color:#dc2626}
+.it-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.it-emoji{font-size:16px;flex-shrink:0}
+.it-tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;text-transform:uppercase}
+.it-city{font-size:10px;color:#9ca3af;margin-left:auto}
+.it-title{font-size:13px;color:#e5e7eb;line-height:1.4;font-weight:500}
+.it-source{font-size:10px;color:#6b7280;margin-top:4px}
 
 /* Loading */
-.loading{position:absolute;inset:0;background:#fff;z-index:5000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;transition:opacity .4s}
-.loading.hidden{opacity:0;pointer-events:none}
-.spinner{width:40px;height:40px;border:3px solid #f0f0f5;border-top-color:#dc2626;border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:13px;color:#666;font-weight:600}
-
-/* Top bar */
-.topbar{position:absolute;top:0;left:0;right:0;padding:env(safe-area-inset-top,46px) 14px 12px;display:flex;gap:10px;align-items:center;z-index:1000;pointer-events:none}
-.topbar>*{pointer-events:auto}
-.btn-icon{width:42px;height:42px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
-.title-bar{flex:1;background:#fff;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
-.t-eb{font-size:9px;letter-spacing:1px;color:#dc2626;font-weight:800}
-.t-loc{font-size:14px;font-weight:800;line-height:1.2;display:flex;align-items:center;gap:5px}
-
-/* Stats banner */
-.stats{position:absolute;top:96px;left:14px;right:14px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border-radius:12px;padding:10px 14px;z-index:998;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(220,38,38,.3)}
-.stats .em{font-size:14px}
-.stats b{font-size:13px}
-
-/* Filter chips */
-.chips{position:absolute;top:148px;left:0;right:0;padding:0 14px;display:flex;gap:6px;overflow-x:auto;z-index:500;-webkit-overflow-scrolling:touch}
-.chips::-webkit-scrollbar{display:none}
-.chip{padding:7px 12px;background:rgba(255,255,255,.96);border-radius:18px;font-size:11.5px;font-weight:700;color:#1a1a1a;white-space:nowrap;cursor:pointer;backdrop-filter:blur(10px);box-shadow:0 2px 6px rgba(0,0,0,.1);transition:all .2s;display:flex;align-items:center;gap:5px;flex-shrink:0}
-.chip.act{background:#1a1a1a;color:#fff}
-.chip .num{font-size:9px;opacity:.7;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:8px}
-.chip.act .num{background:rgba(255,255,255,.2);opacity:1}
-
-/* Markers */
-.pm{width:36px;height:36px;border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,.35);cursor:pointer;background:#dc2626;position:relative}
-.pm.t-roubo{background:#dc2626}
-.pm.t-furto{background:#f59e0b}
-.pm.pulse::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid currentColor;animation:cpulse 2s ease-out infinite;opacity:0}
-@keyframes cpulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.8);opacity:0}}
-
-/* Right controls */
-.controls{position:absolute;right:12px;top:200px;display:flex;flex-direction:column;gap:8px;z-index:500}
-.ctrl{width:42px;height:42px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;transition:transform .15s}
-.ctrl:active{transform:scale(.92)}
-
-/* Bottom sheet */
-.sheet{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.18);z-index:999;transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateY(calc(100% - 200px))}
-.sheet.expand{transform:translateY(35%)}
-.sheet.full{transform:translateY(0)}
-.handle{width:42px;height:4px;background:#d4d4d8;border-radius:2px;margin:8px auto 6px;cursor:grab}
-.sh-head{padding:8px 18px 10px;display:flex;justify-content:space-between;align-items:center}
-.sh-tt{font-size:16px;font-weight:800}
-.sh-cnt{font-size:10px;background:#fee2e2;color:#dc2626;padding:3px 9px;border-radius:6px;font-weight:700}
-.sh-sub{padding:0 18px 10px;font-size:11px;color:#666}
-.sh-update{font-size:10px;color:#aaa;margin-left:auto}
-
-.list{padding:0 18px 90px;max-height:60vh;overflow-y:auto}
-.list::-webkit-scrollbar{display:none}
-.it{padding:11px 0;border-top:1px solid #f0f0f5;display:flex;gap:10px;cursor:pointer;transition:background .2s}
-.it.active{background:linear-gradient(90deg,#fef2f2,#fff);border-radius:8px;margin:0 -8px;padding:11px 8px}
-.it.active .it-tt{color:#dc2626}
-.it-th{width:60px;height:76px;border-radius:8px;background:linear-gradient(135deg,#374151,#111827);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;position:relative;overflow:hidden}
-.it-th img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-.it-th .play{position:absolute;width:24px;height:24px;background:rgba(255,255,255,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#1a1a1a;z-index:2}
-.it-th .dur{position:absolute;bottom:2px;right:3px;font-size:8px;background:rgba(0,0,0,.7);color:#fff;padding:1px 3px;border-radius:2px;z-index:2}
-.it-info{flex:1;min-width:0}
-.it-tt{font-size:13px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px}
-.it-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:10px;color:#888}
-.it-tag{padding:2px 6px;border-radius:4px;font-weight:700;font-size:9px;background:#fee2e2;color:#dc2626}
-.it-tag.f{background:#ffedd5;color:#d97706}
-.it-loc{display:flex;align-items:center;gap:3px;color:#666;font-size:9.5px}
-.it-author{font-size:11px;color:#666;margin-top:5px;display:flex;align-items:center;gap:5px}
-.it-av{width:16px;height:16px;border-radius:50%;background:#f0f0f5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
-.it-vfd{font-size:9px;background:#dbeafe;color:#1e40af;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px}
-
-/* Video modal (player) */
-.video-modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:5000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
-.video-modal.show{opacity:1;pointer-events:auto}
-.video-modal-close{position:absolute;top:env(safe-area-inset-top,40px);right:14px;width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;cursor:pointer;backdrop-filter:blur(10px);z-index:5001}
-.video-modal-content{width:100%;max-width:430px;aspect-ratio:9/16;max-height:90vh;background:#000;display:flex;align-items:center;justify-content:center;position:relative}
-.video-modal-content iframe{width:100%;height:100%;border:0}
-.video-info{position:absolute;bottom:0;left:0;right:0;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.9));color:#fff;font-size:13px;line-height:1.4;pointer-events:none}
-.video-info b{display:block;margin-bottom:4px;font-size:14px}
+.loading{position:fixed;inset:0;background:#0a0e1a;z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#dc2626;border-radius:50%;animation:r 1s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.loading-text{color:#9ca3af;font-size:13px}
 
 /* Toast */
-.toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:3000;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(8px);max-width:280px;text-align:center}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.9);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
-/* Empty state */
-.empty{padding:40px 24px;text-align:center;color:#888}
-.empty .em{font-size:48px;margin-bottom:8px}
-.empty .ttl{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
-.empty .desc{font-size:12px}
-
-/* Error state */
-.err-banner{position:absolute;top:96px;left:14px;right:14px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:12px;padding:10px 14px;z-index:1500;font-size:11.5px;display:none}
-.err-banner.show{display:block}
+/* Empty */
+.empty{padding:40px 20px;text-align:center;color:#6b7280;font-size:13px}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Loading -->
-  <div class="loading" id="loading">
-    <div class="spinner"></div>
-    <div class="loading-text">Carregando ocorrências...</div>
-  </div>
-
-  <!-- Map -->
-  <div id="map"></div>
-
-  <!-- Error banner (when data fetch fails) -->
-  <div class="err-banner" id="errBanner">⚠️ Falha ao carregar dados. Tente novamente em alguns instantes.</div>
-
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="btn-icon" id="back">←</div>
-    <div class="title-bar">
-      <div style="flex:1">
-        <div class="t-eb">🚨 OCORRÊNCIAS NA SUA CIDADE</div>
-        <div class="t-loc"><span id="cityLbl">Recife, PE</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats">
-    <span class="em">🚨</span>
-    <span id="statsText"><b>0 ocorrências</b> registradas · últimos 7 dias</span>
-  </div>
-
-  <!-- Filter chips -->
-  <div class="chips" id="chips">
-    <div class="chip act" data-type="all">Tudo <span class="num" id="cAll">0</span></div>
-    <div class="chip" data-type="roubo">🔫 Roubo <span class="num" id="cRoubo">0</span></div>
-    <div class="chip" data-type="furto">📱 Furto <span class="num" id="cFurto">0</span></div>
-  </div>
-
-  <!-- Right controls -->
-  <div class="controls">
-    <div class="ctrl" id="zi">＋</div>
-    <div class="ctrl" id="zo">−</div>
-  </div>
-
-  <!-- Bottom sheet -->
-  <div class="sheet" id="sheet">
-    <div class="handle" id="handle"></div>
-    <div class="sh-head">
-      <div class="sh-tt">Ocorrências recentes</div>
-      <div class="sh-cnt" id="shCnt">0 casos</div>
-    </div>
-    <div class="sh-sub">
-      <span>Ordenado por data</span>
-      <span class="sh-update" id="updTime"></span>
-    </div>
-    <div class="list" id="list"></div>
-  </div>
-
-  <!-- Video modal -->
-  <div class="video-modal" id="videoModal">
-    <div class="video-modal-close" id="videoClose">×</div>
-    <div class="video-modal-content">
-      <iframe id="videoFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-      <div class="video-info" id="videoInfo"></div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="loading-text">Carregando ocorrências...</div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<div id="map"></div>
+
+<div class="topbar">
+  <div class="title"><span class="dot"></span>Mapa do Crime · Brasil</div>
+  <div class="subtitle">Notícias reais de fontes oficiais (G1)</div>
+  <div class="city-bar" id="cityBar"></div>
+  <div class="type-bar" id="typeBar"></div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-handle" onclick="toggleSheet()"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sheetTitle">Ocorrências</div>
+    <div class="sheet-count" id="sheetCount">0</div>
+  </div>
+  <div class="sheet-body" id="list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ====== Config ====== */
-const DATA_URL = '/data.json';
-const FALLBACK_CITY = {lat:-8.0476, lng:-34.8770, name:'Recife, PE'};
-const tagName = {roubo:'ROUBO', furto:'FURTO'};
-const tagCls  = {roubo:'',      furto:'f'};
+const TYPE_EMOJI = {homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',trafico:'💊',outros:'❗'};
+const TYPE_LABEL = {homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',outros:'Outros'};
+const TYPE_COLOR = {homicidio:'#7f1d1d',roubo:'#dc2626',furto:'#d97706',estupro:'#be185d',trafico:'#7e22ce',outros:'#475569'};
 
-/* ====== State ====== */
-let curFilter = 'all';
-let allMarkers = [];
-let allIncidents = [];
-let map;
-let dataLoadedAt = null;
+// 城市坐标（用于切换城市时定位）
+const CITY_COORDS = {
+  'Brasil':[-14.235,-51.925,4],
+  'São Paulo':[-23.5505,-46.6333,11],
+  'Rio de Janeiro':[-22.9068,-43.1729,11],
+  'Recife':[-8.0476,-34.8770,12],
+  'Salvador':[-12.9714,-38.5014,11],
+  'Brasília':[-15.7975,-47.8919,11],
+  'Fortaleza':[-3.7172,-38.5433,11],
+  'Belo Horizonte':[-19.9167,-43.9345,11],
+  'Porto Alegre':[-30.0346,-51.2177,11],
+  'Curitiba':[-25.4284,-49.2733,11],
+};
 
-/* ====== Analytics helper ====== */
-function track(event, params){
-  try{
-    if(typeof gtag !== 'undefined') gtag('event', event, params || {});
-  }catch(e){}
+let allData=[],map,markers=[],curCity='Brasil',curType='all';
+
+function showToast(msg,t=1500){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),t);
 }
 
-/* ====== Init Map ====== */
-function initMap(center){
-  map = L.map('map',{
-    center:[center.lat, center.lng], zoom:12,
-    zoomControl:false, attributionControl:false
-  });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-    subdomains:'abcd', maxZoom:19,
-    attribution:'© OpenStreetMap, © CartoDB'
+function toggleSheet(){
+  document.getElementById('sheet').classList.toggle('collapsed');
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// 初始化地图
+function initMap(){
+  map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-14.235,-51.925],4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:19,subdomains:'abcd'
   }).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© OSM © Carto').addTo(map);
 }
 
-/* ====== Fetch data ====== */
-async function loadData(){
-  try{
-    const res = await fetch(DATA_URL + '?_=' + Date.now()); // bust cache
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    dataLoadedAt = new Date();
-    allIncidents = data.incidents || [];
-
-    // Update UI from data
-    document.getElementById('cityLbl').textContent = data.city.name || FALLBACK_CITY.name;
-    document.getElementById('statsText').innerHTML = 
-      `<b>${allIncidents.length} ocorrências</b> registradas · últimos ${data.meta.period_days || 7} dias`;
-    
-    if(data.meta.last_updated){
-      const updated = new Date(data.meta.last_updated);
-      document.getElementById('updTime').textContent = 'Atualizado: ' + formatRelative(updated);
-    }
-
-    initMap(data.city);
-    updateChipCounts();
-    renderMarkers();
-    renderList();
-
-    document.getElementById('loading').classList.add('hidden');
-    track('page_view', {city: data.city.id, total: allIncidents.length});
-  }catch(err){
-    console.error('Failed to load data:', err);
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('errBanner').classList.add('show');
-    initMap(FALLBACK_CITY);
-    track('data_load_error', {error: err.message});
-  }
-}
-
-/* ====== Format helpers ====== */
-function formatRelative(date){
-  const diff = Math.floor((Date.now() - date.getTime())/1000);
-  if(diff < 60) return 'agora';
-  if(diff < 3600) return Math.floor(diff/60) + ' min atrás';
-  if(diff < 86400) return Math.floor(diff/3600) + 'h atrás';
-  return Math.floor(diff/86400) + 'd atrás';
-}
-
-function getEmoji(type){
-  return type === 'roubo' ? '🔫' : '📱';
-}
-
-/* ====== Markers ====== */
-function renderMarkers(){
-  allMarkers.forEach(m => map.removeLayer(m));
-  allMarkers = [];
-  const filtered = curFilter === 'all' ? allIncidents : allIncidents.filter(i => i.type === curFilter);
-  filtered.forEach(inc => {
-    const ic = L.divIcon({
-      className:'',
-      html:`<div class="pm t-${inc.type} ${inc.is_pulse ? 'pulse' : ''}">${getEmoji(inc.type)}</div>`,
-      iconSize:[36,36], iconAnchor:[18,18]
-    });
-    const m = L.marker([inc.lat, inc.lng], {icon:ic}).addTo(map);
-    m.on('click', () => {
-      track('marker_click', {id:inc.id, type:inc.type});
-      highlightListItem(inc.id);
-      setSheet(1);
-      showToast('▶ ' + tagName[inc.type] + ' · ' + inc.location_name);
-    });
-    allMarkers.push(m);
+// 渲染城市选择器
+function renderCityBar(){
+  const counts={};
+  allData.forEach(d=>{counts[d.city]=(counts[d.city]||0)+1});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  
+  const bar=document.getElementById('cityBar');
+  bar.innerHTML=`<div class="city-chip ${curCity==='Brasil'?'active':''}" data-city="Brasil">🇧🇷 Brasil <span class="count">${allData.length}</span></div>`;
+  sorted.forEach(([city,n])=>{
+    if(n<3)return; // 只显示有 3+ 条的城市
+    bar.innerHTML+=`<div class="city-chip ${curCity===city?'active':''}" data-city="${escapeHtml(city)}">📍 ${escapeHtml(city)} <span class="count">${n}</span></div>`;
+  });
+  
+  bar.querySelectorAll('.city-chip').forEach(el=>{
+    el.onclick=()=>switchCity(el.dataset.city);
   });
 }
 
-function highlightListItem(id){
-  document.querySelectorAll('.it').forEach(el => el.classList.remove('active'));
-  const el = document.querySelector('.it[data-id="' + id + '"]');
-  if(el){
-    el.classList.add('active');
-    el.scrollIntoView({behavior:'smooth', block:'center'});
-  }
+// 渲染类型筛选
+function renderTypeBar(){
+  const filtered = curCity==='Brasil'?allData:allData.filter(d=>d.city===curCity);
+  const counts={};
+  filtered.forEach(d=>{counts[d.type]=(counts[d.type]||0)+1});
+  
+  const bar=document.getElementById('typeBar');
+  bar.innerHTML=`<div class="type-chip ${curType==='all'?'active':''}" data-type="all">Todos (${filtered.length})</div>`;
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([t,n])=>{
+    bar.innerHTML+=`<div class="type-chip ${curType===t?'active':''}" data-type="${t}">${TYPE_EMOJI[t]||'❗'} ${TYPE_LABEL[t]||t} (${n})</div>`;
+  });
+  
+  bar.querySelectorAll('.type-chip').forEach(el=>{
+    el.onclick=()=>switchType(el.dataset.type);
+  });
 }
 
-/* ====== List ====== */
-function renderList(){
-  const filtered = curFilter === 'all' ? allIncidents : allIncidents.filter(i => i.type === curFilter);
-  document.getElementById('shCnt').textContent = filtered.length + ' casos';
+// 切换城市
+function switchCity(city){
+  curCity=city;
+  curType='all';
+  const [lat,lng,zoom]=CITY_COORDS[city]||[-14.235,-51.925,4];
+  map.flyTo([lat,lng],zoom,{duration:.8});
+  renderCityBar();
+  renderTypeBar();
+  renderMarkers();
+  renderList();
+  showToast(`📍 ${city}`);
+}
+
+// 切换类型
+function switchType(t){
+  curType=t;
+  renderTypeBar();
+  renderMarkers();
+  renderList();
+}
+
+// 过滤数据
+function getFilteredData(){
+  let d=allData;
+  if(curCity!=='Brasil') d=d.filter(x=>x.city===curCity);
+  if(curType!=='all') d=d.filter(x=>x.type===curType);
+  return d;
+}
+
+// 渲染 marker
+function renderMarkers(){
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
   
-  if(filtered.length === 0){
-    document.getElementById('list').innerHTML = `
-      <div class="empty">
-        <div class="em">🔍</div>
-        <div class="ttl">Nenhuma ocorrência</div>
-        <div class="desc">Não há casos deste tipo no momento</div>
-      </div>`;
+  const data=getFilteredData();
+  data.forEach((d,idx)=>{
+    const icon=L.divIcon({
+      className:'',
+      html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,
+      iconSize:[28,28],iconAnchor:[14,14]
+    });
+    const m=L.marker([d.lat,d.lng],{icon}).addTo(map);
+    
+    const html=`
+      <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
+      <div class="pop-title">${escapeHtml(d.title)}</div>
+      <div class="pop-meta">📍 ${escapeHtml(d.city)} · ${escapeHtml(d.source||'')}</div>
+      <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener">Ler notícia →</a>
+    `;
+    m.bindPopup(html,{maxWidth:280,minWidth:240});
+    
+    m.on('click',()=>{
+      highlightItem(idx);
+    });
+    
+    markers.push(m);
+  });
+}
+
+// 渲染列表
+function renderList(){
+  const data=getFilteredData();
+  document.getElementById('sheetCount').textContent=`${data.length} ocorrências`;
+  document.getElementById('sheetTitle').textContent=curCity==='Brasil'?'Brasil':curCity;
+  
+  const list=document.getElementById('list');
+  if(data.length===0){
+    list.innerHTML='<div class="empty">Nenhuma ocorrência encontrada</div>';
     return;
   }
-
-  document.getElementById('list').innerHTML = filtered.map(i => {
-    const t = tagCls[i.type];
-    return `<div class="it" data-id="${i.id}">
-      <div class="it-th">
-        ${i.thumbnail_url ? `<img src="${i.thumbnail_url}" loading="lazy" onerror="this.style.display='none'">` : ''}
-        ${getEmoji(i.type)}
-        <div class="play">▶</div>
-        <div class="dur">${i.duration_str}</div>
+  
+  list.innerHTML=data.map((d,idx)=>`
+    <div class="it" data-idx="${idx}">
+      <div class="it-row">
+        <span class="it-emoji">${TYPE_EMOJI[d.type]||'❗'}</span>
+        <span class="it-tag" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
+        <span class="it-city">${escapeHtml(d.city)}</span>
       </div>
-      <div class="it-info">
-        <div class="it-tt">${escapeHtml(i.title)}</div>
-        <div class="it-meta">
-          <span class="it-tag ${t}">${tagName[i.type]}</span>
-          <span class="it-loc">📍 ${escapeHtml(i.location_name)}</span>
-          <span>·</span><span>${i.publish_time_relative}</span>
-        </div>
-        <div class="it-author">
-          <div class="it-av">${i.author_avatar_letter}</div>${escapeHtml(i.author_name)}
-          ${i.verified ? '<span class="it-vfd">✓</span>' : ''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  document.querySelectorAll('.it').forEach(el => {
-    el.onclick = () => {
-      const id = el.dataset.id;
-      const inc = allIncidents.find(x => x.id === id);
-      if(inc) openVideo(inc);
+      <div class="it-title">${escapeHtml(d.title)}</div>
+      <div class="it-source">${escapeHtml(d.source||'')}</div>
+    </div>
+  `).join('');
+  
+  list.querySelectorAll('.it').forEach(el=>{
+    el.onclick=()=>{
+      const idx=+el.dataset.idx;
+      const d=data[idx];
+      map.flyTo([d.lat,d.lng],14,{duration:.6});
+      const m=markers[idx];
+      setTimeout(()=>m&&m.openPopup(),650);
+      highlightItem(idx);
     };
   });
 }
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-/* ====== Video modal ====== */
-function openVideo(inc){
-  track('video_open', {id:inc.id, type:inc.type});
-  const modal = document.getElementById('videoModal');
-  const frame = document.getElementById('videoFrame');
-  const info = document.getElementById('videoInfo');
-  frame.src = inc.video_url + '?autoplay=1&rel=0';
-  info.innerHTML = `<b>${escapeHtml(inc.title)}</b>📍 ${escapeHtml(inc.location_name)} · ${inc.publish_time_relative}`;
-  modal.classList.add('show');
-}
-document.getElementById('videoClose').onclick = () => {
-  document.getElementById('videoModal').classList.remove('show');
-  document.getElementById('videoFrame').src = '';
-};
-
-/* ====== Filters ====== */
-function updateChipCounts(){
-  const counts = {all: allIncidents.length, roubo:0, furto:0};
-  allIncidents.forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
-  document.getElementById('cAll').textContent = counts.all;
-  document.getElementById('cRoubo').textContent = counts.roubo;
-  document.getElementById('cFurto').textContent = counts.furto;
-}
-
-document.querySelectorAll('.chip').forEach(c => {
-  c.onclick = () => {
-    document.querySelectorAll('.chip').forEach(x => x.classList.remove('act'));
-    c.classList.add('act');
-    curFilter = c.dataset.type;
-    track('filter_click', {type:curFilter});
-    renderMarkers(); renderList();
-    showToast(curFilter === 'all' ? 'Mostrando tudo' : 'Filtro: ' + tagName[curFilter]);
-  };
-});
-
-/* ====== Bottom sheet ====== */
-let sheetState = 0;
-const sheet = document.getElementById('sheet');
-function setSheet(s){
-  sheetState = Math.max(0, Math.min(2, s));
-  sheet.classList.remove('expand', 'full');
-  if(sheetState === 1) sheet.classList.add('expand');
-  if(sheetState === 2) sheet.classList.add('full');
-}
-const handle = document.getElementById('handle');
-handle.onclick = () => setSheet((sheetState + 1) % 3);
-
-let dStart = 0, dragging = false;
-handle.addEventListener('touchstart', e => { dStart = e.touches[0].clientY; dragging = true; });
-handle.addEventListener('touchmove', e => {
-  if(!dragging) return;
-  const dy = e.touches[0].clientY - dStart;
-  if(Math.abs(dy) > 40){
-    if(dy < 0 && sheetState < 2){ setSheet(sheetState + 1); dStart = e.touches[0].clientY; }
-    if(dy > 0 && sheetState > 0){ setSheet(sheetState - 1); dStart = e.touches[0].clientY; }
+// 高亮列表项
+function highlightItem(idx){
+  document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
+  const el=document.querySelector(`.it[data-idx="${idx}"]`);
+  if(el){
+    el.classList.add('active');
+    el.scrollIntoView({behavior:'smooth',block:'center'});
   }
-});
-handle.addEventListener('touchend', () => dragging = false);
-
-/* ====== Map controls ====== */
-document.addEventListener('click', e => {
-  if(e.target.id === 'zi' && map) map.zoomIn();
-  if(e.target.id === 'zo' && map) map.zoomOut();
-  if(e.target.id === 'back') showToast('← Voltar');
-});
-
-/* ====== Toast ====== */
-let toastTimer;
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  document.getElementById('sheet').classList.remove('collapsed');
 }
 
-/* ====== Init ====== */
-loadData();
-
-/* ====== Track page leave ====== */
-const startTime = Date.now();
-window.addEventListener('beforeunload', () => {
-  track('page_leave', {duration_sec: Math.floor((Date.now() - startTime)/1000)});
-});
+// 启动
+async function init(){
+  try{
+    initMap();
+    const res=await fetch('/rss_incidents.json?_='+Date.now());
+    allData=await res.json();
+    renderCityBar();
+    renderTypeBar();
+    renderMarkers();
+    renderList();
+    document.getElementById('loading').style.display='none';
+  }catch(e){
+    document.getElementById('loading').innerHTML=`<div style="color:#ef4444">Erro: ${e.message}</div>`;
+  }
+}
+init();
 </script>
 </body>
 </html>
