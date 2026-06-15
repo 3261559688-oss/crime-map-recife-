@@ -366,6 +366,8 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 .pm.policia{background:#1e40af}
 .pm.faccao{background:#831843}
 .pm.fraude{background:#0d9488}
+.pm.veiculo{background:#374151}
+.pm.menor{background:#a16207}
 .pm.outros{background:#475569}
 
 /* 弹窗 */
@@ -482,9 +484,9 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const TYPE_EMOJI={homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',trafico:'💊',sequestro:'🔗',violencia:'👊',policia:'👮',faccao:'🏴',fraude:'💳',outros:'❗'};
-const TYPE_LABEL={homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',sequestro:'Sequestro',violencia:'Violência',policia:'Polícia',faccao:'Facção',fraude:'Fraude',outros:'Outros'};
-const TYPE_COLOR={homicidio:'#7f1d1d',roubo:'#dc2626',furto:'#d97706',estupro:'#be185d',trafico:'#7e22ce',sequestro:'#9a3412',violencia:'#b91c1c',policia:'#1e3a8a',faccao:'#581c87',fraude:'#92400e',outros:'#475569'};
+const TYPE_EMOJI={homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',trafico:'💊',sequestro:'🔗',violencia:'👊',policia:'👮',faccao:'🔥',fraude:'💳',veiculo:'🚗',menor:'👦',outros:'❗'};
+const TYPE_LABEL={homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',sequestro:'Sequestro',violencia:'Violência',policia:'Polícia',faccao:'Facção',fraude:'Fraude',veiculo:'Veículo',menor:'Menor',outros:'Outros'};
+const TYPE_COLOR={homicidio:'#7f1d1d',roubo:'#dc2626',furto:'#d97706',estupro:'#be185d',trafico:'#7e22ce',sequestro:'#0891b2',violencia:'#ea580c',policia:'#1e40af',faccao:'#831843',fraude:'#0d9488',veiculo:'#374151',menor:'#a16207',outros:'#475569'};
 
 const CITY_COORDS={
   'Brasil':[-14.235,-51.925,4],

@@ -212,6 +212,50 @@ RSS_FEEDS = [
     ("UOL Polícia", "https://noticias.uol.com.br/cotidiano/index.rss", "BR", "São Paulo"),
     ("Terra Brasil", "https://rss.terra.com.br/0,,EI306,00.xml", "BR", "São Paulo"),
     ("Yahoo Brasil", "https://br.noticias.yahoo.com/rss/brasil", "BR", "São Paulo"),
+
+    # ========================================
+    # 🆕🆕 第三波：30+ 新 RSS 源
+    # ========================================
+    # 小报 / 民生类
+    ("Brasil 247", "https://www.brasil247.com/rss", "BR", "São Paulo"),
+    ("Brasil de Fato", "https://www.brasildefato.com.br/rss2.xml", "BR", "São Paulo"),
+    ("Carta Capital", "https://www.cartacapital.com.br/feed/", "BR", "São Paulo"),
+    ("Veja", "https://veja.abril.com.br/feed", "BR", "São Paulo"),
+    ("IstoÉ", "https://istoe.com.br/feed/", "BR", "São Paulo"),
+    ("Exame", "https://exame.com/feed/", "BR", "São Paulo"),
+    ("BBC Brasil", "https://feeds.bbci.co.uk/portuguese/rss.xml", "BR", "São Paulo"),
+    ("DW Brasil", "https://rss.dw.com/rdf/rss-br-all", "BR", "São Paulo"),
+    ("CNN Brasil", "https://www.cnnbrasil.com.br/feed/", "BR", "São Paulo"),
+    ("Poder360", "https://www.poder360.com.br/feed/", "BR", "Brasília"),
+
+    # G1 更多城市级
+    ("G1 Santos", "https://g1.globo.com/rss/g1/sp/santos-regiao/", "SP", "Santos"),
+    ("G1 Sorocaba", "https://g1.globo.com/rss/g1/sp/sorocaba-jundiai/", "SP", "Sorocaba"),
+    ("G1 Ribeirão", "https://g1.globo.com/rss/g1/sp/ribeirao-preto-franca/", "SP", "Ribeirão Preto"),
+    ("G1 Bauru", "https://g1.globo.com/rss/g1/sp/bauru-marilia/", "SP", "Bauru"),
+    ("G1 Vale", "https://g1.globo.com/rss/g1/sp/vale-do-paraiba-regiao/", "SP", "São José dos Campos"),
+    ("G1 Triângulo", "https://g1.globo.com/rss/g1/mg/triangulo-mineiro/", "MG", "Uberlândia"),
+    ("G1 Sul MG", "https://g1.globo.com/rss/g1/mg/sul-de-minas/", "MG", "Pouso Alegre"),
+    ("G1 Zona da Mata", "https://g1.globo.com/rss/g1/mg/zona-da-mata/", "MG", "Juiz de Fora"),
+    ("G1 Norte RJ", "https://g1.globo.com/rss/g1/rj/norte-fluminense/", "RJ", "Campos dos Goytacazes"),
+    ("G1 Região dos Lagos", "https://g1.globo.com/rss/g1/rj/regiao-dos-lagos/", "RJ", "Cabo Frio"),
+    ("G1 Sul RJ", "https://g1.globo.com/rss/g1/rj/sul-do-rio-costa-verde/", "RJ", "Volta Redonda"),
+    ("G1 Oeste BA", "https://g1.globo.com/rss/g1/ba/oeste/", "BA", "Salvador"),
+    ("G1 Sudoeste BA", "https://g1.globo.com/rss/g1/ba/sudoeste/", "BA", "Itabuna"),
+    ("G1 Norte SC", "https://g1.globo.com/rss/g1/sc/santa-catarina/norte-catarinense/", "SC", "Joinville"),
+    ("G1 Vale Itajaí", "https://g1.globo.com/rss/g1/sc/santa-catarina/vale-do-itajai/", "SC", "Blumenau"),
+    ("G1 Centro Oeste PR", "https://g1.globo.com/rss/g1/pr/oeste-sudoeste/", "PR", "Cascavel"),
+    ("G1 Norte PR", "https://g1.globo.com/rss/g1/pr/norte-noroeste/", "PR", "Maringá"),
+
+    # 国际/地方更多
+    ("O Tempo", "https://www.otempo.com.br/rss/cidades", "MG", "Belo Horizonte"),
+    ("Hoje em Dia", "https://www.hojeemdia.com.br/rss", "MG", "Belo Horizonte"),
+    ("Folha Vitória", "https://www.folhavitoria.com.br/rss/", "ES", "Vitória"),
+    ("Correio Braziliense", "https://www.correiobraziliense.com.br/rss/cidadesdf.xml", "DF", "Brasília"),
+    ("Correio do Povo", "https://www.correiodopovo.com.br/rss/policia", "RS", "Porto Alegre"),
+    ("Zero Hora Polícia", "https://gauchazh.clicrbs.com.br/seguranca/rss.xml", "RS", "Porto Alegre"),
+    ("Diário Catarinense", "https://www.nsctotal.com.br/seguranca/feed/", "SC", "Florianópolis"),
+    ("Tribuna PR", "https://www.tribunapr.com.br/rss/policia/", "PR", "Curitiba"),
 ]
 
 # ============================================================
@@ -292,6 +336,15 @@ CRIME_KW = [
     'pcc', 'cv ', 'comando vermelho', 'organização criminosa',
     'tortura', 'tortur', 'incêndio criminoso', 'arma de fogo', 'pistola',
     'corrupção', 'fraude', 'estelionato', 'golpe',
+    # 🆕 汽车相关犯罪
+    'roubo de carro', 'roubo de veículo', 'roubo de moto', 'carro roubado',
+    'moto roubada', 'veículo roubado', 'recupera veículo', 'carro furtado',
+    'desmanche', 'receptação', 'racha', 'embriaguez ao volante', 'atropela',
+    'atropelado', 'atropelada', 'fuga após acidente',
+    # 🆕 未成年相关
+    'adolescente apreendid', 'menor apreendid', 'menor preso',
+    'criança morta', 'criança baleada', 'adolescente morto', 'adolescente baleado',
+    'ato infracional', 'aliciamento de menor', 'exploração de menor',
 ]
 EXCLUDE_KW = [
     # 节日（避免「quadrilha junina = 圣若昂方阵舞」误判）
@@ -317,6 +370,17 @@ CRIME_TYPES = {
     'faccao':    ['facção', 'milícia', 'pcc', 'comando vermelho', 'organização criminosa',
                   'quadrilha'],
     'fraude':    ['fraude', 'estelionato', 'golpe', 'corrupção'],
+    # 🆕 汽车相关
+    'veiculo':   ['roubo de carro', 'roubo de veículo', 'roubo de moto',
+                  'carro roubado', 'moto roubada', 'veículo roubado',
+                  'recupera veículo', 'carro furtado', 'desmanche',
+                  'receptação', 'racha', 'embriaguez ao volante',
+                  'atropela', 'atropelado', 'atropelada', 'fuga após acidente'],
+    # 🆕 未成年
+    'menor':     ['adolescente apreendid', 'menor apreendid', 'menor preso',
+                  'criança morta', 'criança baleada', 'adolescente morto',
+                  'adolescente baleado', 'ato infracional',
+                  'aliciamento', 'aliciamento de menor', 'exploração de menor'],
 }
 
 # ============================================================
