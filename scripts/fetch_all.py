@@ -262,32 +262,61 @@ CITY_COORDS = {
 # 关键词
 # ============================================================
 CRIME_KW = [
-    'roubo', 'roub', 'assalt', 'furto', 'furt',
-    'homicid', 'morto', 'morta', 'mortos', 'mortas',
-    'baleado', 'baleada', 'tiro', 'tiros', 'matou', 'matar',
-    'esfaqueado', 'facad',
-    'estupro', 'estupr', 'feminic',
-    'sequestr', 'rapto',
-    'tráfico', 'trafico', 'drogas', 'apreendid', 'preso', 'presa',
-    'crime', 'criminoso', 'bandido', 'quadrilha',
-    'execução', 'executado', 'chacin',
-    'tentativa de homicídio', 'agressão', 'agredid',
-    'narcotráfico', 'cocaín', 'maconha', 'crack',
-    'cadáver', 'corpo encontrado',
-    'preso em flagrante',
+    # 抢劫盗窃
+    'roubo', 'roub', 'assalt', 'furto', 'furt', 'latrocín', 'latrocin',
+    'arrastão', 'arrastao', 'saqueio', 'saque',
+    # 杀人
+    'homicid', 'morto', 'morta', 'mortos', 'mortas', 'morre', 'morreu',
+    'baleado', 'baleada', 'baleados', 'tiro', 'tiros', 'matou', 'matar', 'matam',
+    'esfaqueado', 'esfaqueada', 'facad', 'apunhal',
+    'execução', 'executado', 'executada', 'chacin', 'massacre',
+    'cadáver', 'corpo encontrado', 'corpos encontrados', 'morto a tiros',
+    # 性暴力 / 妇女
+    'estupro', 'estupr', 'feminic', 'violência sexual', 'abuso sexual',
+    'pedofilia', 'aliciamento',
+    # 绑架 / 劫持
+    'sequestr', 'rapto', 'cativeiro', 'refém', 'refens',
+    # 毒品
+    'tráfico', 'trafico', 'drogas', 'narcotráfico', 'cocaín', 'maconha', 'crack',
+    'entorpecente', 'apreensão de drogas',
+    # 警方行动
+    'apreendid', 'preso', 'presa', 'presos', 'presas', 'detido', 'detida',
+    'preso em flagrante', 'operação policial', 'confronto', 'troca de tiros',
+    'fugitivo', 'foragido',
+    # 暴力 / 家暴
+    'agressão', 'agredid', 'espancado', 'espancada', 'lesão corporal',
+    'violência doméstica', 'tentativa de homicídio', 'tentativa de assassinato',
+    'ameaça', 'ameaçou',
+    # 综合
+    'crime', 'criminoso', 'bandido', 'quadrilha', 'facção', 'milícia',
+    'pcc', 'cv ', 'comando vermelho', 'organização criminosa',
+    'tortura', 'tortur', 'incêndio criminoso', 'arma de fogo', 'pistola',
+    'corrupção', 'fraude', 'estelionato', 'golpe',
 ]
 EXCLUDE_KW = [
-    'junina', 'são joão', 'forró', 'quadrilha junina',
-    'futebol', 'campeonato',
+    # 节日（避免「quadrilha junina = 圣若昂方阵舞」误判）
+    'junina', 'juninas', 'são joão', 'forró', 'arraial',
+    # 体育
+    'futebol', 'campeonato brasileiro', 'libertadores', 'copa do mundo',
 ]
 CRIME_TYPES = {
     'homicidio': ['homicid', 'morto', 'morta', 'baleado', 'baleada', 'matou',
-                  'esfaqueado', 'facad', 'feminic', 'execução', 'chacin',
-                  'cadáver', 'corpo encontrado'],
-    'roubo': ['roubo', 'roub', 'assalt'],
+                  'esfaqueado', 'facad', 'feminic', 'execução', 'chacin', 'massacre',
+                  'cadáver', 'corpo encontrado', 'morre', 'morreu', 'tentativa de homicídio',
+                  'apunhal', 'tortura', 'tortur'],
+    'roubo': ['roubo', 'roub', 'assalt', 'arrastão', 'arrastao', 'latrocín', 'latrocin'],
     'furto': ['furto', 'furt'],
-    'estupro': ['estupro', 'estupr'],
-    'trafico': ['tráfico', 'trafico', 'drogas', 'narcotráfico', 'cocaín', 'maconha', 'crack'],
+    'estupro': ['estupro', 'estupr', 'violência sexual', 'abuso sexual', 'pedofilia'],
+    'trafico': ['tráfico', 'trafico', 'drogas', 'narcotráfico', 'cocaín', 'maconha', 'crack',
+                'entorpecente'],
+    'sequestro': ['sequestr', 'rapto', 'cativeiro', 'refém', 'refens'],
+    'violencia': ['agressão', 'agredid', 'espancado', 'espancada', 'lesão corporal',
+                  'violência doméstica', 'ameaça', 'ameaçou'],
+    'policia':   ['operação policial', 'confronto', 'troca de tiros', 'preso em flagrante',
+                  'fugitivo', 'foragido', 'apreensão'],
+    'faccao':    ['facção', 'milícia', 'pcc', 'comando vermelho', 'organização criminosa',
+                  'quadrilha'],
+    'fraude':    ['fraude', 'estelionato', 'golpe', 'corrupção'],
 }
 
 # ============================================================
@@ -418,7 +447,7 @@ def main():
             if not is_crime(text): continue
             
             ctype = detect_type(text)
-            if ctype == 'outros': continue
+            # 🆕 不再丢弃 outros：匹配 CRIME_KW 但未归类的也保留
             
             pub_dt = parse_pub_date(item['pubDate'], link)
             if pub_dt and pub_dt < cutoff:
