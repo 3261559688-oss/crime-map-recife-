@@ -2,39 +2,97 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e1a">
 <title>Mapa do Crime · Brasil</title>
-<meta name="description" content="Mapa interativo de ocorrências em cidades brasileiras. Acompanhe roubos, furtos e homicídios.">
+<meta name="description" content="Mapa interativo de ocorrências em cidades brasileiras.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#0a0e1a;color:#e5e7eb;overflow:hidden}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#e5e7eb;overflow:hidden}
+
+/* 电脑端：模拟手机框架 */
+body{background:#1a1d29;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.phone{position:relative;width:100vw;height:100vh;background:#0a0e1a;overflow:hidden}
+
+@media (min-width:768px){
+  body{background:radial-gradient(ellipse at center,#2d3142 0%,#0d0e16 100%)}
+  .phone{
+    width:390px;height:844px;
+    border-radius:48px;
+    box-shadow:
+      0 0 0 12px #1a1d29,
+      0 0 0 14px #2d3142,
+      0 30px 80px rgba(0,0,0,.6),
+      0 12px 24px rgba(0,0,0,.4);
+  }
+  /* 电脑端模拟手机刘海 */
+  .phone::before{
+    content:"";position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    width:120px;height:32px;background:#000;border-radius:20px;z-index:9999;
+  }
+  /* 电脑端模拟手机底部 home 条 */
+  .phone::after{
+    content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+    width:130px;height:5px;background:#fff;border-radius:3px;z-index:9999;opacity:.9
+  }
+  .desktop-hint{
+    position:fixed;top:30px;left:30px;color:#9ca3af;font-size:13px;line-height:1.6;max-width:240px
+  }
+  .desktop-hint h3{color:#fff;font-size:16px;margin-bottom:8px}
+  .desktop-hint a{color:#dc2626;text-decoration:none}
+}
+@media (max-width:767px){
+  .desktop-hint{display:none}
+}
+
 #map{position:absolute;inset:0;z-index:1;background:#0a0e1a}
 
-/* 顶部 */
-.topbar{position:fixed;top:0;left:0;right:0;z-index:100;padding:env(safe-area-inset-top) 12px 8px;background:linear-gradient(180deg,rgba(10,14,26,.95) 0%,rgba(10,14,26,.85) 70%,transparent 100%);backdrop-filter:blur(8px)}
-.title{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;padding:8px 4px 6px}
-.title .dot{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.subtitle{font-size:11px;color:#9ca3af;padding-left:18px;margin-top:-4px;margin-bottom:6px}
+/* 状态栏（仿 iOS） */
+.statusbar{position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top);min-height:44px;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:600;color:#fff;pointer-events:none}
+.statusbar .time{font-size:15px}
+.statusbar .right{display:flex;gap:5px;align-items:center;font-size:13px}
 
-/* 城市选择器 */
-.city-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 4px 8px;scrollbar-width:none}
+@media (min-width:768px){
+  .statusbar{padding-top:18px;padding-left:32px;padding-right:32px}
+}
+
+/* 顶部 */
+.topbar{position:absolute;top:0;left:0;right:0;z-index:100;padding-top:calc(env(safe-area-inset-top) + 8px);padding-left:12px;padding-right:12px;padding-bottom:8px;background:linear-gradient(180deg,rgba(10,14,26,.95) 0%,rgba(10,14,26,.85) 70%,transparent 100%);backdrop-filter:blur(12px)}
+
+@media (min-width:768px){
+  .topbar{padding-top:54px}
+}
+
+.title{font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;padding:6px 4px 4px}
+.title .dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.subtitle{font-size:10px;color:#9ca3af;padding-left:18px;margin-top:-2px;margin-bottom:6px;line-height:1.3}
+
+/* 城市 */
+.city-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .city-bar::-webkit-scrollbar{display:none}
-.city-chip{flex-shrink:0;padding:7px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:18px;font-size:13px;color:#cbd5e1;cursor:pointer;transition:.2s;white-space:nowrap;font-weight:500}
-.city-chip:active{transform:scale(.94)}
+.city-chip{flex-shrink:0;padding:7px 13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:18px;font-size:12px;color:#cbd5e1;cursor:pointer;transition:.2s;white-space:nowrap;font-weight:500}
+.city-chip:active{transform:scale(.92)}
 .city-chip.active{background:#dc2626;border-color:#dc2626;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.4)}
-.city-chip .count{display:inline-block;margin-left:6px;padding:1px 7px;background:rgba(0,0,0,.25);border-radius:10px;font-size:11px;font-weight:600}
+.city-chip .count{display:inline-block;margin-left:5px;padding:1px 6px;background:rgba(0,0,0,.25);border-radius:8px;font-size:10px;font-weight:600}
 .city-chip.active .count{background:rgba(255,255,255,.25)}
 
-/* 类型筛选 */
-.type-bar{display:flex;gap:5px;overflow-x:auto;padding:0 4px 8px;scrollbar-width:none}
+/* 类型 */
+.type-bar{display:flex;gap:5px;overflow-x:auto;padding:0 4px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .type-bar::-webkit-scrollbar{display:none}
-.type-chip{flex-shrink:0;padding:5px 11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;font-size:12px;color:#9ca3af;cursor:pointer;transition:.2s;white-space:nowrap}
-.type-chip.active{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)}
+.type-chip{flex-shrink:0;padding:5px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;font-size:11px;color:#9ca3af;cursor:pointer;transition:.2s;white-space:nowrap}
+.type-chip:active{transform:scale(.92)}
+.type-chip.active{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.22)}
+
+/* 浮动按钮 */
+.fab{position:absolute;right:14px;bottom:240px;z-index:60;width:44px;height:44px;background:rgba(31,41,55,.95);border:1px solid rgba(255,255,255,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px);transition:.2s;font-size:18px;color:#e5e7eb}
+.fab:active{transform:scale(.92)}
 
 /* Marker */
-.pm{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);font-weight:700}
+.pm{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;color:#fff;font-size:14px;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.6);font-weight:700}
 .pm.homicidio{background:#7f1d1d}
 .pm.roubo{background:#dc2626}
 .pm.furto{background:#d97706}
@@ -43,76 +101,100 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC"
 .pm.outros{background:#475569}
 
 /* 弹窗 */
-.leaflet-popup-content-wrapper{background:#1f2937;color:#e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.6);padding:0}
-.leaflet-popup-content{margin:12px 14px;line-height:1.5;width:240px!important}
+.leaflet-popup-content-wrapper{background:#1f2937;color:#e5e7eb;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.6);padding:0}
+.leaflet-popup-content{margin:12px 14px;line-height:1.5;width:230px!important}
 .leaflet-popup-tip{background:#1f2937}
-.pop-type{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:6px;color:#fff}
+.leaflet-popup-close-button{color:#9ca3af!important}
+.pop-type{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;text-transform:uppercase;margin-bottom:6px;color:#fff;letter-spacing:.5px}
 .pop-title{font-size:13px;font-weight:600;color:#f3f4f6;margin-bottom:6px;line-height:1.4}
-.pop-meta{font-size:11px;color:#9ca3af;margin-bottom:8px}
-.pop-link{display:block;padding:7px;background:#dc2626;color:#fff;text-align:center;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600}
+.pop-meta{font-size:10px;color:#9ca3af;margin-bottom:8px}
+.pop-link{display:block;padding:8px;background:#dc2626;color:#fff;text-align:center;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600}
 .pop-link:active{background:#b91c1c}
 
 /* 底部 sheet */
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#111827;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.5);max-height:55vh;display:flex;flex-direction:column;transition:transform .3s;padding-bottom:env(safe-area-inset-bottom)}
-.sheet.collapsed{transform:translateY(calc(100% - 50px))}
-.sheet-handle{display:flex;justify-content:center;padding:10px;cursor:pointer}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:#0f172a;border-radius:18px 18px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.6);max-height:55%;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:env(safe-area-inset-bottom);border-top:1px solid rgba(255,255,255,.06)}
+.sheet.collapsed{transform:translateY(calc(100% - 56px))}
+.sheet-handle{display:flex;justify-content:center;padding:10px;cursor:grab}
 .sheet-handle::after{content:"";width:36px;height:4px;background:#4b5563;border-radius:2px}
-.sheet-header{padding:0 16px 8px;display:flex;justify-content:space-between;align-items:center}
-.sheet-title{font-size:14px;font-weight:700;color:#fff}
-.sheet-count{font-size:12px;color:#9ca3af}
-.sheet-body{flex:1;overflow-y:auto;padding:0 12px 16px;-webkit-overflow-scrolling:touch}
+.sheet-header{padding:0 16px 8px;display:flex;justify-content:space-between;align-items:flex-end}
+.sheet-title{font-size:15px;font-weight:700;color:#fff}
+.sheet-count{font-size:11px;color:#9ca3af}
+.sheet-body{flex:1;overflow-y:auto;padding:0 12px 20px;-webkit-overflow-scrolling:touch}
 
 /* 列表项 */
-.it{padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid transparent;transition:.2s}
-.it:active{transform:scale(.98);background:rgba(255,255,255,.06)}
-.it.active{background:rgba(220,38,38,.12);border-left-color:#dc2626}
-.it-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
-.it-emoji{font-size:16px;flex-shrink:0}
-.it-tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;text-transform:uppercase}
+.it{padding:10px 12px;background:rgba(255,255,255,.04);border-radius:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid transparent;transition:.2s}
+.it:active{transform:scale(.98);background:rgba(255,255,255,.07)}
+.it.active{background:rgba(220,38,38,.14);border-left-color:#dc2626}
+.it-row{display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
+.it-emoji{font-size:14px;flex-shrink:0}
+.it-tag{font-size:8px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;text-transform:uppercase;letter-spacing:.5px}
 .it-city{font-size:10px;color:#9ca3af;margin-left:auto}
-.it-title{font-size:13px;color:#e5e7eb;line-height:1.4;font-weight:500}
-.it-source{font-size:10px;color:#6b7280;margin-top:4px}
+.it-title{font-size:12.5px;color:#e5e7eb;line-height:1.4;font-weight:500;-webkit-user-select:text;user-select:text}
+.it-source{font-size:9.5px;color:#6b7280;margin-top:4px}
 
 /* Loading */
-.loading{position:fixed;inset:0;background:#0a0e1a;z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
-.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#dc2626;border-radius:50%;animation:r 1s linear infinite}
+.loading{position:absolute;inset:0;background:#0a0e1a;z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#dc2626;border-radius:50%;animation:r 1s linear infinite}
 @keyframes r{to{transform:rotate(360deg)}}
-.loading-text{color:#9ca3af;font-size:13px}
+.loading-text{color:#9ca3af;font-size:12px}
 
 /* Toast */
-.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.9);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.92);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;backdrop-filter:blur(8px);max-width:80%}
 .toast.show{opacity:1}
 
-/* Empty */
 .empty{padding:40px 20px;text-align:center;color:#6b7280;font-size:13px}
+
+/* Leaflet 控件位置调整 */
+.leaflet-control-zoom{display:none}
+.leaflet-control-attribution{font-size:9px!important;background:rgba(0,0,0,.4)!important;color:#9ca3af!important}
+.leaflet-control-attribution a{color:#9ca3af!important}
 </style>
 </head>
 <body>
 
-<div class="loading" id="loading">
-  <div class="spin"></div>
-  <div class="loading-text">Carregando ocorrências...</div>
+<div class="desktop-hint">
+  <h3>📱 Visualização Mobile</h3>
+  <p>Este H5 é otimizado para smartphone.<br><br>
+  No celular, abra:<br>
+  <a href="https://crime-map-recife.vercel.app/" target="_blank">crime-map-recife.vercel.app</a></p>
 </div>
 
-<div id="map"></div>
-
-<div class="topbar">
-  <div class="title"><span class="dot"></span>Mapa do Crime · Brasil</div>
-  <div class="subtitle">Notícias reais de fontes oficiais (G1)</div>
-  <div class="city-bar" id="cityBar"></div>
-  <div class="type-bar" id="typeBar"></div>
-</div>
-
-<div class="sheet" id="sheet">
-  <div class="sheet-handle" onclick="toggleSheet()"></div>
-  <div class="sheet-header">
-    <div class="sheet-title" id="sheetTitle">Ocorrências</div>
-    <div class="sheet-count" id="sheetCount">0</div>
+<div class="phone">
+  
+  <!-- iOS 状态栏 -->
+  <div class="statusbar">
+    <span class="time" id="clock">9:41</span>
+    <span class="right">📶 5G 🔋</span>
   </div>
-  <div class="sheet-body" id="list"></div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <div class="loading" id="loading">
+    <div class="spin"></div>
+    <div class="loading-text">Carregando...</div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="topbar">
+    <div class="title"><span class="dot"></span>Mapa do Crime · Brasil</div>
+    <div class="subtitle">Notícias reais · Fonte G1</div>
+    <div class="city-bar" id="cityBar"></div>
+    <div class="type-bar" id="typeBar"></div>
+  </div>
+
+  <div class="fab" id="fabLocate" title="Voltar ao Brasil">🇧🇷</div>
+
+  <div class="sheet collapsed" id="sheet">
+    <div class="sheet-handle" id="sheetHandle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="sheetTitle">Ocorrências</div>
+      <div class="sheet-count" id="sheetCount">0</div>
+    </div>
+    <div class="sheet-body" id="list"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -120,7 +202,6 @@ const TYPE_EMOJI = {homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',
 const TYPE_LABEL = {homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',outros:'Outros'};
 const TYPE_COLOR = {homicidio:'#7f1d1d',roubo:'#dc2626',furto:'#d97706',estupro:'#be185d',trafico:'#7e22ce',outros:'#475569'};
 
-// 城市坐标（用于切换城市时定位）
 const CITY_COORDS = {
   'Brasil':[-14.235,-51.925,4],
   'São Paulo':[-23.5505,-46.6333,11],
@@ -136,66 +217,71 @@ const CITY_COORDS = {
 
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
 
+// 实时时钟
+function updateClock(){
+  const d=new Date();
+  document.getElementById('clock').textContent=
+    d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+updateClock();setInterval(updateClock,30000);
+
 function showToast(msg,t=1500){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),t);
 }
 
-function toggleSheet(){
-  document.getElementById('sheet').classList.toggle('collapsed');
-}
-
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// 初始化地图
 function initMap(){
-  map = L.map('map',{zoomControl:false,attributionControl:false}).setView([-14.235,-51.925],4);
+  // map 必须挂在 #map 上
+  map = L.map('map',{zoomControl:false,attributionControl:true}).setView([-14.235,-51.925],4);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
     maxZoom:19,subdomains:'abcd'
   }).addTo(map);
-  L.control.zoom({position:'bottomright'}).addTo(map);
-  L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© OSM © Carto').addTo(map);
+  
+  // 修复电脑端 phone container 大小变化时 map resize
+  setTimeout(()=>map.invalidateSize(),200);
+  window.addEventListener('resize',()=>map.invalidateSize());
 }
 
-// 渲染城市选择器
 function renderCityBar(){
   const counts={};
   allData.forEach(d=>{counts[d.city]=(counts[d.city]||0)+1});
   const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   
   const bar=document.getElementById('cityBar');
-  bar.innerHTML=`<div class="city-chip ${curCity==='Brasil'?'active':''}" data-city="Brasil">🇧🇷 Brasil <span class="count">${allData.length}</span></div>`;
+  let html=`<div class="city-chip ${curCity==='Brasil'?'active':''}" data-city="Brasil">🇧🇷 Brasil <span class="count">${allData.length}</span></div>`;
   sorted.forEach(([city,n])=>{
-    if(n<3)return; // 只显示有 3+ 条的城市
-    bar.innerHTML+=`<div class="city-chip ${curCity===city?'active':''}" data-city="${escapeHtml(city)}">📍 ${escapeHtml(city)} <span class="count">${n}</span></div>`;
+    if(n<3)return;
+    html+=`<div class="city-chip ${curCity===city?'active':''}" data-city="${escapeHtml(city)}">📍 ${escapeHtml(city)} <span class="count">${n}</span></div>`;
   });
+  bar.innerHTML=html;
   
   bar.querySelectorAll('.city-chip').forEach(el=>{
     el.onclick=()=>switchCity(el.dataset.city);
   });
 }
 
-// 渲染类型筛选
 function renderTypeBar(){
   const filtered = curCity==='Brasil'?allData:allData.filter(d=>d.city===curCity);
   const counts={};
   filtered.forEach(d=>{counts[d.type]=(counts[d.type]||0)+1});
   
   const bar=document.getElementById('typeBar');
-  bar.innerHTML=`<div class="type-chip ${curType==='all'?'active':''}" data-type="all">Todos (${filtered.length})</div>`;
+  let html=`<div class="type-chip ${curType==='all'?'active':''}" data-type="all">Todos · ${filtered.length}</div>`;
   Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([t,n])=>{
-    bar.innerHTML+=`<div class="type-chip ${curType===t?'active':''}" data-type="${t}">${TYPE_EMOJI[t]||'❗'} ${TYPE_LABEL[t]||t} (${n})</div>`;
+    html+=`<div class="type-chip ${curType===t?'active':''}" data-type="${t}">${TYPE_EMOJI[t]||'❗'} ${TYPE_LABEL[t]||t} · ${n}</div>`;
   });
+  bar.innerHTML=html;
   
   bar.querySelectorAll('.type-chip').forEach(el=>{
     el.onclick=()=>switchType(el.dataset.type);
   });
 }
 
-// 切换城市
 function switchCity(city){
   curCity=city;
   curType='all';
@@ -208,7 +294,6 @@ function switchCity(city){
   showToast(`📍 ${city}`);
 }
 
-// 切换类型
 function switchType(t){
   curType=t;
   renderTypeBar();
@@ -216,7 +301,6 @@ function switchType(t){
   renderList();
 }
 
-// 过滤数据
 function getFilteredData(){
   let d=allData;
   if(curCity!=='Brasil') d=d.filter(x=>x.city===curCity);
@@ -224,7 +308,6 @@ function getFilteredData(){
   return d;
 }
 
-// 渲染 marker
 function renderMarkers(){
   markers.forEach(m=>map.removeLayer(m));
   markers=[];
@@ -234,7 +317,7 @@ function renderMarkers(){
     const icon=L.divIcon({
       className:'',
       html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,
-      iconSize:[28,28],iconAnchor:[14,14]
+      iconSize:[32,32],iconAnchor:[16,16]
     });
     const m=L.marker([d.lat,d.lng],{icon}).addTo(map);
     
@@ -244,21 +327,18 @@ function renderMarkers(){
       <div class="pop-meta">📍 ${escapeHtml(d.city)} · ${escapeHtml(d.source||'')}</div>
       <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener">Ler notícia →</a>
     `;
-    m.bindPopup(html,{maxWidth:280,minWidth:240});
+    m.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-8]});
     
-    m.on('click',()=>{
-      highlightItem(idx);
-    });
+    m.on('click',()=>highlightItem(idx));
     
     markers.push(m);
   });
 }
 
-// 渲染列表
 function renderList(){
   const data=getFilteredData();
   document.getElementById('sheetCount').textContent=`${data.length} ocorrências`;
-  document.getElementById('sheetTitle').textContent=curCity==='Brasil'?'Brasil':curCity;
+  document.getElementById('sheetTitle').textContent=curCity==='Brasil'?'🇧🇷 Brasil':'📍 '+curCity;
   
   const list=document.getElementById('list');
   if(data.length===0){
@@ -290,7 +370,6 @@ function renderList(){
   });
 }
 
-// 高亮列表项
 function highlightItem(idx){
   document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
   const el=document.querySelector(`.it[data-idx="${idx}"]`);
@@ -300,6 +379,16 @@ function highlightItem(idx){
   }
   document.getElementById('sheet').classList.remove('collapsed');
 }
+
+// 抽屉点击切换展开/收起
+document.getElementById('sheetHandle').addEventListener('click',()=>{
+  document.getElementById('sheet').classList.toggle('collapsed');
+});
+
+// FAB 回到全国视图
+document.getElementById('fabLocate').addEventListener('click',()=>{
+  switchCity('Brasil');
+});
 
 // 启动
 async function init(){
@@ -312,6 +401,7 @@ async function init(){
     renderMarkers();
     renderList();
     document.getElementById('loading').style.display='none';
+    setTimeout(()=>map.invalidateSize(),300);
   }catch(e){
     document.getElementById('loading').innerHTML=`<div style="color:#ef4444">Erro: ${e.message}</div>`;
   }
