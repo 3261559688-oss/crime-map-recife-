@@ -1,0 +1,187 @@
+{
+  "table_name_suggested": "dwd_intl_crime_incident_di",
+  "business": "国际化业务-巴西-犯罪地图",
+  "owner": "dongyuhan03",
+  "data_classification": "L1-公开（巴西新闻 RSS）",
+  "update_frequency": "every 3 hours",
+  "partition_strategy": "p_date (yyyyMMdd)",
+  "partition_value_now": "20260622",
+  "data_endpoints": {
+    "json": "https://crime-map-recife.vercel.app/api/incidents.json",
+    "csv": "https://crime-map-recife.vercel.app/api/incidents.csv",
+    "ndjson": "https://crime-map-recife.vercel.app/api/incidents.ndjson",
+    "manifest": "https://crime-map-recife.vercel.app/api/manifest.json"
+  },
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "STRING",
+      "comment": "事件唯一 ID"
+    },
+    {
+      "name": "title",
+      "type": "STRING",
+      "comment": "新闻标题（葡语原文）"
+    },
+    {
+      "name": "crime_type",
+      "type": "STRING",
+      "comment": "犯罪类型枚举（13 类）"
+    },
+    {
+      "name": "crime_type_zh",
+      "type": "STRING",
+      "comment": "犯罪类型中文"
+    },
+    {
+      "name": "city",
+      "type": "STRING",
+      "comment": "城市"
+    },
+    {
+      "name": "state",
+      "type": "STRING",
+      "comment": "州（2 字母）"
+    },
+    {
+      "name": "lat",
+      "type": "DOUBLE",
+      "comment": "纬度"
+    },
+    {
+      "name": "lng",
+      "type": "DOUBLE",
+      "comment": "经度"
+    },
+    {
+      "name": "source_media",
+      "type": "STRING",
+      "comment": "来源媒体"
+    },
+    {
+      "name": "news_url",
+      "type": "STRING",
+      "comment": "原文链接"
+    },
+    {
+      "name": "pub_time",
+      "type": "STRING",
+      "comment": "发布时间 ISO"
+    },
+    {
+      "name": "pub_ts",
+      "type": "BIGINT",
+      "comment": "发布时间 unix 秒"
+    },
+    {
+      "name": "city_method",
+      "type": "STRING",
+      "comment": "地址解析方式 (default/title/url)"
+    },
+    {
+      "name": "llm_verified",
+      "type": "BOOLEAN",
+      "comment": "LLM 校验是否真犯罪"
+    },
+    {
+      "name": "llm_score",
+      "type": "INT",
+      "comment": "LLM 置信度 0-100"
+    },
+    {
+      "name": "llm_state",
+      "type": "STRING",
+      "comment": "LLM 校正后的州"
+    },
+    {
+      "name": "llm_city",
+      "type": "STRING",
+      "comment": "LLM 校正后的城市"
+    },
+    {
+      "name": "llm_neighbor",
+      "type": "STRING",
+      "comment": "LLM 解析的街区"
+    },
+    {
+      "name": "llm_type",
+      "type": "STRING",
+      "comment": "LLM 重分类的犯罪类型"
+    },
+    {
+      "name": "etl_dt",
+      "type": "STRING",
+      "comment": "抽取分区日期 yyyyMMdd"
+    }
+  ],
+  "record_count_total": 2547,
+  "last_export_time": "2026-06-22T08:41:35.537062+00:00",
+  "sample_records": [
+    {
+      "event_id": "inc_001",
+      "title": "Liderança do CV no RJ tinha ligação com o PCC, aponta Exército",
+      "crime_type": "faccao",
+      "crime_type_zh": "派系",
+      "city": "Brasília",
+      "state": "DF",
+      "lat": -15.780287,
+      "lng": -47.904629,
+      "source_media": "Metrópoles DF",
+      "news_url": "https://www.metropoles.com/colunas/tacio-lorran/lideranca-do-cv-no-rj-tinha-ligacao-com-o-pcc-aponta-exercito",
+      "pub_time": "2026-06-22T03:26:17+00:00",
+      "pub_ts": 1782098777,
+      "city_method": "default",
+      "llm_verified": null,
+      "llm_score": null,
+      "llm_state": null,
+      "llm_city": null,
+      "llm_neighbor": null,
+      "llm_type": null,
+      "etl_dt": "20260622"
+    },
+    {
+      "event_id": "inc_002",
+      "title": "&quot;Empresa aérea do trafico&quot; recebeu R$ 224 mil de campanhas eleitorais",
+      "crime_type": "trafico",
+      "crime_type_zh": "贩毒",
+      "city": "Brasília",
+      "state": "DF",
+      "lat": -15.781042,
+      "lng": -47.895257,
+      "source_media": "Metrópoles DF",
+      "news_url": "https://www.metropoles.com/colunas/andreza-matais/taxi-aereo-investigado-por-trafico-recebeu-r-244-mil-de-campanhas",
+      "pub_time": "2026-06-22T03:26:17+00:00",
+      "pub_ts": 1782098777,
+      "city_method": "default",
+      "llm_verified": null,
+      "llm_score": null,
+      "llm_state": null,
+      "llm_city": null,
+      "llm_neighbor": null,
+      "llm_type": null,
+      "etl_dt": "20260622"
+    },
+    {
+      "event_id": "inc_003",
+      "title": "Foragido, Léo Índio surge em vídeo próximo à fronteira com o Brasil",
+      "crime_type": "policia",
+      "crime_type_zh": "警方",
+      "city": "Brasília",
+      "state": "DF",
+      "lat": -15.781281,
+      "lng": -47.880697,
+      "source_media": "Metrópoles DF",
+      "news_url": "https://www.metropoles.com/colunas/manoela-alcantara/foragido-leo-indio-surge-em-video-proximo-a-fronteira-com-o-brasil",
+      "pub_time": "2026-06-22T03:26:17+00:00",
+      "pub_ts": 1782098777,
+      "city_method": "default",
+      "llm_verified": null,
+      "llm_score": null,
+      "llm_state": null,
+      "llm_city": null,
+      "llm_neighbor": null,
+      "llm_type": null,
+      "etl_dt": "20260622"
+    }
+  ]
+}

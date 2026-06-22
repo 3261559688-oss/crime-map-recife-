@@ -36,6 +36,8 @@ jobs:
       
       - name: 📡 Fetch RSS data
         run: python3 scripts/fetch_all.py
+      - name: 📦 Export warehouse-ready files (JSON/CSV/NDJSON/Manifest)
+        run: python3 scripts/export_for_warehouse.py
       
       - name: 📊 Show summary
         run: |
