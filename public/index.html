@@ -325,6 +325,21 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 .city-btn .arrow{font-size:9px;opacity:.7}
 
 /* 类型 */
+.city-btn#geoBtn{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+.city-btn#geoBtn.active{background:rgba(34,197,94,.85);border-color:#22c55e;color:#fff}
+.city-btn#geoBtn.loading{opacity:.6;pointer-events:none}
+.radius-bar{display:flex;align-items:center;gap:8px;padding:6px 4px 2px;font-size:12px;color:rgba(255,255,255,.8)}
+.radius-label{font-weight:600;flex-shrink:0}
+.radius-opts{display:flex;gap:5px}
+.radius-opt{padding:4px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer;transition:.2s}
+.radius-opt:hover{background:rgba(255,255,255,.15)}
+.radius-opt.active{background:rgba(34,197,94,.85);border-color:#22c55e;color:#fff;font-weight:700}
+.radius-close{margin-left:auto;cursor:pointer;padding:2px 8px;opacity:.7}
+.radius-close:hover{opacity:1}
+.user-pin{background:none;border:none}
+.user-pin-dot{width:22px;height:22px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.35),0 0 0 12px rgba(59,130,246,.18);animation:userPulse 2s infinite}
+@keyframes userPulse{0%,100%{box-shadow:0 0 0 6px rgba(59,130,246,.4),0 0 0 12px rgba(59,130,246,.2)}50%{box-shadow:0 0 0 10px rgba(59,130,246,.2),0 0 0 20px rgba(59,130,246,.05)}}
+.dist-tag{display:inline-block;margin-left:6px;padding:1px 6px;background:rgba(59,130,246,.2);color:#60a5fa;border-radius:8px;font-size:11px;font-weight:600}
 .type-bar{display:flex;gap:5px;overflow-x:auto;padding:2px 4px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .type-bar::-webkit-scrollbar{display:none}
 .type-chip{flex-shrink:0;padding:5px 11px;background:var(--bg-chip);border:1px solid var(--border);border-radius:12px;font-size:11px;color:var(--text-muted);cursor:pointer;transition:.2s;white-space:nowrap}
@@ -450,8 +465,22 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
         <span class="label" id="cityBtnLabel">Brasil</span>
         <span class="arrow">▼</span>
       </div>
+      <div class="city-btn" id="geoBtn" title="Usar minha localização">
+        <span id="geoIcon">🧭</span>
+        <span class="label" id="geoLabel">Perto</span>
+      </div>
     </div>
     <div class="type-bar" id="typeBar"></div>
+    <div class="radius-bar" id="radiusBar" style="display:none">
+      <span class="radius-label">Raio:</span>
+      <div class="radius-opts">
+        <div class="radius-opt" data-r="5">5 km</div>
+        <div class="radius-opt active" data-r="10">10 km</div>
+        <div class="radius-opt" data-r="20">20 km</div>
+        <div class="radius-opt" data-r="50">50 km</div>
+      </div>
+      <span class="radius-close" id="radiusClose">✕</span>
+    </div>
   </div>
 
   <!-- 城市选择弹层 -->
@@ -548,6 +577,9 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     city_picked:         {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'city_list'},
     city_search:         {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'search_box'},
     city_modal_cancel:   {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'cancel'},
+    geo_enable:          {type:'CLICK_EVENT', el:'GEO_LOCATION_BUTTON', area:'enable'},
+    geo_disable:         {type:'CLICK_EVENT', el:'GEO_LOCATION_BUTTON', area:'disable'},
+    geo_error:           {type:'CLICK_EVENT', el:'GEO_LOCATION_BUTTON', area:'error'},
     type_filter:         {type:'CLICK_EVENT', el:'CRIME_TYPE_FILTER'},
     marker_click:        {type:'CLICK_EVENT', el:'CRIME_MARKER'},
     list_item_click:     {type:'CLICK_EVENT', el:'CRIME_LIST_ITEM'},
@@ -734,6 +766,26 @@ const CITY_COORDS={
 };
 
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
+// 📍 用户定位
+let userPos=null;        // {lat,lng}
+let geoMode=false;       // 是否启用附近模式
+let geoRadius=10;        // km
+let userMarker=null;
+let userCircle=null;
+
+// Haversine 距离（km）
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function fmtDist(km){
+  if(km<1)return Math.round(km*1000)+' m';
+  if(km<10)return km.toFixed(1)+' km';
+  return Math.round(km)+' km';
+}
 
 // 时钟
 function updateClock(){
@@ -861,6 +913,14 @@ function renderTypeBar(){
 
 function switchCity(city){
   const from=curCity;
+  if(geoMode && city!=='Brasil'){
+    geoMode=false;
+    document.getElementById('geoBtn').classList.remove('active');
+    document.getElementById('geoLabel').textContent='Perto';
+    document.getElementById('radiusBar').style.display='none';
+    if(userMarker){map.removeLayer(userMarker);userMarker=null;}
+    if(userCircle){map.removeLayer(userCircle);userCircle=null;}
+  }
   curCity=city;
   curType='all';
   document.getElementById('cityBtnLabel').textContent=city;
@@ -886,7 +946,16 @@ function switchType(t){
 
 function getFilteredData(){
   let d=allData;
-  if(curCity!=='Brasil')d=d.filter(x=>x.city===curCity);
+  // 🤖 LLM 校验过滤：丢弃明确非犯罪的
+  d=d.filter(x=>x.llm_verified!==false);
+  // 📍 附近模式优先
+  if(geoMode && userPos){
+    d=d.map(x=>({...x,_dist:haversine(userPos.lat,userPos.lng,x.lat,x.lng)}))
+        .filter(x=>x._dist<=geoRadius)
+        .sort((a,b)=>a._dist-b._dist);
+  }else{
+    if(curCity!=='Brasil')d=d.filter(x=>x.city===curCity);
+  }
   if(curType!=='all')d=d.filter(x=>x.type===curType);
   return d;
 }
@@ -928,6 +997,7 @@ function renderList(){
         <span class="it-emoji">${TYPE_EMOJI[d.type]||'❗'}</span>
         <span class="it-tag" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
         <span class="it-city">${escapeHtml(d.city)}</span>
+        ${d._dist!=null?`<span class="dist-tag">📍 ${fmtDist(d._dist)}</span>`:''}
       </div>
       <div class="it-title">${escapeHtml(d.title)}</div>
       <div class="it-source"><span>${escapeHtml(d.source||'')}</span>${(()=>{const t=timeAgo(d.pub_date);return t.text?`<span class="it-time ${t.cls}">${t.text}</span>`:''})()}</div>
@@ -1041,6 +1111,74 @@ sheetHandle.addEventListener('click',e=>{
 
 // ========== 城市按钮 ==========
 document.getElementById('cityBtn').addEventListener('click',()=>{openCityModal();track('city_modal_open',{from_city:curCity});});
+
+// ========== 📍 用户定位（附近模式）==========
+function setUserMarker(lat,lng){
+  if(userMarker){map.removeLayer(userMarker);userMarker=null;}
+  if(userCircle){map.removeLayer(userCircle);userCircle=null;}
+  const icon=L.divIcon({className:'user-pin',html:'<div class="user-pin-dot"></div>',iconSize:[22,22],iconAnchor:[11,11]});
+  userMarker=L.marker([lat,lng],{icon,zIndexOffset:1000}).addTo(map);
+  userMarker.bindPopup('🧍 Você está aqui');
+  userCircle=L.circle([lat,lng],{radius:geoRadius*1000,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.08,weight:1.5,dashArray:'6 4'}).addTo(map);
+}
+function enableGeoMode(lat,lng){
+  userPos={lat,lng};
+  geoMode=true;
+  curCity='Brasil';
+  curType='all';
+  document.getElementById('geoBtn').classList.add('active');
+  document.getElementById('geoLabel').textContent=`Perto · ${geoRadius}km`;
+  document.getElementById('cityBtnLabel').textContent='Perto de você';
+  document.getElementById('radiusBar').style.display='flex';
+  setUserMarker(lat,lng);
+  // 自动 zoom
+  const zoom=geoRadius<=5?13:geoRadius<=10?12:geoRadius<=20?11:10;
+  map.flyTo([lat,lng],zoom,{duration:.8});
+  renderTypeBar();renderMarkers();renderList();
+  const n=getFilteredData().length;
+  showToast(n>0?`📍 ${n} ocorrências em ${geoRadius} km`:`Nenhuma ocorrência em ${geoRadius} km`);
+  track('geo_enable',{lat:lat.toFixed(4),lng:lng.toFixed(4),radius:geoRadius,result_count:n});
+}
+function disableGeoMode(){
+  geoMode=false;
+  document.getElementById('geoBtn').classList.remove('active');
+  document.getElementById('geoLabel').textContent='Perto';
+  document.getElementById('radiusBar').style.display='none';
+  if(userMarker){map.removeLayer(userMarker);userMarker=null;}
+  if(userCircle){map.removeLayer(userCircle);userCircle=null;}
+  switchCity('Brasil');
+  track('geo_disable',{});
+}
+document.getElementById('geoBtn').addEventListener('click',()=>{
+  if(geoMode){disableGeoMode();return;}
+  if(!navigator.geolocation){showToast('❌ Seu navegador não suporta GPS');return;}
+  const btn=document.getElementById('geoBtn');
+  btn.classList.add('loading');
+  document.getElementById('geoIcon').textContent='⏳';
+  showToast('📍 Buscando localização...');
+  navigator.geolocation.getCurrentPosition(p=>{
+    btn.classList.remove('loading');
+    document.getElementById('geoIcon').textContent='🧭';
+    enableGeoMode(p.coords.latitude,p.coords.longitude);
+  },err=>{
+    btn.classList.remove('loading');
+    document.getElementById('geoIcon').textContent='🧭';
+    const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
+    showToast(msgs[err.code]||'❌ Erro de localização');
+    track('geo_error',{code:err.code,message:err.message});
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+});
+document.getElementById('radiusBar').addEventListener('click',e=>{
+  const opt=e.target.closest('.radius-opt');
+  if(opt && userPos){
+    document.querySelectorAll('.radius-opt').forEach(x=>x.classList.remove('active'));
+    opt.classList.add('active');
+    geoRadius=+opt.dataset.r;
+    enableGeoMode(userPos.lat,userPos.lng);
+  }
+});
+document.getElementById('radiusClose').addEventListener('click',disableGeoMode);
+
 document.getElementById('cityClose').addEventListener('click',closeCityModal);
 document.getElementById('cityModal').addEventListener('click',e=>{
   if(e.target.id==='cityModal')closeCityModal();
