@@ -484,6 +484,191 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* ============================================================
+   📊 埋点抽象层 - Trinity 适配版（快手站内规范）
+   设计：所有业务代码只调 track(event, props)
+   接入 Kwai App: 自动走 window.__radar.track（native bridge）
+   接入 Kwai Web: 自动走 window.kuaishouLog.report
+   浏览器调试: 走 console（__CM_DEBUG=true）
+   ============================================================ */
+(function(){
+  // ---- 匿名 UID / SID ----
+  let uid=localStorage.getItem('cm_uid');
+  if(!uid){uid='u_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('cm_uid',uid);}
+  let sid=sessionStorage.getItem('cm_sid');
+  if(!sid){sid='s_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);sessionStorage.setItem('cm_sid',sid);}
+  window.__CM_UID=uid;window.__CM_SID=sid;
+
+  // ---- 设备/环境 ----
+  const ua=navigator.userAgent;
+  const isMobile=/Mobi|Android|iPhone|iPad/i.test(ua);
+  const ctx={
+    uid,sid,page:location.pathname,referrer:document.referrer||'',
+    ua,is_mobile:isMobile,
+    screen_w:screen.width,screen_h:screen.height,
+    lang:navigator.language,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  window.__CM_CTX=ctx;
+
+  // ---- 页面动作计数器（用于 TASK_EVENT 上报）----
+  const counters={
+    city_switch_count:0, type_switch_count:0,
+    marker_click_count:0, list_click_count:0,
+    news_open_count:0, max_scroll_pct:0,
+  };
+  window.__CM_COUNTERS=counters;
+
+  // ---- 活跃时长统计（仅前台累计）----
+  let activeMs=0, lastTick=Date.now();
+  setInterval(()=>{
+    if(document.visibilityState==='visible'){activeMs+=Date.now()-lastTick;}
+    lastTick=Date.now();
+  },5000);
+  window.__CM_GET_ACTIVE_MS=()=>activeMs;
+
+  // ============================================================
+  // 🎯 Trinity 协议映射表
+  //   event -> { type, el, page, area }
+  //     type:  PAGE_SHOW_EVENT / ELEMENT_SHOW_EVENT / CLICK_EVENT / TASK_EVENT
+  //     el:    element_package.action2 (英文大写下划线)
+  //     area:  click_area 简写（部分 CITY_SWITCH_POPUP 用）
+  // ============================================================
+  const PAGE_NAME='CRIME_MAP_PAGE';
+  const TRINITY_MAP={
+    // 页面曝光
+    page_view:           {type:'PAGE_SHOW_EVENT'},
+    // 元素曝光
+    city_button_show:    {type:'ELEMENT_SHOW_EVENT', el:'CITY_SWITCH_BUTTON'},
+    type_filter_show:    {type:'ELEMENT_SHOW_EVENT', el:'CRIME_TYPE_FILTER'},
+    marker_exposure:     {type:'ELEMENT_SHOW_EVENT', el:'CRIME_MARKER'},
+    list_item_exposure:  {type:'ELEMENT_SHOW_EVENT', el:'CRIME_LIST_ITEM'},
+    city_modal_open:     {type:'ELEMENT_SHOW_EVENT', el:'CITY_SWITCH_POPUP'},
+    // 点击事件
+    city_switch:         {type:'CLICK_EVENT', el:'CITY_SWITCH_BUTTON'},
+    city_picked:         {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'city_list'},
+    city_search:         {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'search_box'},
+    city_modal_cancel:   {type:'CLICK_EVENT', el:'CITY_SWITCH_POPUP', area:'cancel'},
+    type_filter:         {type:'CLICK_EVENT', el:'CRIME_TYPE_FILTER'},
+    marker_click:        {type:'CLICK_EVENT', el:'CRIME_MARKER'},
+    list_item_click:     {type:'CLICK_EVENT', el:'CRIME_LIST_ITEM'},
+    news_open:           {type:'CLICK_EVENT', el:'NEWS_OUTLINK'},
+    sheet_toggle:        {type:'CLICK_EVENT', el:'LIST_SHEET_HANDLE'},
+    // 任务事件
+    session_end:         {type:'TASK_EVENT', task:'PAGE_DURATION'},
+    // 异常
+    error:               {type:'CLICK_EVENT', el:'PAGE_ERROR'},
+  };
+
+  // 把 props -> Trinity payload
+  function buildPayload(event, props){
+    const cfg=TRINITY_MAP[event];
+    if(!cfg)return null;
+    const params={...props};
+    if(cfg.area) params.click_area=cfg.area;
+
+    const payload={
+      event_type: cfg.type,
+      url_package: {
+        page2: PAGE_NAME,
+        params: {
+          source_page:'LOCAL_TAB_PAGE',
+          source_element:'CRIME_MAP_BANNER',
+        }
+      }
+    };
+    if(cfg.el){
+      payload.element_package={action2: cfg.el, params};
+    }
+    if(cfg.task){
+      payload.task_event_package={task_name: cfg.task, params};
+    }
+    if(cfg.type==='PAGE_SHOW_EVENT'){
+      Object.assign(payload.url_package.params, params);
+    }
+    return payload;
+  }
+
+  // ---- 缓冲队列 ----
+  const queue=[];
+  let flushTimer=null;
+  function flush(){
+    if(!queue.length)return;
+    const batch=queue.splice(0,queue.length);
+    sendToBackend(batch);
+  }
+  function scheduleFlush(){
+    if(flushTimer)return;
+    flushTimer=setTimeout(()=>{flushTimer=null;flush();},2000);
+  }
+
+  // 🔥 上报通道：环境自动选择
+  function sendToBackend(events){
+    events.forEach(e=>{
+      const payload=buildPayload(e.event, e.props||{});
+      if(!payload)return;
+
+      // 🅰️ Kwai App 内 native bridge（生产环境）
+      if(window.__radar && typeof window.__radar.track==='function'){
+        try{window.__radar.track(payload);}catch(_){ }
+      }
+      // 🅱️ Kwai Web SDK
+      else if(window.kuaishouLog && typeof window.kuaishouLog.report==='function'){
+        try{window.kuaishouLog.report(payload);}catch(_){ }
+      }
+      // 🅲 浏览器调试模式
+      else if(window.__CM_DEBUG){
+        const tag=payload.event_type;
+        const el=payload.element_package?.action2 || payload.task_event_package?.task_name || payload.url_package.page2;
+        console.log('%c📊 Trinity %c '+tag+' %c '+el,
+          'background:#dc2626;color:#fff;padding:2px 6px;border-radius:3px',
+          'background:#1e40af;color:#fff;padding:2px 6px',
+          'color:#666', payload);
+      }
+    });
+  }
+
+  // ---- 公开 API ----
+  window.track=function(event,props){
+    queue.push({event, props:props||{}, ts:Date.now(), uid, sid, url:location.href});
+    scheduleFlush();
+  };
+
+  // ---- 曝光观察器（IntersectionObserver）----
+  const exposeOb=new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting && en.intersectionRatio>=0.5){
+        const el=en.target;
+        if(el.__exposed)return;
+        // 进入视口 500ms 才算
+        el.__expTimer=setTimeout(()=>{
+          if(el.__exposed)return;
+          el.__exposed=true;
+          const event=el.dataset.expEvent;
+          const data=el.__expData||{};
+          if(event)track(event, data);
+          exposeOb.unobserve(el);
+        },500);
+      }else{
+        if(en.target.__expTimer){clearTimeout(en.target.__expTimer);en.target.__expTimer=null;}
+      }
+    });
+  },{threshold:[0.5]});
+  window.__CM_EXPOSE=function(el, event, data){
+    if(!el || el.__expRegistered)return;
+    el.__expRegistered=true;
+    el.dataset.expEvent=event;
+    el.__expData=data;
+    exposeOb.observe(el);
+  };
+
+  // ---- 页面关闭强制 flush ----
+  window.addEventListener('pagehide',flush);
+  window.addEventListener('beforeunload',flush);
+
+  // 默认开调试（接入站内时可关）
+  window.__CM_DEBUG=true;
+})();
+
 const TYPE_EMOJI={homicidio:'🩸',roubo:'🔫',furto:'📱',estupro:'⚠️',trafico:'💊',sequestro:'🔗',violencia:'👊',policia:'👮',faccao:'🔥',fraude:'💳',veiculo:'🚗',menor:'👦',outros:'❗'};
 const TYPE_LABEL={homicidio:'Homicídio',roubo:'Roubo',furto:'Furto',estupro:'Estupro',trafico:'Tráfico',sequestro:'Sequestro',violencia:'Violência',policia:'Polícia',faccao:'Facção',fraude:'Fraude',veiculo:'Veículo',menor:'Menor',outros:'Outros'};
 const TYPE_COLOR={homicidio:'#7f1d1d',roubo:'#dc2626',furto:'#d97706',estupro:'#be185d',trafico:'#7e22ce',sequestro:'#0891b2',violencia:'#ea580c',policia:'#1e40af',faccao:'#831843',fraude:'#0d9488',veiculo:'#374151',menor:'#a16207',outros:'#475569'};
@@ -633,6 +818,7 @@ function renderTypeBar(){
 }
 
 function switchCity(city){
+  const from=curCity;
   curCity=city;
   curType='all';
   document.getElementById('cityBtnLabel').textContent=city;
@@ -642,13 +828,18 @@ function switchCity(city){
   renderMarkers();
   renderList();
   showToast(`📍 ${city}`);
+  __CM_COUNTERS.city_switch_count++;
+  track('city_switch',{from_city:from,city_name:city,result_count:getFilteredData().length});
 }
 
 function switchType(t){
+  const from=curType;
   curType=t;
   renderTypeBar();
   renderMarkers();
   renderList();
+  __CM_COUNTERS.type_switch_count++;
+  track('type_filter',{from_type:from,crime_type:t,city_name:curCity,result_count:getFilteredData().length});
 }
 
 function getFilteredData(){
@@ -669,10 +860,14 @@ function renderMarkers(){
       <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
       <div class="pop-title">${escapeHtml(d.title)}</div>
       <div class="pop-meta">📍 ${escapeHtml(d.city)} · ${escapeHtml(d.source||'')}${d.pub_date?' · '+timeAgo(d.pub_date).text:''}</div>
-      <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener">Ler notícia →</a>
+      <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener" data-news-id="${escapeHtml(d.id||'')}" data-crime-type="${escapeHtml(d.type||'')}" data-source="${escapeHtml(d.source||'')}">Ler notícia →</a>
     `;
     m.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-8]});
-    m.on('click',()=>highlightItem(idx));
+    m.on('click',()=>{
+      highlightItem(idx);
+      __CM_COUNTERS.marker_click_count++;
+      track('marker_click',{news_id:d.id||'',crime_type:d.type,city_name:d.city,source:d.source||''});
+    });
     markers.push(m);
   });
 }
@@ -698,6 +893,12 @@ function renderList(){
   `).join('');
   
   list.querySelectorAll('.it').forEach(el=>{
+    const idx=+el.dataset.idx;
+    const d=data[idx];
+    // 📊 列表项曝光
+    if(window.__CM_EXPOSE){
+      window.__CM_EXPOSE(el,'list_item_exposure',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx});
+    }
     el.onclick=()=>{
       const idx=+el.dataset.idx;
       const d=data[idx];
@@ -705,6 +906,8 @@ function renderList(){
       const m=markers[idx];
       setTimeout(()=>m&&m.openPopup(),650);
       highlightItem(idx);
+      __CM_COUNTERS.list_click_count++;
+      track('list_item_click',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx,source:d.source||''});
     };
   });
 }
@@ -788,25 +991,40 @@ window.addEventListener('mouseup',onDragEnd);
 // 点击 handle 也能切换
 sheetHandle.addEventListener('click',e=>{
   if(Math.abs(e.clientY-dragStartY)<3){ // 没移动太多 = 点击
-    if(isCollapsed())expandSheet();
-    else collapseSheet();
+    const _from=isCollapsed()?'collapsed':(sheet.classList.contains('expanded')?'expanded':'collapsed');
+    if(isCollapsed()){expandSheet();track('sheet_toggle',{action:'expand',from_state:_from});}
+    else{collapseSheet();track('sheet_toggle',{action:'collapse',from_state:_from});}
   }
 });
 
 // ========== 城市按钮 ==========
-document.getElementById('cityBtn').addEventListener('click',openCityModal);
+document.getElementById('cityBtn').addEventListener('click',()=>{openCityModal();track('city_modal_open',{from_city:curCity});});
 document.getElementById('cityClose').addEventListener('click',closeCityModal);
 document.getElementById('cityModal').addEventListener('click',e=>{
   if(e.target.id==='cityModal')closeCityModal();
 });
 document.getElementById('citySearch').addEventListener('input',e=>{
   renderCityList(e.target.value);
+  if(e.target.value.length>=2)track('city_search',{q:e.target.value,match_count:0});
 });
+document.getElementById('cityClose').addEventListener('click',()=>{track('city_modal_cancel',{from_city:curCity});});
 
 // ========== 启动 ==========
+// 跟随用户首次「读新闻」按钮拦截：通过事件委托（popup 是动态创建的）
+document.addEventListener('click',function(e){
+  const a=e.target.closest('.pop-link');
+  if(a){
+    __CM_COUNTERS.news_open_count++;
+    let _domain='';try{_domain=new URL(a.href).hostname;}catch(_){}
+    const _from=a.closest('.list-item')?'list_item':'marker_popup';
+    track('news_open',{news_id:a.dataset.newsId||'',crime_type:a.dataset.crimeType||curType,target_domain:_domain,source:a.dataset.source||'',from_element:_from});
+  }
+});
+
 async function init(){
   try{
     initMap();
+    const t0=performance.now();
     const res=await fetch('/rss_incidents.json?_='+Date.now());
     allData=await res.json();
     renderTypeBar();
@@ -814,8 +1032,49 @@ async function init(){
     renderList();
     document.getElementById('loading').style.display='none';
     setTimeout(()=>map.invalidateSize(),300);
+
+    // 📊 页面访问主事件
+    track('page_view',{
+      total_count:allData.length,
+      load_ms:Math.round(performance.now()-t0),
+      default_city:curCity,
+      is_first_visit:!localStorage.getItem('cm_visited')?'TRUE':'FALSE',
+      ...window.__CM_CTX,
+    });
+    localStorage.setItem('cm_visited','1');
+
+    // 📊 元素曝光埋点
+    if(window.__CM_EXPOSE){
+      window.__CM_EXPOSE(document.getElementById('cityBtn'),'city_button_show',{city_name:curCity});
+      window.__CM_EXPOSE(document.querySelector('.type-bar')||document.body,'type_filter_show',{current_type:curType,type_count:14});
+    }
+
+    // 📊 停留时长上报（页面关闭时）
+    const startedAt=Date.now();
+    let maxScroll=0;
+    document.querySelector('.list')?.addEventListener('scroll',e=>{
+      const el=e.target;
+      const pct=Math.round(el.scrollTop/(el.scrollHeight-el.clientHeight)*100);
+      if(pct>maxScroll)maxScroll=pct;
+    });
+    let _exitType='close';
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_exitType='switch_tab';});
+    window.addEventListener('popstate',()=>{_exitType='back';});
+    function _reportSessionEnd(){
+      __CM_COUNTERS.max_scroll_pct=maxScroll;
+      track('session_end',{
+        duration_ms:Date.now()-startedAt,
+        active_ms:window.__CM_GET_ACTIVE_MS(),
+        ...__CM_COUNTERS,
+        last_city:curCity,
+        last_type:curType,
+        exit_type:_exitType,
+      });
+    }
+    window.addEventListener('pagehide',_reportSessionEnd);
   }catch(e){
     document.getElementById('loading').innerHTML=`<div style="color:#ef4444">Erro: ${e.message}</div>`;
+    track('error',{message:String(e.message||e),stack:String(e.stack||'').slice(0,500)});
   }
 }
 init();
