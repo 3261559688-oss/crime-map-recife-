@@ -74,6 +74,25 @@ CREATE TABLE IF NOT EXISTS dwd_intl_crime_incident_di (
   llm_reason    TEXT,
   llm_at        TEXT,
   llm_model     TEXT,
+  -- 🅰️ Stage A: 真伪
+  llm_a_is_crime INTEGER,
+  llm_a_score    INTEGER,
+  llm_a_reason   TEXT,
+  llm_a_at       TEXT,
+  -- 🅱️ Stage B: 类型
+  llm_b_type     TEXT,
+  llm_b_score    INTEGER,
+  llm_b_changed  INTEGER,
+  llm_b_reason   TEXT,
+  llm_b_at       TEXT,
+  -- 🅲 Stage C: 地理
+  llm_c_state    TEXT,
+  llm_c_city     TEXT,
+  llm_c_neighbor TEXT,
+  llm_c_score    INTEGER,
+  llm_c_evidence TEXT,
+  llm_c_reason   TEXT,
+  llm_c_at       TEXT,
   -- 元数据
   etl_dt        TEXT,
   p_date        TEXT,
@@ -82,7 +101,9 @@ CREATE TABLE IF NOT EXISTS dwd_intl_crime_incident_di (
 CREATE INDEX IF NOT EXISTS idx_dwd_pdate    ON dwd_intl_crime_incident_di(p_date);
 CREATE INDEX IF NOT EXISTS idx_dwd_verified ON dwd_intl_crime_incident_di(llm_verified);
 CREATE INDEX IF NOT EXISTS idx_dwd_state    ON dwd_intl_crime_incident_di(state);
-CREATE INDEX IF NOT EXISTS idx_dwd_score    ON dwd_intl_crime_incident_di(llm_score);
+CREATE INDEX IF NOT EXISTS idx_dwd_a        ON dwd_intl_crime_incident_di(llm_a_is_crime);
+CREATE INDEX IF NOT EXISTS idx_dwd_b_type   ON dwd_intl_crime_incident_di(llm_b_type);
+CREATE INDEX IF NOT EXISTS idx_dwd_c_state  ON dwd_intl_crime_incident_di(llm_c_state);
 """
 
 # 维表：城市坐标
