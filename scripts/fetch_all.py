@@ -259,6 +259,86 @@ RSS_FEEDS = [
 ]
 
 # ============================================================
+# 🆕 Google News RSS — 按城市定向搜索（覆盖面大杀器）
+# 每个城市一个专属 RSS，搜索犯罪相关关键词
+# Google News RSS 超稳定 + 聚合了上千个巴西媒体源
+# ============================================================
+import urllib.parse as _up
+
+# (城市, 州, 城市精确名用于搜索)
+GNEWS_CITIES = [
+    # 大城市 / 首府
+    ("Recife", "PE"), ("São Paulo", "SP"), ("Rio de Janeiro", "RJ"),
+    ("Salvador", "BA"), ("Fortaleza", "CE"), ("Belo Horizonte", "MG"),
+    ("Porto Alegre", "RS"), ("Curitiba", "PR"), ("Brasília", "DF"),
+    ("Florianópolis", "SC"), ("Goiânia", "GO"), ("Vitória", "ES"),
+    ("Belém", "PA"), ("Manaus", "AM"), ("São Luís", "MA"),
+    ("João Pessoa", "PB"), ("Natal", "RN"), ("Maceió", "AL"),
+    ("Aracaju", "SE"), ("Teresina", "PI"), ("Cuiabá", "MT"),
+    ("Campo Grande", "MS"), ("Palmas", "TO"), ("Rio Branco", "AC"),
+    ("Porto Velho", "RO"), ("Macapá", "AP"), ("Boa Vista", "RR"),
+    # PE 内陆
+    ("Caruaru", "PE"), ("Petrolina", "PE"), ("Olinda", "PE"), ("Jaboatão", "PE"),
+    # SP 都市圈 / 内陆
+    ("Osasco", "SP"), ("Guarulhos", "SP"), ("Campinas", "SP"),
+    ("Santo André", "SP"), ("Santos", "SP"), ("Ribeirão Preto", "SP"),
+    ("São José do Rio Preto", "SP"), ("Sorocaba", "SP"), ("Bauru", "SP"),
+    ("São José dos Campos", "SP"), ("Presidente Prudente", "SP"),
+    ("Itapetininga", "SP"), ("São Carlos", "SP"),
+    # RJ
+    ("São Gonçalo", "RJ"), ("Niterói", "RJ"), ("Cabo Frio", "RJ"),
+    ("Campos dos Goytacazes", "RJ"), ("Volta Redonda", "RJ"), ("Petrópolis", "RJ"),
+    # MG
+    ("Contagem", "MG"), ("Uberlândia", "MG"), ("Juiz de Fora", "MG"),
+    ("Pouso Alegre", "MG"), ("Governador Valadares", "MG"), ("Divinópolis", "MG"),
+    # BA
+    ("Feira de Santana", "BA"), ("Camaçari", "BA"), ("Itabuna", "BA"),
+    ("Juazeiro", "BA"), ("Porto Seguro", "BA"),
+    # PR
+    ("Londrina", "PR"), ("Maringá", "PR"), ("Cascavel", "PR"), ("Ponta Grossa", "PR"),
+    # SC
+    ("Joinville", "SC"), ("Blumenau", "SC"),
+    # RS
+    ("Caxias do Sul", "RS"), ("Pelotas", "RS"), ("Santa Maria", "RS"),
+]
+
+# 每个城市生成 2 个不同关键词组合的 Google News RSS，提升覆盖
+_GNEWS_QUERIES = [
+    'crime+OR+homicidio+OR+assalto+OR+roubo',
+    'tráfico+OR+morto+OR+baleado+OR+polícia',
+]
+
+for _city, _state in GNEWS_CITIES:
+    for _i, _q in enumerate(_GNEWS_QUERIES, start=1):
+        _city_q = _up.quote(f'"{_city}"')
+        _url = (
+            f"https://news.google.com/rss/search?"
+            f"q={_q}+{_city_q}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+        )
+        RSS_FEEDS.append(
+            (f"GNews {_city} #{_i}", _url, _state, _city)
+        )
+
+# 全国级 Google News（兜底）
+RSS_FEEDS.extend([
+    ("GNews Brasil Crime",
+     "https://news.google.com/rss/search?q=crime+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+     "BR", "Brasil"),
+    ("GNews Brasil Homicídio",
+     "https://news.google.com/rss/search?q=homicidio+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+     "BR", "Brasil"),
+    ("GNews Brasil Tráfico",
+     "https://news.google.com/rss/search?q=tráfico+drogas+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+     "BR", "Brasil"),
+    ("GNews Brasil Operação",
+     "https://news.google.com/rss/search?q=operação+policial+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+     "BR", "Brasil"),
+    ("GNews Brasil Feminicídio",
+     "https://news.google.com/rss/search?q=feminicídio+brasil&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+     "BR", "Brasil"),
+])
+
+# ============================================================
 # 城市坐标
 # ============================================================
 CITY_COORDS = {

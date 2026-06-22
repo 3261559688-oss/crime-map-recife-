@@ -559,35 +559,6 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     error:               {type:'CLICK_EVENT', el:'PAGE_ERROR'},
   };
 
-  // 把 props -> Trinity payload
-  function buildPayload(event, props){
-    const cfg=TRINITY_MAP[event];
-    if(!cfg)return null;
-    const params={...props};
-    if(cfg.area) params.click_area=cfg.area;
-
-    const payload={
-      event_type: cfg.type,
-      url_package: {
-        page2: PAGE_NAME,
-        params: {
-          source_page:'LOCAL_TAB_PAGE',
-          source_element:'CRIME_MAP_BANNER',
-        }
-      }
-    };
-    if(cfg.el){
-      payload.element_package={action2: cfg.el, params};
-    }
-    if(cfg.task){
-      payload.task_event_package={task_name: cfg.task, params};
-    }
-    if(cfg.type==='PAGE_SHOW_EVENT'){
-      Object.assign(payload.url_package.params, params);
-    }
-    return payload;
-  }
-
   // ---- 缓冲队列 ----
   const queue=[];
   let flushTimer=null;
@@ -601,28 +572,99 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     flushTimer=setTimeout(()=>{flushTimer=null;flush();},2000);
   }
 
-  // 🔥 上报通道：环境自动选择
+  // 🔥 上报通道（按 @kibt/weblogger 官方规范）
+  //   生产: window.kwailog.sendPv/sendClick/sendShow（项目里 import @kibt/weblogger 后挂全局）
+  //   降级: 直接 POST https://logsdk.kwai-pro.com/rest/wd/common/log/collect/misc2
+  //   调试: console
+  const RADAR_HTTP_ENDPOINT='https://logsdk.kwai-pro.com/rest/wd/common/log/collect/misc2';
+  const RADAR_PROJECT_ID='04dd286660';
+
+  // 读 cookie 工具
+  function _ck(k){
+    const m=document.cookie.match(new RegExp('(?:^|; )'+k+'=([^;]*)'));
+    return m?decodeURIComponent(m[1]):'';
+  }
+  function _qs(k){
+    return new URLSearchParams(location.search).get(k)||'';
+  }
+  // 平台标识：H5=4（按 weblogger getPlatform 默认值；接入站内时由 SDK 重写）
+  function _platform(){
+    const ua=navigator.userAgent;
+    if(/Android/i.test(ua))return 1;
+    if(/iPhone|iPad|iOS/i.test(ua))return 2;
+    return 4; // H5
+  }
+
+  // 构建官方基础参数（每条都带）
+  function buildBaseParams(){
+    return {
+      product_name: _ck('kpn') || _qs('kpn') || 'KWAI',
+      package_name: _ck('kpn') || _qs('kpn') || 'KWAI',
+      platform: _platform(),
+      version_name: _ck('appver') || '',
+      user_id: _ck('ud') || uid,
+      network_type: _ck('net') || '',
+      h5_extra_attr: {
+        country_name: {
+          country: _ck('countryInfo') || _qs('country') || 'BR',
+          bucket: _ck('bucket') || ''
+        },
+        channel: _qs('source') || 'CRIME_MAP_BANNER'
+      }
+    };
+  }
+
   function sendToBackend(events){
     events.forEach(e=>{
-      const payload=buildPayload(e.event, e.props||{});
-      if(!payload)return;
+      const cfg=TRINITY_MAP[e.event];
+      if(!cfg)return;
+      const props=e.props||{};
+      if(cfg.area)props.click_area=cfg.area;
 
-      // 🅰️ Kwai App 内 native bridge（生产环境）
-      if(window.__radar && typeof window.__radar.track==='function'){
-        try{window.__radar.track(payload);}catch(_){ }
+      // 🅰️ Kwai App 内 / 已接入 @kibt/weblogger（生产）
+      const kw=window.kwailog;
+      if(kw && typeof kw.sendPv==='function'){
+        try{
+          if(cfg.type==='PAGE_SHOW_EVENT'){
+            kw.sendPv({page:PAGE_NAME, type:'enter', params:props});
+          }else if(cfg.type==='ELEMENT_SHOW_EVENT'){
+            kw.sendShow({action:cfg.el, params:props});
+          }else if(cfg.type==='CLICK_EVENT'){
+            kw.sendClick({action:cfg.el, params:props});
+          }else if(cfg.type==='TASK_EVENT'){
+            kw.sendClick({action:cfg.task||'PAGE_TASK', type:'STAY_LENGTH_STAT_EVENT', params:props});
+          }
+        }catch(_){ }
+        return;
       }
-      // 🅱️ Kwai Web SDK
-      else if(window.kuaishouLog && typeof window.kuaishouLog.report==='function'){
-        try{window.kuaishouLog.report(payload);}catch(_){ }
+
+      // 🅱️ HTTP 直传（端外 / 没引 SDK 时）
+      if(window.__CM_HTTP_FALLBACK){
+        const body={
+          event_type: cfg.type,
+          page: PAGE_NAME,
+          action: cfg.el || cfg.task || '',
+          params: props,
+          base_params: buildBaseParams(),
+          radar_project: RADAR_PROJECT_ID,
+          ts: e.ts
+        };
+        try{
+          const blob=new Blob([JSON.stringify(body)],{type:'application/json'});
+          if(navigator.sendBeacon)navigator.sendBeacon(RADAR_HTTP_ENDPOINT, blob);
+          else fetch(RADAR_HTTP_ENDPOINT,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});
+        }catch(_){ }
+        return;
       }
-      // 🅲 浏览器调试模式
-      else if(window.__CM_DEBUG){
-        const tag=payload.event_type;
-        const el=payload.element_package?.action2 || payload.task_event_package?.task_name || payload.url_package.page2;
-        console.log('%c📊 Trinity %c '+tag+' %c '+el,
+
+      // 🅲 浏览器调试
+      if(window.__CM_DEBUG){
+        const action=cfg.el||cfg.task||PAGE_NAME;
+        console.log('%c📊 Trinity %c '+cfg.type+' %c '+action,
           'background:#dc2626;color:#fff;padding:2px 6px;border-radius:3px',
           'background:#1e40af;color:#fff;padding:2px 6px',
-          'color:#666', payload);
+          'color:#666',
+          {event:e.event, props, base:buildBaseParams()});
       }
     });
   }
