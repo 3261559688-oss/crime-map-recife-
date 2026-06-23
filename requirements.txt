@@ -1,0 +1,5 @@
+# Crime Map Recife 项目依赖
+# 极简：项目主体用 Python 标准库，仅以下几个外部包
+openpyxl>=3.1.0       # 用于 export_xlsx（kim doc 上传可点击表）
+feedparser>=6.0.10    # RSS 解析（fetch_all.py）
+requests>=2.31.0      # HTTP 客户端（cidades 反查）

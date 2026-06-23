@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📍 Nearby Crime · 附近事件演示</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif}
+  body{display:flex;height:100vh;background:#0a0e1a;color:#e5e7eb}
+  #map{flex:1;height:100%}
+  #panel{width:380px;background:#111827;overflow-y:auto;border-left:1px solid #1f2937;display:flex;flex-direction:column}
+  .head{padding:20px;border-bottom:1px solid #1f2937}
+  .head h1{font-size:18px;margin-bottom:4px}
+  .head .me{font-size:13px;color:#9ca3af;margin-top:8px}
+  .head .me b{color:#60a5fa}
+  .ctrl{padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #1f2937;align-items:center}
+  .ctrl label{font-size:12px;color:#9ca3af}
+  .chip{padding:5px 12px;font-size:12px;background:#1f2937;border:1px solid #374151;border-radius:14px;cursor:pointer;color:#d1d5db;user-select:none}
+  .chip:hover{background:#374151}
+  .chip.active{background:#2563eb;border-color:#2563eb;color:#fff}
+  .stats{padding:10px 20px;font-size:12px;color:#9ca3af;background:#0f172a}
+  .stats b{color:#fbbf24;font-size:14px}
+  .list{flex:1;overflow-y:auto}
+  .item{padding:14px 20px;border-bottom:1px solid #1f2937;cursor:pointer;transition:.15s}
+  .item:hover{background:#1f2937}
+  .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .type{font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.5px}
+  .type.homicidio{background:#7f1d1d;color:#fecaca}
+  .type.sequestro{background:#9a3412;color:#fed7aa}
+  .type.estupro{background:#831843;color:#fbcfe8}
+  .type.roubo{background:#78350f;color:#fde68a}
+  .type.policia{background:#1e3a8a;color:#bfdbfe}
+  .type.faccao{background:#581c87;color:#e9d5ff}
+  .type.violencia{background:#374151;color:#d1d5db}
+  .type.fraude{background:#0f766e;color:#a7f3d0}
+  .type.veiculo,.type.outros,.type.menor,.type.trafico,.type.furto{background:#374151;color:#d1d5db}
+  .dist{font-size:13px;color:#60a5fa;font-weight:600;font-variant-numeric:tabular-nums}
+  .title{font-size:13px;line-height:1.4;color:#e5e7eb;margin-bottom:6px}
+  .meta{font-size:11px;color:#6b7280}
+  .meta .city{color:#9ca3af}
+  .meta .nb{color:#fbbf24}
+  .empty{padding:40px 20px;text-align:center;color:#6b7280;font-size:13px}
+  /* 用户图钉 */
+  .me-marker{width:18px;height:18px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,.3);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 6px rgba(59,130,246,.3)}50%{box-shadow:0 0 0 14px rgba(59,130,246,.0)}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <div class="head">
+    <h1>📍 Crime Map · Nearby</h1>
+    <div class="me" id="me-info">定位中...</div>
+  </div>
+  <div class="ctrl">
+    <label>半径</label>
+    <span class="chip" data-r="1">1 km</span>
+    <span class="chip" data-r="3">3 km</span>
+    <span class="chip active" data-r="5">5 km</span>
+    <span class="chip" data-r="10">10 km</span>
+    <span class="chip" data-r="20">20 km</span>
+    <span class="chip" data-r="50">50 km</span>
+  </div>
+  <div class="stats" id="stats">加载中...</div>
+  <div class="list" id="list"></div>
+</div>
+
+<script>
+const API = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+  ? 'http://localhost:8787'
+  : '';   // 同源部署时为空
+
+let map, meMarker, eventLayer, me = null, currentRadius = 5;
+
+const TYPE_EMOJI = {
+  homicidio:'🔴', sequestro:'🟠', estupro:'🟣', roubo:'🟡',
+  policia:'🚓', faccao:'⚫', violencia:'⚠️', fraude:'💰',
+  veiculo:'🚗', menor:'👶', trafico:'💊', furto:'🎒', outros:'⚪'
+};
+
+function relTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now()/1000 - ts;
+  if (diff < 3600) return Math.floor(diff/60) + '分钟前';
+  if (diff < 86400) return Math.floor(diff/3600) + '小时前';
+  if (diff < 86400*30) return Math.floor(diff/86400) + '天前';
+  return new Date(ts*1000).toLocaleDateString();
+}
+
+async function init() {
+  // 1️⃣ 初始化地图（先用一个默认中心，等 whereami 返回后聚焦）
+  map = L.map('map', { zoomControl: true }).setView([-23.55, -46.63], 12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OSM &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+  eventLayer = L.layerGroup().addTo(map);
+
+  // 2️⃣ 拿用户位置
+  try {
+    const res = await fetch(API + '/api/whereami');
+    me = await res.json();
+    document.getElementById('me-info').innerHTML =
+      `IP <b>${me.ip || '-'}</b> · 定位 <b>${me.city || '-'}</b> / ${me.state || '-'} <span style="color:#6b7280">(${me.source||''})</span>`;
+    map.setView([me.lat, me.lng], 13);
+    // 用户图钉
+    const dot = L.divIcon({className:'me-marker', iconSize:[18,18]});
+    meMarker = L.marker([me.lat, me.lng], {icon: dot, zIndexOffset: 1000})
+      .addTo(map).bindPopup('📍 你在这');
+  } catch (e) {
+    document.getElementById('me-info').textContent = '⚠️ 定位失败 — ' + e.message;
+    return;
+  }
+
+  // 3️⃣ 半径切换
+  document.querySelectorAll('.chip').forEach(c => {
+    c.onclick = () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      currentRadius = parseFloat(c.dataset.r);
+      loadNearby();
+    };
+  });
+
+  // 4️⃣ 拉附近事件
+  loadNearby();
+}
+
+async function loadNearby() {
+  if (!me) return;
+  document.getElementById('stats').textContent = '查询中...';
+  document.getElementById('list').innerHTML = '';
+  eventLayer.clearLayers();
+
+  // 画半径圈
+  L.circle([me.lat, me.lng], {
+    radius: currentRadius * 1000,
+    color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.05, weight: 1
+  }).addTo(eventLayer);
+
+  try {
+    const res = await fetch(`${API}/api/nearby?lat=${me.lat}&lng=${me.lng}&radius_km=${currentRadius}&limit=200`);
+    const data = await res.json();
+
+    document.getElementById('stats').innerHTML =
+      `半径 <b>${currentRadius} km</b> 内共 <b>${data.count}</b> 起事件 · 显示 ${data.returned}`;
+
+    const listEl = document.getElementById('list');
+    if (data.events.length === 0) {
+      listEl.innerHTML = '<div class="empty">这片区域近期没有犯罪事件 ✨</div>';
+      return;
+    }
+
+    data.events.forEach((ev, i) => {
+      // 列表 item
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <div class="row1">
+          <span class="type ${ev.type||'outros'}">${TYPE_EMOJI[ev.type]||'⚪'} ${ev.type||'outros'}</span>
+          <span class="dist">${ev.distance_km < 1 ? Math.round(ev.distance_km*1000)+' m' : ev.distance_km.toFixed(1)+' km'}</span>
+        </div>
+        <div class="title">${ev.title || '(无标题)'}</div>
+        <div class="meta">
+          <span class="city">${ev.city || ''}</span>
+          ${ev.neighborhood ? '<span class="nb"> · '+ev.neighborhood+'</span>' : ''}
+          <span> · ${relTime(ev.pub_ts)}</span>
+        </div>
+      `;
+      div.onclick = () => {
+        map.setView([ev.lat, ev.lng], 16);
+        if (ev._marker) ev._marker.openPopup();
+      };
+      listEl.appendChild(div);
+
+      // 地图 marker
+      const m = L.marker([ev.lat, ev.lng]).addTo(eventLayer);
+      m.bindPopup(`
+        <b>${TYPE_EMOJI[ev.type]||'⚪'} ${ev.type||'outros'}</b>
+        <span style="float:right;color:#3b82f6;font-weight:600">${ev.distance_km.toFixed(2)} km</span>
+        <hr style="margin:6px 0;border:none;border-top:1px solid #ddd">
+        <div style="font-size:12px;line-height:1.4">${ev.title || ''}</div>
+        <div style="font-size:11px;color:#666;margin-top:6px">${ev.city||''} ${ev.neighborhood?' · '+ev.neighborhood:''} · ${relTime(ev.pub_ts)}</div>
+        ${ev.news_url ? `<a href="${ev.news_url}" target="_blank" style="font-size:11px;color:#2563eb;display:block;margin-top:6px">打开原文 ↗</a>` : ''}
+      `);
+      ev._marker = m;
+    });
+  } catch (e) {
+    document.getElementById('stats').textContent = '⚠️ 查询失败：' + e.message;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

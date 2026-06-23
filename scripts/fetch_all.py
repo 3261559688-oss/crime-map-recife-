@@ -603,9 +603,24 @@ def main():
             lat, lng = get_coords(city, link)
             if lat is None: continue
             
+            # 🆕 保留 RSS 自带的 description（清理 HTML 标签 + 实体 + 截断）
+            import re as _re
+            from html import unescape as _unescape
+            desc_raw = item.get('description', '') or ''
+            desc_clean = _unescape(desc_raw)                           # 解 HTML 实体 &amp; &lt; &gt; &quot;
+            desc_clean = _re.sub(r'<[^>]+>', '', desc_clean)           # 去 HTML 标签
+            desc_clean = _re.sub(r'https?://\S+', '', desc_clean)      # 去裸 URL
+            desc_clean = _re.sub(r'\s+', ' ', desc_clean).strip()       # 合并空白
+            desc_clean = desc_clean[:500]                               # 截 500 字
+
+            # 🆕 用 URL hash 当稳定主键（同一条新闻永远同一编号，跨批次去重）
+            import hashlib as _hl
+            _stable_id = 'inc_' + _hl.md5((link or title).encode('utf-8')).hexdigest()[:10]
+
             all_incidents.append({
-                'id': f'inc_{len(all_incidents)+1:03d}',
+                'id': _stable_id,
                 'title': title[:200],
+                'description': desc_clean,                         # 🆕 给 LLM 看的摘要
                 'link': link,
                 'city': city,
                 'state': state if state != 'BR' else '',
@@ -625,9 +640,7 @@ def main():
     
     # 按时间倒序
     all_incidents.sort(key=lambda x: x['pub_ts'], reverse=True)
-    # 重新编号
-    for i, inc in enumerate(all_incidents):
-        inc['id'] = f'inc_{i+1:03d}'
+    # 🆕 不重新编号 — 保持 URL hash 主键稳定，确保跨批次编号一致
     
     # 统计
     print(f"\n{'='*60}\n📊 总计: {len(all_incidents)} 条（最近 {MAX_AGE_DAYS} 天）\n{'='*60}")

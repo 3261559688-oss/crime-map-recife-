@@ -9,6 +9,23 @@
 <title>Mapa do Crime · Brasil</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
+/* === 用户位置蓝点（脉冲） === */
+.user-loc-marker{position:relative;width:20px;height:20px}
+.user-loc-marker .ulm-dot{position:absolute;left:50%;top:50%;width:14px;height:14px;
+  background:#3b82f6;border:3px solid #fff;border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 1px rgba(59,130,246,.5),0 2px 6px rgba(0,0,0,.4);
+  z-index:2}
+.user-loc-marker .ulm-pulse{position:absolute;left:50%;top:50%;width:14px;height:14px;
+  background:rgba(59,130,246,.45);border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:ulmPulse 2s ease-out infinite;z-index:1}
+@keyframes ulmPulse{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:.7}
+  100%{transform:translate(-50%,-50%) scale(3.6);opacity:0}
+}
+</style>
+<style>
 /* === 主题变量 === */
 :root,[data-theme="dark"]{
   --bg-page:#1a1d29;
@@ -822,6 +839,39 @@ function initMap(){
   tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19,subdomains:'abcd'}).addTo(map);
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
+  // 🆕 显示用户位置（蓝色脉冲点）
+  showUserLocation();
+}
+
+// ========== 用户位置 ==========
+let userMarker=null;
+async function showUserLocation(){
+  try{
+    // 1) 优先调后端 IP 接口（部署后可用）
+    let me=null;
+    try{
+      const r=await fetch('/api/whereami',{cache:'no-store'});
+      if(r.ok) me=await r.json();
+    }catch(_){}
+    // 2) 兜底：mock 圣保罗市中心（开发期 / 接口未上）
+    if(!me||!me.lat){
+      me={lat:-23.5505,lng:-46.6333,city:'São Paulo',state:'SP',source:'mock'};
+    }
+    const icon=L.divIcon({
+      className:'user-loc-marker',
+      html:'<div class="ulm-pulse"></div><div class="ulm-dot"></div>',
+      iconSize:[20,20],iconAnchor:[10,10]
+    });
+    userMarker=L.marker([me.lat,me.lng],{icon,zIndexOffset:1000,interactive:true})
+      .addTo(map)
+      .bindPopup(`📍 你在 <b>${me.city||'-'}</b>${me.state?' / '+me.state:''}`);
+    // 🆕 飞到用户位置（带平滑动画）
+    setTimeout(()=>{
+      map.flyTo([me.lat,me.lng],12,{duration:1.6,easeLinearity:0.25});
+      // 飞到后自动弹出气泡（800ms 等动画）
+      setTimeout(()=>userMarker && userMarker.openPopup(), 1700);
+    }, 400);
+  }catch(e){console.warn('[user-loc]',e);}
 }
 
 // ========== 主题切换 ==========

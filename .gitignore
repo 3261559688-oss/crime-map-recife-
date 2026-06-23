@@ -4,6 +4,19 @@ node_modules/
 .env.local
 .vercel
 *.log
+
+# SQLite 主库（数据，不进 git；用 frontend-cloud backup 备份）
+data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+
+# 中间产物
+data/crime_for_llm.*
+data/crime_llm_result.*
+data/.luigi_done_*
+data/final_report_*.txt
+data/pipeline.log*
+
+# 部署产物
+public/backup/

@@ -1,0 +1,14 @@
+# Crime Map 定时巡检 — 每 30 分钟一次
+# 安装：crontab /etc/cron.d/crime-map
+
+# 环境变量（容器里这些会被 Docker run -e 注入到 PATH）
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# 每 30 分钟跑一次完整流水线
+*/30 * * * * cd /app && bash scripts/pipeline.sh >> /app/data/pipeline.log 2>&1
+
+# 每天凌晨 3 点压缩昨天的日志
+0 3 * * * gzip -f /app/data/pipeline.log.1 2>/dev/null; mv /app/data/pipeline.log /app/data/pipeline.log.1
+
+# 文件末尾必须有空行

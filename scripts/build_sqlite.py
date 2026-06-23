@@ -30,6 +30,7 @@ DDL_ODS = """
 CREATE TABLE IF NOT EXISTS ods_intl_crime_incident_di (
   event_id      TEXT PRIMARY KEY,
   title         TEXT,
+  description   TEXT,            -- 🆕 RSS 摘要（给 LLM 增强上下文）
   crime_type    TEXT,
   city          TEXT,
   state         TEXT,
@@ -54,6 +55,7 @@ DDL_DWD = """
 CREATE TABLE IF NOT EXISTS dwd_intl_crime_incident_di (
   event_id      TEXT PRIMARY KEY,
   title         TEXT,
+  description   TEXT,            -- 🆕 RSS 摘要（给 LLM 增强上下文）
   crime_type    TEXT,
   city          TEXT,
   state         TEXT,
@@ -185,6 +187,7 @@ def main():
         base = (
             x.get('id'),
             x.get('title'),
+            x.get('description',''),
             x.get('type'),
             x.get('city'),
             x.get('state'),
@@ -204,6 +207,7 @@ def main():
         rows_dwd.append((
             x.get('id'),
             x.get('title'),
+            x.get('description',''),
             x.get('type'),
             x.get('city'),
             x.get('state'),
@@ -228,19 +232,19 @@ def main():
 
     cur.executemany("""
         INSERT OR REPLACE INTO ods_intl_crime_incident_di
-        (event_id,title,crime_type,city,state,lat,lng,source_media,news_url,
+        (event_id,title,description,crime_type,city,state,lat,lng,source_media,news_url,
          pub_time,pub_ts,city_method,etl_dt,p_date,ingested_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, rows_ods)
 
     cur.executemany("""
         INSERT OR REPLACE INTO dwd_intl_crime_incident_di
-        (event_id,title,crime_type,city,state,lat,lng,source_media,news_url,
+        (event_id,title,description,crime_type,city,state,lat,lng,source_media,news_url,
          pub_time,pub_ts,city_method,
          llm_verified,llm_score,llm_state,llm_city,llm_neighbor,llm_type,
          llm_reason,llm_at,llm_model,
          etl_dt,p_date,ingested_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, rows_dwd)
 
     # 写维表（如果有 cities.json）
