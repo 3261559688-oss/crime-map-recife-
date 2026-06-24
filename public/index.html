@@ -1018,9 +1018,9 @@ function renderMarkers(){
     const icon=L.divIcon({className:'',html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,iconSize:[32,32],iconAnchor:[16,16]});
     const m=L.marker([d.lat,d.lng],{icon}).addTo(map);
     const html=`
-      <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
+      <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>${d.llm_verified?'<span class="pop-type" style="background:#16a34a;margin-left:4px" title="Verificado por IA">✓ IA</span>':''}
       <div class="pop-title">${escapeHtml(d.title)}</div>
-      <div class="pop-meta">📍 ${escapeHtml(d.city)} · ${escapeHtml(d.source||'')}${d.pub_date?' · '+timeAgo(d.pub_date).text:''}</div>
+      <div class="pop-meta">📍 ${escapeHtml(d.city)}${d.neighborhood?' · '+escapeHtml(d.neighborhood):''} · ${escapeHtml(d.source||'')}${d.pub_date?' · '+timeAgo(d.pub_date).text:''}</div>
       <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener" data-news-id="${escapeHtml(d.id||'')}" data-crime-type="${escapeHtml(d.type||'')}" data-source="${escapeHtml(d.source||'')}">Ler notícia →</a>
     `;
     m.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-8]});
