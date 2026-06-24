@@ -40,6 +40,7 @@ WHERE
     AND lat IS NOT NULL AND lng IS NOT NULL
     AND COALESCE(llm_c_city, city) IS NOT NULL
     AND COALESCE(llm_c_state, state) IS NOT NULL
+    AND (llm_b_score IS NULL OR llm_b_score >= 30)  -- 🚮 B 段判定明显非犯罪的剔除
 """)
 new = cur.execute("SELECT COUNT(*) FROM incidents_published").fetchone()[0]
 con.commit()
