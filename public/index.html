@@ -836,7 +836,7 @@ function timeAgo(isoStr){
 
 function initMap(){
   map=L.map('map',{zoomControl:false,attributionControl:true}).setView([-14.235,-51.925],4);
-  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19,subdomains:'abcd'}).addTo(map);
+  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19}).addTo(map);
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
   // 🆕 显示用户位置（蓝色脉冲点）
@@ -877,9 +877,9 @@ async function showUserLocation(){
 // ========== 主题切换 ==========
 let tileLayer=null;
 function getTileUrl(){
-  const theme=document.documentElement.getAttribute('data-theme')||'dark';
-  const style=theme==='light'?'light_all':'dark_all';
-  return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
+  // 🌍 ArcGIS Online 全球可访问（国内不被墙）
+  // 备用：cartocdn 经常被墙
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
 }
 // 固定浅色主题
 document.documentElement.setAttribute('data-theme','light');
