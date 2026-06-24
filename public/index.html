@@ -1255,13 +1255,23 @@ async function init(){
   try{
     initMap();
     const t0=performance.now();
-    const res=await fetch('/rss_incidents.json?_='+Date.now());
-    allData=await res.json();
+    // 🚀 首屏快速：先拉 200 条精选（114KB），1 秒就能出图
+    const liteRes=await fetch('/rss_incidents_lite.json?_='+Date.now());
+    allData=await liteRes.json();
     renderTypeBar();
     renderMarkers();
     renderList();
     document.getElementById('loading').style.display='none';
     setTimeout(()=>map.invalidateSize(),300);
+    // 🔄 后台拉完整版（1920 条），加载完静默替换 + 重渲染
+    fetch('/rss_incidents.json?_='+Date.now())
+      .then(r=>r.json())
+      .then(full=>{
+        allData=full;
+        renderTypeBar();
+        renderMarkers();
+        renderList();
+      }).catch(()=>{});
 
     // 📊 页面访问主事件
     track('page_view',{
