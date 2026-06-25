@@ -1,18 +1,8 @@
-name: 🚨 Auto Fetch RSS - Incremental (30min)
+name: 🚨 Auto Update + LLM (30min full pipeline)
 
-# ✅ 每 30 分钟跑一次：抓 RSS → 合并到 raw 层（增量、不重复）
-# ⚠️ 不会覆盖前端用的 rss_incidents.json（那个是 LLM 过滤后的）
-#
-# 数据更新完整链路：
-#   [此 Action - 自动]  fetch_all.py → public/raw_incidents.json
-#                                   ↓
-#                       merge_raw_to_db.py → 合并到 SQLite raw 层（去重）
-#                                   ↓
-#   [本地 - 手动]      run_llm_pipeline.py → 跑 A/B/C 段 LLM
-#                                   ↓
-#                       refresh_published.py → incidents_published 表
-#                                   ↓
-#                       export_from_published.py → public/rss_incidents.json
+# ✅ 每 30 分钟完整跑：抓 RSS → 合并 DB → 跑 LLM → 刷展示层 → 更新前端 JSON
+# 需要 GitHub Secret: WQ_API_KEY (万擎 API key)
+# 在 https://github.com/3261559688-oss/crime-map-recife-/settings/secrets/actions 配置
 
 on:
   schedule:
@@ -22,7 +12,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/fetch_all.py'
-      - 'scripts/merge_raw_to_db.py'
+      - 'scripts/llm_call_v2.py'
       - '.github/workflows/update-data.yml'
 
 concurrency:
@@ -32,13 +22,11 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
 
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
-        with:
-          lfs: false
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
@@ -48,56 +36,83 @@ jobs:
       - name: 📦 Install deps
         run: pip install requests feedparser python-dateutil pytz
 
-      - name: 📡 Fetch RSS (full snapshot)
+      - name: 💾 Cache DB
+        uses: actions/cache@v4
+        with:
+          path: data/crime_map.db
+          key: crime-map-db-${{ github.run_id }}
+          restore-keys: |
+            crime-map-db-
+
+      - name: 🔧 Ensure DB exists (rebuild from ndjson if missing)
+        run: |
+          if [ ! -f data/crime_map.db ] && [ -f public/api/incidents.ndjson ]; then
+            python3 scripts/rebuild_db_from_ndjson.py
+          fi
+
+      - name: 📡 Step 1 - Fetch RSS
         run: python3 scripts/fetch_all.py
 
-      - name: 🔀 Rename: snapshot → raw layer
+      - name: 🔀 Step 2 - Rename to raw layer
         run: |
-          # fetch_all.py 默认写 rss_incidents.json，把它重命名为 raw（避免覆盖前端 JSON）
-          if [ -f public/rss_incidents.json ]; then
-            mv public/rss_incidents.json public/raw_incidents.json
+          mv public/rss_incidents.json public/raw_incidents.json
+          mv public/meta.json public/raw_meta.json
+          # 先把 git 上的前端 JSON 拉回（避免误覆盖）
+          git checkout HEAD -- public/rss_incidents.json public/rss_incidents_lite.json public/meta.json 2>/dev/null || true
+
+      - name: 🔗 Step 3 - Merge raw → DB
+        run: python3 scripts/merge_raw_to_db.py
+
+      - name: 🧠 Step 4 - LLM A (is_crime)
+        env:
+          WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
+        run: |
+          if [ -z "$WQ_API_KEY" ]; then
+            echo "⚠️ WQ_API_KEY 未配置，跳过 LLM"
+            exit 0
           fi
-          if [ -f public/meta.json ]; then
-            mv public/meta.json public/raw_meta.json
-          fi
-          # 恢复前端 JSON（LLM 过滤版本）从 git
-          git checkout HEAD -- public/rss_incidents.json public/rss_incidents_lite.json public/meta.json 2>/dev/null || echo "(no front JSON to restore)"
+          python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 0 --workers 10 || echo "A 跑了部分，继续"
+
+      - name: 🧠 Step 5 - LLM B (type)
+        env:
+          WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
+        if: env.WQ_API_KEY != ''
+        run: python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 0 --workers 10 || echo "B 跑了部分"
+
+      - name: 🧠 Step 6 - LLM C (geo)
+        env:
+          WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
+        if: env.WQ_API_KEY != ''
+        run: python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 0 --workers 10 || echo "C 跑了部分"
+
+      - name: 🔄 Step 7 - Refresh published layer
+        run: python3 scripts/refresh_published.py
+
+      - name: 📤 Step 8 - Export front-end JSON
+        run: python3 scripts/export_from_published.py
 
       - name: 📊 Summary
         run: |
-          echo "===== Raw layer (latest fetched) ====="
+          echo "=== Front-end JSON ==="
           python3 -c "
           import json
-          d = json.load(open('public/raw_incidents.json'))
-          print(f'  Total: {len(d)} incidents')
-          dates = sorted([x.get('pub_date','') for x in d if x.get('pub_date')], reverse=True)
-          print(f'  Latest: {dates[0] if dates else \"?\"}')
-          print(f'  Oldest: {dates[-1] if dates else \"?\"}')
-          "
-          echo ""
-          echo "===== Front-end (LLM filtered, unchanged) ====="
-          python3 -c "
-          import json, os
-          if os.path.exists('public/rss_incidents.json'):
-            d = json.load(open('public/rss_incidents.json'))
-            print(f'  Total: {len(d)} incidents')
-            dates = sorted([x.get('pub_date','') for x in d if x.get('pub_date')], reverse=True)
-            print(f'  Latest: {dates[0] if dates else \"?\"}')
-          else:
-            print('  (none)')
+          d = json.load(open('public/rss_incidents.json'))
+          ts = sorted([x.get('pub_date','') for x in d if x.get('pub_date')], reverse=True)
+          print(f'Total: {len(d)} incidents')
+          print(f'Latest: {ts[0] if ts else \"?\"}')
           "
 
-      - name: 💾 Commit raw layer only
+      - name: 💾 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 只 commit raw 层；前端 JSON 不动
-          git add public/raw_incidents.json public/raw_meta.json
+          git add public/rss_incidents.json public/rss_incidents_lite.json public/meta.json public/raw_incidents.json public/raw_meta.json
           if git diff --staged --quiet; then
-            echo "📭 raw 层无变化，跳过"
+            echo "📭 无变化"
           else
-            COUNT=$(python3 -c "import json; print(len(json.load(open('public/raw_incidents.json'))))" 2>/dev/null || echo "?")
-            git commit -m "🤖 raw: ${COUNT} incidents at $(date -u +'%Y-%m-%d %H:%M UTC')"
+            COUNT=$(python3 -c "import json; print(len(json.load(open('public/rss_incidents.json'))))" 2>/dev/null || echo "?")
+            LATEST=$(python3 -c "import json; d=json.load(open('public/rss_incidents.json')); ts=sorted([x.get('pub_date','') for x in d if x.get('pub_date')],reverse=True); print(ts[0] if ts else '?')" 2>/dev/null || echo "?")
+            git commit -m "🤖 auto: ${COUNT} incidents (latest ${LATEST})"
             git push
-            echo "✅ raw 层增量已推送（前端 JSON 不变）"
+            echo "✅ 已推送"
           fi
