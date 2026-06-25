@@ -482,10 +482,6 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
         <span class="label" id="cityBtnLabel">Brasil</span>
         <span class="arrow">▼</span>
       </div>
-      <div class="city-btn" id="geoBtn" title="Usar minha localização">
-        <span id="geoIcon">🧭</span>
-        <span class="label" id="geoLabel">Perto</span>
-      </div>
     </div>
     <div class="type-bar" id="typeBar"></div>
     <div class="radius-bar" id="radiusBar" style="display:none">
@@ -981,7 +977,7 @@ function switchCity(city){
   const from=curCity;
   if(geoMode && city!=='Brasil'){
     geoMode=false;
-    document.getElementById('geoBtn').classList.remove('active');
+    document.getElementById('geoBtn')?.classList.remove('active');
     document.getElementById('geoLabel').textContent='Perto';
     document.getElementById('radiusBar').style.display='none';
     if(userMarker){map.removeLayer(userMarker);userMarker=null;}
@@ -1192,7 +1188,7 @@ function enableGeoMode(lat,lng){
   geoMode=true;
   curCity='Brasil';
   curType='all';
-  document.getElementById('geoBtn').classList.add('active');
+  document.getElementById('geoBtn')?.classList.add('active');
   document.getElementById('geoLabel').textContent=`Perto · ${geoRadius}km`;
   document.getElementById('cityBtnLabel').textContent='Perto de você';
   document.getElementById('radiusBar').style.display='flex';
@@ -1207,7 +1203,7 @@ function enableGeoMode(lat,lng){
 }
 function disableGeoMode(){
   geoMode=false;
-  document.getElementById('geoBtn').classList.remove('active');
+  document.getElementById('geoBtn')?.classList.remove('active');
   document.getElementById('geoLabel').textContent='Perto';
   document.getElementById('radiusBar').style.display='none';
   if(userMarker){map.removeLayer(userMarker);userMarker=null;}
@@ -1215,25 +1211,6 @@ function disableGeoMode(){
   switchCity('Brasil');
   track('geo_disable',{});
 }
-document.getElementById('geoBtn').addEventListener('click',()=>{
-  if(geoMode){disableGeoMode();return;}
-  if(!navigator.geolocation){showToast('❌ Seu navegador não suporta GPS');return;}
-  const btn=document.getElementById('geoBtn');
-  btn.classList.add('loading');
-  document.getElementById('geoIcon').textContent='⏳';
-  showToast('📍 Buscando localização...');
-  navigator.geolocation.getCurrentPosition(p=>{
-    btn.classList.remove('loading');
-    document.getElementById('geoIcon').textContent='🧭';
-    enableGeoMode(p.coords.latitude,p.coords.longitude);
-  },err=>{
-    btn.classList.remove('loading');
-    document.getElementById('geoIcon').textContent='🧭';
-    const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
-    showToast(msgs[err.code]||'❌ Erro de localização');
-    track('geo_error',{code:err.code,message:err.message});
-  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
-});
 document.getElementById('radiusBar').addEventListener('click',e=>{
   const opt=e.target.closest('.radius-opt');
   if(opt && userPos){
