@@ -527,34 +527,38 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 
   <div class="toast" id="toast"></div>
 
-  <!-- 底部定位引导条（首次进入显示） -->
-  <div id="geo-banner" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:2000;
-    background:linear-gradient(135deg,#1e3a5f,#0f2847);
-    color:#fff;padding:14px 16px 18px;
-    box-shadow:0 -3px 20px rgba(0,0,0,.4);
-    border-top:1px solid rgba(255,255,255,.15);">
-    <div style="display:flex;align-items:flex-start;gap:12px;max-width:480px;margin:0 auto;">
-      <div style="font-size:28px;line-height:1;flex-shrink:0;">📍</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:15px;margin-bottom:4px;">
-          Veja crimes perto de você
-        </div>
-        <div style="font-size:12px;opacity:.8;line-height:1.5;margin-bottom:12px;">
-          Ative a localização para ver os crimes mais recentes no seu bairro e arredores.
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button id="geo-banner-allow" style="flex:1;background:#22c55e;color:#fff;border:none;
-            border-radius:10px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;">
-            🧭 Ativar localização
-          </button>
-          <button id="geo-banner-deny" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
-            border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;">
-            Agora não
-          </button>
-        </div>
+  <!-- 居中定位授权弹窗（首次进入 1.5s 后弹出） -->
+  <div id="geo-modal" style="display:none;position:fixed;inset:0;z-index:5000;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+    align-items:center;justify-content:center;padding:20px;">
+    <div style="background:linear-gradient(135deg,#1e3a5f,#0f2847);color:#fff;
+      max-width:340px;width:100%;border-radius:18px;padding:24px;
+      box-shadow:0 20px 60px rgba(0,0,0,.5);
+      animation:geoModalIn .35s cubic-bezier(.22,1,.36,1);">
+      <div style="text-align:center;font-size:48px;line-height:1;margin-bottom:12px;">📍</div>
+      <div style="text-align:center;font-weight:700;font-size:18px;margin-bottom:8px;">
+        Veja crimes perto de você
       </div>
+      <div style="text-align:center;font-size:13px;opacity:.85;line-height:1.55;margin-bottom:20px;">
+        Permita o acesso à sua localização para ver com precisão o que aconteceu perto de você nas últimas horas.
+      </div>
+      <button id="geo-modal-allow" style="width:100%;background:#22c55e;color:#fff;border:none;
+        border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;
+        box-shadow:0 4px 14px rgba(34,197,94,.4);margin-bottom:8px;">
+        🧭 Permitir localização
+      </button>
+      <button id="geo-modal-deny" style="width:100%;background:transparent;color:rgba(255,255,255,.7);
+        border:none;border-radius:12px;padding:10px;font-size:13px;cursor:pointer;">
+        Agora não
+      </button>
     </div>
   </div>
+  <style>
+    @keyframes geoModalIn {
+      from { opacity:0; transform:scale(.85) translateY(20px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+  </style>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -868,38 +872,22 @@ function initMap(){
   tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19}).addTo(map);
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
-  // 🆕 显示用户位置（蓝色脉冲点）
-  showUserLocation();
+  // ❌ 不自动定位 — 默认全巴西，等用户授权后再放蓝色脉冲点
 }
 
 // ========== 用户位置 ==========
-async function showUserLocation(){
-  try{
-    // 1) 优先调后端 IP 接口（部署后可用）
-    let me=null;
-    try{
-      const r=await fetch('/api/whereami',{cache:'no-store'});
-      if(r.ok) me=await r.json();
-    }catch(_){}
-    // 2) 兜底：mock 圣保罗市中心（开发期 / 接口未上）
-    if(!me||!me.lat){
-      me={lat:-23.5505,lng:-46.6333,city:'São Paulo',state:'SP',source:'mock'};
-    }
-    const icon=L.divIcon({
-      className:'user-loc-marker',
-      html:'<div class="ulm-pulse"></div><div class="ulm-dot"></div>',
-      iconSize:[20,20],iconAnchor:[10,10]
-    });
-    userMarker=L.marker([me.lat,me.lng],{icon,zIndexOffset:1000,interactive:true})
-      .addTo(map)
-      .bindPopup(`📍 你在 <b>${me.city||'-'}</b>${me.state?' / '+me.state:''}`);
-    // 🆕 飞到用户位置（带平滑动画）
-    setTimeout(()=>{
-      map.flyTo([me.lat,me.lng],12,{duration:1.6,easeLinearity:0.25});
-      // 飞到后自动弹出气泡（800ms 等动画）
-      setTimeout(()=>userMarker && userMarker.openPopup(), 1700);
-    }, 400);
-  }catch(e){console.warn('[user-loc]',e);}
+// 仅在 GPS 授权成功后调用，根据真实经纬度放蓝色脉冲点
+function placeUserLocationDot(lat, lng){
+  if(userMarker){ map.removeLayer(userMarker); userMarker=null; }
+  const icon=L.divIcon({
+    className:'user-loc-marker',
+    html:'<div class="ulm-pulse"></div><div class="ulm-dot"></div>',
+    iconSize:[20,20],iconAnchor:[10,10]
+  });
+  userMarker=L.marker([lat,lng],{icon,zIndexOffset:1000,interactive:true})
+    .addTo(map)
+    .bindPopup(`📍 Você está aqui`);
+  setTimeout(()=>userMarker && userMarker.openPopup(), 800);
 }
 
 // ========== 主题切换 ==========
@@ -1267,34 +1255,47 @@ document.getElementById('citySearch').addEventListener('input',e=>{
 });
 document.getElementById('cityClose').addEventListener('click',()=>{track('city_modal_cancel',{from_city:curCity});});
 
-// ========== 定位引导条 ==========
-function showGeoBanner(){
-  const banner=document.getElementById('geo-banner');
-  if(!banner)return;
-  banner.style.display='block';
-  // 滑入动画
-  banner.animate([{transform:'translateY(100%)',opacity:0},{transform:'translateY(0)',opacity:1}],
-    {duration:350,easing:'cubic-bezier(.22,1,.36,1)',fill:'forwards'});
+// ========== 定位授权弹窗 ==========
+function showGeoModal(){
+  const modal=document.getElementById('geo-modal');
+  if(!modal)return;
+  modal.style.display='flex';
+  track('geo_modal_show',{});
 
-  document.getElementById('geo-banner-allow').addEventListener('click',()=>{
-    hideGeoBanner();
+  const allow=document.getElementById('geo-modal-allow');
+  const deny=document.getElementById('geo-modal-deny');
+
+  allow.onclick=()=>{
+    hideGeoModal();
     localStorage.setItem('geo_asked','1');
-    // 直接触发定位（复用 geoBtn 逻辑）
-    document.getElementById('geoBtn').click();
-    track('geo_banner_allow',{});
-  });
-  document.getElementById('geo-banner-deny').addEventListener('click',()=>{
-    hideGeoBanner();
+    track('geo_modal_allow',{});
+    if(!navigator.geolocation){showToast('❌ GPS não suportado');return;}
+    showToast('📍 Buscando localização...');
+    navigator.geolocation.getCurrentPosition(p=>{
+      // ✅ 真实经纬度到手 → 放蓝色脉冲点 + 飞过去 + 启用附近模式
+      const lat=p.coords.latitude, lng=p.coords.longitude;
+      placeUserLocationDot(lat, lng);
+      enableGeoMode(lat, lng);
+      track('geo_granted',{lat,lng});
+    },err=>{
+      const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
+      showToast(msgs[err.code]||'❌ Erro de localização');
+      track('geo_denied',{code:err.code});
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+  };
+  deny.onclick=()=>{
+    hideGeoModal();
     localStorage.setItem('geo_asked','1');
-    track('geo_banner_deny',{});
-  });
+    track('geo_modal_deny',{});
+  };
+  // 点遮罩外部不关闭（强引导，避免误关）
 }
-function hideGeoBanner(){
-  const banner=document.getElementById('geo-banner');
-  if(!banner)return;
-  banner.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(100%)',opacity:0}],
-    {duration:280,easing:'ease-in',fill:'forwards'})
-    .finished.then(()=>banner.style.display='none');
+function hideGeoModal(){
+  const m=document.getElementById('geo-modal');
+  if(!m)return;
+  m.style.transition='opacity .25s';
+  m.style.opacity='0';
+  setTimeout(()=>{m.style.display='none';m.style.opacity='1';},250);
 }
 
 // ========== 启动 ==========
@@ -1321,9 +1322,9 @@ async function init(){
     renderList();
     document.getElementById('loading').style.display='none';
     setTimeout(()=>map.invalidateSize(),300);
-    // 📍 首次进入：显示底部位置授权引导条（3秒后出现，不打扰地图加载）
+    // 📍 首次进入：1.5 秒后弹出定位授权弹窗（地图先出来，再问授权）
     if(!localStorage.getItem('geo_asked') && navigator.geolocation){
-      setTimeout(showGeoBanner, 3000);
+      setTimeout(showGeoModal, 1500);
     }
     // 🔄 后台拉完整版（1920 条），加载完静默替换 + 重渲染
     fetch('/rss_incidents.json?_='+Date.now())
