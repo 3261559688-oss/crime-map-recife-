@@ -1,24 +1,29 @@
-name: 🚨 Auto Update Crime Data (DISABLED)
+name: 🚨 Auto Fetch RSS - Incremental (30min)
 
-# ⛔ 已禁用 — 这个 Action 会覆盖 LLM 过滤后的 JSON
-# 原因：fetch_all.py + export_for_warehouse.py 不走 LLM 流水线
-# 直接覆盖 rss_incidents.json 导致前端看到的还是 2542 条原始数据
+# ✅ 每 30 分钟跑一次：抓 RSS → 合并到 raw 层（增量、不重复）
+# ⚠️ 不会覆盖前端用的 rss_incidents.json（那个是 LLM 过滤后的）
 #
-# 当 LLM 流水线被搬到云端后再启用，逻辑应该是：
-#   1. fetch_all.py → 抓 RSS
-#   2. run_llm_pipeline.py → 跑 A/B/C 段 LLM
-#   3. refresh_published.py → 重建展示层
-#   4. export_from_published.py → 导出 JSON（前端用）
-#
-# 暂时关掉自动调度，只保留手动触发用于测试
+# 数据更新完整链路：
+#   [此 Action - 自动]  fetch_all.py → public/raw_incidents.json
+#                                   ↓
+#                       merge_raw_to_db.py → 合并到 SQLite raw 层（去重）
+#                                   ↓
+#   [本地 - 手动]      run_llm_pipeline.py → 跑 A/B/C 段 LLM
+#                                   ↓
+#                       refresh_published.py → incidents_published 表
+#                                   ↓
+#                       export_from_published.py → public/rss_incidents.json
 
 on:
-  # ⛔ 禁用定时调度
-  # schedule:
-  #   - cron: '*/30 * * * *'
-
-  # 仅手动触发
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fetch_all.py'
+      - 'scripts/merge_raw_to_db.py'
+      - '.github/workflows/update-data.yml'
 
 concurrency:
   group: update-data
@@ -27,24 +32,72 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: false
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: ⚠️ Warning
+      - name: 📦 Install deps
+        run: pip install requests feedparser python-dateutil pytz
+
+      - name: 📡 Fetch RSS (full snapshot)
+        run: python3 scripts/fetch_all.py
+
+      - name: 🔀 Rename: snapshot → raw layer
         run: |
-          echo "⚠️ 注意：当前流水线不包含 LLM 处理"
-          echo "⚠️ 抓取的数据将进入 raw 层，但不会自动更新 incidents_published"
-          echo "⚠️ 也不会更新前端 rss_incidents.json"
+          # fetch_all.py 默认写 rss_incidents.json，把它重命名为 raw（避免覆盖前端 JSON）
+          if [ -f public/rss_incidents.json ]; then
+            mv public/rss_incidents.json public/raw_incidents.json
+          fi
+          if [ -f public/meta.json ]; then
+            mv public/meta.json public/raw_meta.json
+          fi
+          # 恢复前端 JSON（LLM 过滤版本）从 git
+          git checkout HEAD -- public/rss_incidents.json public/rss_incidents_lite.json public/meta.json 2>/dev/null || echo "(no front JSON to restore)"
+
+      - name: 📊 Summary
+        run: |
+          echo "===== Raw layer (latest fetched) ====="
+          python3 -c "
+          import json
+          d = json.load(open('public/raw_incidents.json'))
+          print(f'  Total: {len(d)} incidents')
+          dates = sorted([x.get('pub_date','') for x in d if x.get('pub_date')], reverse=True)
+          print(f'  Latest: {dates[0] if dates else \"?\"}')
+          print(f'  Oldest: {dates[-1] if dates else \"?\"}')
+          "
           echo ""
-          echo "如需更新前端 JSON，请在本地跑："
-          echo "  python3 scripts/refresh_published.py"
-          echo "  python3 scripts/export_from_published.py"
-          echo "  git add public/ && git commit && git push"
+          echo "===== Front-end (LLM filtered, unchanged) ====="
+          python3 -c "
+          import json, os
+          if os.path.exists('public/rss_incidents.json'):
+            d = json.load(open('public/rss_incidents.json'))
+            print(f'  Total: {len(d)} incidents')
+            dates = sorted([x.get('pub_date','') for x in d if x.get('pub_date')], reverse=True)
+            print(f'  Latest: {dates[0] if dates else \"?\"}')
+          else:
+            print('  (none)')
+          "
+
+      - name: 💾 Commit raw layer only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 只 commit raw 层；前端 JSON 不动
+          git add public/raw_incidents.json public/raw_meta.json
+          if git diff --staged --quiet; then
+            echo "📭 raw 层无变化，跳过"
+          else
+            COUNT=$(python3 -c "import json; print(len(json.load(open('public/raw_incidents.json'))))" 2>/dev/null || echo "?")
+            git commit -m "🤖 raw: ${COUNT} incidents at $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "✅ raw 层增量已推送（前端 JSON 不变）"
+          fi
