@@ -1,21 +1,25 @@
-name: 🚨 Auto Update Crime Data (30min)
+name: 🚨 Auto Update Crime Data (DISABLED)
+
+# ⛔ 已禁用 — 这个 Action 会覆盖 LLM 过滤后的 JSON
+# 原因：fetch_all.py + export_for_warehouse.py 不走 LLM 流水线
+# 直接覆盖 rss_incidents.json 导致前端看到的还是 2542 条原始数据
+#
+# 当 LLM 流水线被搬到云端后再启用，逻辑应该是：
+#   1. fetch_all.py → 抓 RSS
+#   2. run_llm_pipeline.py → 跑 A/B/C 段 LLM
+#   3. refresh_published.py → 重建展示层
+#   4. export_from_published.py → 导出 JSON（前端用）
+#
+# 暂时关掉自动调度，只保留手动触发用于测试
 
 on:
-  # 每 30 分钟跑一次
-  schedule:
-    - cron: '*/30 * * * *'
-  
-  # 手动触发
-  workflow_dispatch:
-  
-  # push 抓取脚本时也跑
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/fetch_all.py'
-      - '.github/workflows/update-data.yml'
+  # ⛔ 禁用定时调度
+  # schedule:
+  #   - cron: '*/30 * * * *'
 
-# 防并发：同一个 workflow 不重复跑
+  # 仅手动触发
+  workflow_dispatch:
+
 concurrency:
   group: update-data
   cancel-in-progress: false
@@ -24,40 +28,23 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
-      
+
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: 📡 Fetch RSS data
-        run: python3 scripts/fetch_all.py
-      - name: 📦 Export warehouse-ready files (JSON/CSV/NDJSON/Manifest)
-        run: python3 scripts/export_for_warehouse.py
-      
-      - name: 📊 Show summary
+
+      - name: ⚠️ Warning
         run: |
-          echo "=== meta.json ==="
-          cat public/meta.json
+          echo "⚠️ 注意：当前流水线不包含 LLM 处理"
+          echo "⚠️ 抓取的数据将进入 raw 层，但不会自动更新 incidents_published"
+          echo "⚠️ 也不会更新前端 rss_incidents.json"
           echo ""
-          echo "=== File sizes ==="
-          ls -la public/rss_incidents.json public/meta.json
-      
-      - name: 💾 Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/rss_incidents.json public/meta.json
-          
-          if git diff --staged --quiet; then
-            echo "📭 数据无变化，跳过 commit"
-          else
-            COUNT=$(python3 -c "import json; print(json.load(open('public/meta.json'))['total'])")
-            git commit -m "🤖 auto-update: ${COUNT} incidents at $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
-            echo "✅ 已推送，Vercel 自动重新部署"
-          fi
+          echo "如需更新前端 JSON，请在本地跑："
+          echo "  python3 scripts/refresh_published.py"
+          echo "  python3 scripts/export_from_published.py"
+          echo "  git add public/ && git commit && git push"
