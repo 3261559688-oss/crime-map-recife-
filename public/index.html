@@ -452,6 +452,25 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 .leaflet-control-zoom{display:none}
 .leaflet-control-attribution{font-size:9px!important;background:var(--bg-attr)!important;color:var(--text-muted)!important}
 .leaflet-control-attribution a{color:var(--text-muted)!important}
+
+.leaflet-control-scale-line {
+  background: rgba(255,255,255,.85) !important;
+  color: #111 !important;
+  font-size: 11px !important;
+  border: 1px solid rgba(0,0,0,.2) !important;
+  padding: 2px 6px !important;
+  font-weight: 600 !important;
+}
+.leaflet-control-zoom a {
+  background: rgba(255,255,255,.92) !important;
+  color: #111 !important;
+  border-color: rgba(0,0,0,.15) !important;
+}
+.leaflet-control-zoom a:hover {
+  background: rgba(34,197,94,.9) !important;
+  color: #fff !important;
+}
+
 </style>
 </head>
 <body>
@@ -866,9 +885,12 @@ function timeAgo(isoStr){
 function initMap(){
   map=L.map('map',{zoomControl:false,attributionControl:true}).setView([-14.235,-51.925],4);
   tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19}).addTo(map);
+  // 📏 比例尺（公制 km / 米）
+  L.control.scale({position:'bottomleft',metric:true,imperial:false,maxWidth:120}).addTo(map);
+  // 🔍 缩放按钮（右下角，不挡顶部 UI）
+  L.control.zoom({position:'bottomright'}).addTo(map);
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
-  // ❌ 不自动定位 — 默认全巴西，等用户授权后再放蓝色脉冲点
 }
 
 // ========== 用户位置 ==========
@@ -978,7 +1000,7 @@ function switchCity(city){
   if(geoMode && city!=='Brasil'){
     geoMode=false;
     document.getElementById('geoBtn')?.classList.remove('active');
-    document.getElementById('geoLabel').textContent='Perto';
+    document.getElementById('geoLabel')&&(document.getElementById('geoLabel').textContent='Perto');
     document.getElementById('radiusBar').style.display='none';
     if(userMarker){map.removeLayer(userMarker);userMarker=null;}
     if(userCircle){map.removeLayer(userCircle);userCircle=null;}
@@ -986,8 +1008,27 @@ function switchCity(city){
   curCity=city;
   curType='all';
   document.getElementById('cityBtnLabel').textContent=city;
-  const [lat,lng,zoom]=CITY_COORDS[city]||[-14.235,-51.925,4];
-  map.flyTo([lat,lng],zoom,{duration:.8});
+  // 🔍 智能放大：优先用该城市所有点 fitBounds，否则用预设 zoom（+1 级更近）
+  if(city==='Brasil'){
+    map.flyTo([-14.235,-51.925], 4, {duration:.8});
+  } else {
+    const cityPoints = allData.filter(d=>d.city===city);
+    const preset = CITY_COORDS[city];
+    if(cityPoints.length >= 3){
+      // 用所有点画 bounds，再 padding 一点
+      const bounds = L.latLngBounds(cityPoints.map(d=>[d.lat,d.lng]));
+      map.flyToBounds(bounds, {padding:[40,40], maxZoom:14, duration:.9});
+    } else if(preset){
+      const [lat,lng,zoom] = preset;
+      map.flyTo([lat,lng], Math.max(zoom, 12), {duration:.8});  // 强制 ≥12
+    } else if(cityPoints.length >= 1){
+      // 没预设但有点，飞到第一个点
+      map.flyTo([cityPoints[0].lat, cityPoints[0].lng], 13, {duration:.8});
+    } else {
+      // 啥都没有，默认全巴西
+      map.flyTo([-14.235,-51.925], 4, {duration:.8});
+    }
+  }
   renderTypeBar();
   renderMarkers();
   renderList();
@@ -1189,7 +1230,7 @@ function enableGeoMode(lat,lng){
   curCity='Brasil';
   curType='all';
   document.getElementById('geoBtn')?.classList.add('active');
-  document.getElementById('geoLabel').textContent=`Perto · ${geoRadius}km`;
+  document.getElementById('geoLabel')&&(document.getElementById('geoLabel').textContent=`Perto · ${geoRadius}km`);
   document.getElementById('cityBtnLabel').textContent='Perto de você';
   document.getElementById('radiusBar').style.display='flex';
   setUserMarker(lat,lng);
@@ -1204,7 +1245,7 @@ function enableGeoMode(lat,lng){
 function disableGeoMode(){
   geoMode=false;
   document.getElementById('geoBtn')?.classList.remove('active');
-  document.getElementById('geoLabel').textContent='Perto';
+  document.getElementById('geoLabel')&&(document.getElementById('geoLabel').textContent='Perto');
   document.getElementById('radiusBar').style.display='none';
   if(userMarker){map.removeLayer(userMarker);userMarker=null;}
   if(userCircle){map.removeLayer(userCircle);userCircle=null;}
