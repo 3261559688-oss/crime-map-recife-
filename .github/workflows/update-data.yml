@@ -22,7 +22,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
 
     steps:
       - name: ⬇️ Checkout
@@ -63,7 +63,11 @@ jobs:
       - name: 🔗 Step 3 - Merge raw → DB
         run: python3 scripts/merge_raw_to_db.py
 
-      - name: 🧠 Step 4 - LLM A (is_crime)
+      # ⚡ 策略 A：增量跑 LLM
+      # 每次只跑 100 条，保证 25min 内能跑完（即使万擎接口慢）
+      # 新数据每 30min 通常 < 50 条，所以一两轮就追平
+      # 旧的未跑数据会在每轮里慢慢被消化
+      - name: 🧠 Step 4 - LLM A (is_crime) [incremental, max 100]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         run: |
@@ -71,19 +75,20 @@ jobs:
             echo "⚠️ WQ_API_KEY 未配置，跳过 LLM"
             exit 0
           fi
-          python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 0 --workers 10 || echo "A 跑了部分，继续"
+          # 单步 5 分钟内必须返回（避免某条卡死整个流水线）
+          timeout 300 python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 100 --workers 5 || echo "⚠️ A 段超时或部分失败，下次继续"
 
-      - name: 🧠 Step 5 - LLM B (type)
+      - name: 🧠 Step 5 - LLM B (type) [incremental, max 100]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         if: env.WQ_API_KEY != ''
-        run: python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 0 --workers 10 || echo "B 跑了部分"
+        run: timeout 300 python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 100 --workers 5 || echo "⚠️ B 段超时或部分失败"
 
-      - name: 🧠 Step 6 - LLM C (geo)
+      - name: 🧠 Step 6 - LLM C (geo) [incremental, max 100]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         if: env.WQ_API_KEY != ''
-        run: python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 0 --workers 10 || echo "C 跑了部分"
+        run: timeout 300 python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 100 --workers 5 || echo "⚠️ C 段超时或部分失败"
 
       - name: 🔄 Step 7 - Refresh published layer
         run: python3 scripts/refresh_published.py
