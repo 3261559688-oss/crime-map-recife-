@@ -832,6 +832,9 @@ const CITY_COORDS={
 
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
 
+// 🔖 当前页面构建版本（每次发布自动替换）
+const __APP_BUILD__ = '2356c07-1782445757';
+
 // 🔒 客户端 7 天过滤兜底（双保险，即使后端没过滤干净）
 function filterRecent(arr, days=7){
   const cutoff = Date.now()/1000 - days*86400;
@@ -1376,6 +1379,19 @@ async function init(){
     setInterval(async ()=>{
       // 仅在页面可见时拉，避免后台耗流量
       if(document.hidden) return;
+      // 🔁 先检查页面版本是否变化（前端代码升级了 → 自动 reload）
+      try{
+        const v = await fetch('/version.json?_='+Date.now(), {cache:'no-store'});
+        if(v.ok){
+          const j = await v.json();
+          if(j.build && __APP_BUILD__ !== '__BUILD_ID__' && j.build !== __APP_BUILD__){
+            console.log('[auto-update] new version detected', j.build, 'reloading...');
+            // 用户无感重载（保留滚动位置不重要，主页就是地图）
+            location.reload();
+            return;
+          }
+        }
+      }catch(e){}
       try{
         const r = await fetch('/rss_incidents.json?_='+Date.now(), {cache:'no-store'});
         if(!r.ok) return;
