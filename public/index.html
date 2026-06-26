@@ -1060,8 +1060,8 @@ function switchType(t){
 
 function getFilteredData(){
   let d=allData;
-  // 🤖 LLM 校验过滤：丢弃明确非犯罪的
-  d=d.filter(x=>x.llm_verified!==false);
+  // 🤖 LLM 校验过滤：只丢弃明确判为非犯罪的（llm_verified === 0 / null 都允许，避免把未跑过 LLM 的新数据误杀）
+  // 注：llm_verified=false 表示"未经 LLM 校验"，不代表"非犯罪"，应保留
   // 📍 附近模式优先
   if(geoMode && userPos){
     d=d.map(x=>({...x,_dist:haversine(userPos.lat,userPos.lng,x.lat,x.lng)}))
