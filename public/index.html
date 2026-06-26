@@ -1069,6 +1069,12 @@ function getFilteredData(){
         .sort((a,b)=>a._dist-b._dist);
   }else{
     if(curCity!=='Brasil')d=d.filter(x=>x.city===curCity);
+    // 🆕 默认按时间倒序（最新在前）
+    d=d.slice().sort((a,b)=>{
+      const ta = a.pub_ts || (a.pub_date ? Date.parse(a.pub_date)/1000 : 0);
+      const tb = b.pub_ts || (b.pub_date ? Date.parse(b.pub_date)/1000 : 0);
+      return tb - ta;
+    });
   }
   if(curType!=='all')d=d.filter(x=>x.type===curType);
   return d;
