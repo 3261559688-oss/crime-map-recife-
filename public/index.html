@@ -831,6 +831,15 @@ const CITY_COORDS={
 };
 
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
+
+// 🔒 客户端 7 天过滤兜底（双保险，即使后端没过滤干净）
+function filterRecent(arr, days=7){
+  const cutoff = Date.now()/1000 - days*86400;
+  return arr.filter(d=>{
+    const ts = d.pub_ts || (d.pub_date ? Date.parse(d.pub_date)/1000 : 0);
+    return ts >= cutoff;
+  });
+}
 // 📍 用户定位
 let userPos=null;        // {lat,lng}
 let geoMode=false;       // 是否启用附近模式
@@ -1337,6 +1346,7 @@ async function init(){
     // 🚀 首屏快速：先拉 200 条精选（114KB），1 秒就能出图
     const liteRes=await fetch('/rss_incidents_lite.json?_='+Date.now());
     allData=await liteRes.json();
+    allData = filterRecent(allData);  // 🔒 客户端兜底：仅 7 天内
     renderTypeBar();
     renderMarkers();
     renderList();
@@ -1350,7 +1360,7 @@ async function init(){
     fetch('/rss_incidents.json?_='+Date.now())
       .then(r=>r.json())
       .then(full=>{
-        allData=full;
+        allData=filterRecent(full);  // 🔒 客户端兜底：仅 7 天内
         renderTypeBar();
         renderMarkers();
         renderList();
