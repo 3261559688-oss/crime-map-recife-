@@ -1372,6 +1372,29 @@ async function init(){
         renderList();
       }).catch(()=>{});
 
+    // ⏰ 自动后台刷新（每 5 分钟拉一次，静默更新，不弹任何 UI）
+    setInterval(async ()=>{
+      // 仅在页面可见时拉，避免后台耗流量
+      if(document.hidden) return;
+      try{
+        const r = await fetch('/rss_incidents.json?_='+Date.now(), {cache:'no-store'});
+        if(!r.ok) return;
+        const fresh = filterRecent(await r.json());
+        // 看是否有新数据（最新 pub_ts 变了才更新）
+        const newestNew = Math.max(...fresh.map(x=>x.pub_ts||0));
+        const newestOld = Math.max(...allData.map(x=>x.pub_ts||0));
+        if(newestNew > newestOld){
+          const added = fresh.length - allData.length;
+          allData = fresh;
+          renderTypeBar();
+          renderMarkers();
+          renderList();
+          if(added > 0) showToast(`🔄 ${added} novas ocorrências`);
+          track('auto_refresh',{added});
+        }
+      }catch(e){console.warn('[auto-refresh]',e);}
+    }, 5*60*1000);  // 5 分钟
+
     // 📊 页面访问主事件
     track('page_view',{
       total_count:allData.length,
