@@ -65,28 +65,28 @@ RSS_FEEDS = [
     ("UOL Cotidiano", "https://rss.uol.com.br/feed/noticias.xml", "BR", "São Paulo"),
 
     # === R7 ===
-    ("R7 Cidades", "https://noticias.r7.com/cidades/feed.xml", "BR", "São Paulo"),
-    ("R7 SP", "https://noticias.r7.com/sao-paulo/feed.xml", "SP", "São Paulo"),
-    ("R7 RJ", "https://noticias.r7.com/rio-de-janeiro/feed.xml", "RJ", "Rio de Janeiro"),
+    # [DEAD] ("R7 Cidades", "https://noticias.r7.com/cidades/feed.xml", "BR", "São Paulo"),
+    # [DEAD] ("R7 SP", "https://noticias.r7.com/sao-paulo/feed.xml", "SP", "São Paulo"),
+    # [DEAD] ("R7 RJ", "https://noticias.r7.com/rio-de-janeiro/feed.xml", "RJ", "Rio de Janeiro"),
 
     # === Estadão ===
-    ("Estadão Brasil", "https://www.estadao.com.br/rss/brasil.xml", "BR", "São Paulo"),
+    # [DEAD] ("Estadão Brasil", "https://www.estadao.com.br/rss/brasil.xml", "BR", "São Paulo"),
 
     # === 巴西利亚地区 ===
     ("Metrópoles DF", "https://www.metropoles.com/feed", "DF", "Brasília"),
 
     # === 东北地区本地报 ===
-    ("NE10", "https://blogs.ne10.uol.com.br/feed/", "PE", "Recife"),
-    ("Jornal do Commercio", "https://jc.ne10.uol.com.br/feed/", "PE", "Recife"),
+    # [DEAD] ("NE10", "https://blogs.ne10.uol.com.br/feed/", "PE", "Recife"),
+    # [DEAD] ("Jornal do Commercio", "https://jc.ne10.uol.com.br/feed/", "PE", "Recife"),
 
     # === 南部地区本地报 ===
-    ("Gaúcha ZH", "https://gauchazh.clicrbs.com.br/rss.xml", "RS", "Porto Alegre"),
+    # [DEAD] ("Gaúcha ZH", "https://gauchazh.clicrbs.com.br/rss.xml", "RS", "Porto Alegre"),
 
     # === 巴伊亚 ===
     ("A Tarde", "https://www.atarde.com.br/rss", "BA", "Salvador"),
 
     # === 米纳斯吉拉斯 ===
-    ("Estado de Minas", "https://www.em.com.br/rss/noticia/gerais.xml", "MG", "Belo Horizonte"),
+    # [DEAD] ("Estado de Minas", "https://www.em.com.br/rss/noticia/gerais.xml", "MG", "Belo Horizonte"),
 
     # === 圣保罗本地 ===
     ("Diário SP", "https://www.diariosp.com.br/feed/", "SP", "São Paulo"),
@@ -137,23 +137,23 @@ RSS_FEEDS = [
     # ========================================
     # 🆕 R7 各州（之前缺）
     # ========================================
-    ("R7 MG", "https://noticias.r7.com/minas-gerais/feed.xml", "MG", "Belo Horizonte"),
-    ("R7 BA", "https://noticias.r7.com/bahia/feed.xml", "BA", "Salvador"),
-    ("R7 PR", "https://noticias.r7.com/parana/feed.xml", "PR", "Curitiba"),
-    ("R7 PE", "https://noticias.r7.com/pernambuco/feed.xml", "PE", "Recife"),
-    ("R7 RS", "https://noticias.r7.com/rio-grande-do-sul/feed.xml", "RS", "Porto Alegre"),
-    ("R7 GO", "https://noticias.r7.com/goias/feed.xml", "GO", "Goiânia"),
-    ("R7 DF", "https://noticias.r7.com/distrito-federal/feed.xml", "DF", "Brasília"),
+    # [DEAD] ("R7 MG", "https://noticias.r7.com/minas-gerais/feed.xml", "MG", "Belo Horizonte"),
+    # [DEAD] ("R7 BA", "https://noticias.r7.com/bahia/feed.xml", "BA", "Salvador"),
+    # [DEAD] ("R7 PR", "https://noticias.r7.com/parana/feed.xml", "PR", "Curitiba"),
+    # [DEAD] ("R7 PE", "https://noticias.r7.com/pernambuco/feed.xml", "PE", "Recife"),
+    # [DEAD] ("R7 RS", "https://noticias.r7.com/rio-grande-do-sul/feed.xml", "RS", "Porto Alegre"),
+    # [DEAD] ("R7 GO", "https://noticias.r7.com/goias/feed.xml", "GO", "Goiânia"),
+    # [DEAD] ("R7 DF", "https://noticias.r7.com/distrito-federal/feed.xml", "DF", "Brasília"),
 
     # ========================================
     # 🆕 大型综合媒体
     # ========================================
     ("BBC Brasil", "https://feeds.bbci.co.uk/portuguese/rss.xml", "BR", "São Paulo"),
-    ("CNN Brasil Nacional", "https://www.cnnbrasil.com.br/nacional/feed/", "BR", "São Paulo"),
+    # [DEAD] ("CNN Brasil Nacional", "https://www.cnnbrasil.com.br/nacional/feed/", "BR", "São Paulo"),
     ("Carta Capital", "https://www.cartacapital.com.br/feed/", "BR", "São Paulo"),
     ("Veja Brasil", "https://veja.abril.com.br/feed/", "BR", "São Paulo"),
     ("ISTOÉ", "https://istoe.com.br/feed/", "BR", "São Paulo"),
-    ("Exame Brasil", "https://exame.com/feed/", "BR", "São Paulo"),
+    # [DEAD] ("Exame Brasil", "https://exame.com/feed/", "BR", "São Paulo"),
     ("Poder360", "https://www.poder360.com.br/feed/", "DF", "Brasília"),
     ("Agência Brasil", "https://agenciabrasil.ebc.com.br/rss.xml", "BR", "Brasília"),
 
@@ -167,64 +167,64 @@ RSS_FEEDS = [
     # 🆕 各州地方报纸
     # ========================================
     # PE
-    ("Folha PE", "https://www.folhape.com.br/rss/", "PE", "Recife"),
-    ("Diário PE", "https://www.diariodepernambuco.com.br/rss/diariodepernambuco.xml", "PE", "Recife"),
+    # [DEAD] ("Folha PE", "https://www.folhape.com.br/rss/", "PE", "Recife"),
+    # [DEAD] ("Diário PE", "https://www.diariodepernambuco.com.br/rss/diariodepernambuco.xml", "PE", "Recife"),
     # CE
-    ("OPovo CE", "https://www.opovo.com.br/rss/feed/", "CE", "Fortaleza"),
-    ("Diário do Nordeste", "https://diariodonordeste.verdesmares.com.br/rss/", "CE", "Fortaleza"),
+    # [DEAD] ("OPovo CE", "https://www.opovo.com.br/rss/feed/", "CE", "Fortaleza"),
+    # [DEAD] ("Diário do Nordeste", "https://diariodonordeste.verdesmares.com.br/rss/", "CE", "Fortaleza"),
     # RJ
-    ("O Dia RJ", "https://odia.ig.com.br/rss/", "RJ", "Rio de Janeiro"),
-    ("O Globo RJ", "https://oglobo.globo.com/rss/rio", "RJ", "Rio de Janeiro"),
+    # [DEAD] ("O Dia RJ", "https://odia.ig.com.br/rss/", "RJ", "Rio de Janeiro"),
+    # [DEAD] ("O Globo RJ", "https://oglobo.globo.com/rss/rio", "RJ", "Rio de Janeiro"),
     ("Extra RJ", "https://extra.globo.com/rss.xml", "RJ", "Rio de Janeiro"),
     # SP
-    ("Diário Região", "https://www.diarioregiao.com.br/rss/", "SP", "São José do Rio Preto"),
+    # [DEAD] ("Diário Região", "https://www.diarioregiao.com.br/rss/", "SP", "São José do Rio Preto"),
     # PR
-    ("Gazeta do Povo", "https://www.gazetadopovo.com.br/rss/parana", "PR", "Curitiba"),
+    # [DEAD] ("Gazeta do Povo", "https://www.gazetadopovo.com.br/rss/parana", "PR", "Curitiba"),
     ("Bem Paraná", "https://www.bemparana.com.br/rss/", "PR", "Curitiba"),
     # SC
-    ("NSC Total", "https://www.nsctotal.com.br/feed/", "SC", "Florianópolis"),
+    # [DEAD] ("NSC Total", "https://www.nsctotal.com.br/feed/", "SC", "Florianópolis"),
     # ES
-    ("A Gazeta ES", "https://www.agazeta.com.br/rss/", "ES", "Vitória"),
+    # [DEAD] ("A Gazeta ES", "https://www.agazeta.com.br/rss/", "ES", "Vitória"),
     # GO
     ("Jornal Opção GO", "https://www.jornalopcao.com.br/feed/", "GO", "Goiânia"),
     # AM
-    ("Em Tempo AM", "https://d24am.com/rss.xml", "AM", "Manaus"),
+    # [DEAD] ("Em Tempo AM", "https://d24am.com/rss.xml", "AM", "Manaus"),
     ("Portal Amazônia", "https://portalamazonia.com/feed/", "AM", "Manaus"),
     # PA
-    ("Diário do Pará", "https://www.diariodopara.com.br/rss/", "PA", "Belém"),
-    ("Liberal PA", "https://www.oliberal.com/feed/", "PA", "Belém"),
+    # [DEAD] ("Diário do Pará", "https://www.diariodopara.com.br/rss/", "PA", "Belém"),
+    # [DEAD] ("Liberal PA", "https://www.oliberal.com/feed/", "PA", "Belém"),
     # MA
     ("Imirante MA", "https://imirante.com/rss/", "MA", "São Luís"),
     # RN
-    ("Tribuna do Norte", "https://www.tribunadonorte.com.br/rss.xml", "RN", "Natal"),
+    # [DEAD] ("Tribuna do Norte", "https://www.tribunadonorte.com.br/rss.xml", "RN", "Natal"),
     # AL
-    ("Gazeta de Alagoas", "https://d.gazetadealagoas.com.br/feed/", "AL", "Maceió"),
-    ("Cada Minuto AL", "https://www.cadaminuto.com.br/rss/", "AL", "Maceió"),
+    # [DEAD] ("Gazeta de Alagoas", "https://d.gazetadealagoas.com.br/feed/", "AL", "Maceió"),
+    # [DEAD] ("Cada Minuto AL", "https://www.cadaminuto.com.br/rss/", "AL", "Maceió"),
     # MT
-    ("Gazeta Digital MT", "https://www.gazetadigital.com.br/rss/", "MT", "Cuiabá"),
+    # [DEAD] ("Gazeta Digital MT", "https://www.gazetadigital.com.br/rss/", "MT", "Cuiabá"),
     # MS
     ("Campo Grande News", "https://www.campograndenews.com.br/rss/", "MS", "Campo Grande"),
     # AC/RO
-    ("Gente de Opinião", "https://www.gentedeopiniao.com.br/feed/", "RO", "Porto Velho"),
+    # [DEAD] ("Gente de Opinião", "https://www.gentedeopiniao.com.br/feed/", "RO", "Porto Velho"),
     
     # === 全国警务/犯罪类专栏 ===
-    ("UOL Cidades", "https://rss.uol.com.br/feed/cotidiano.xml", "BR", "São Paulo"),
-    ("UOL Polícia", "https://noticias.uol.com.br/cotidiano/index.rss", "BR", "São Paulo"),
-    ("Terra Brasil", "https://rss.terra.com.br/0,,EI306,00.xml", "BR", "São Paulo"),
-    ("Yahoo Brasil", "https://br.noticias.yahoo.com/rss/brasil", "BR", "São Paulo"),
+    # [DEAD] ("UOL Cidades", "https://rss.uol.com.br/feed/cotidiano.xml", "BR", "São Paulo"),
+    # [DEAD] ("UOL Polícia", "https://noticias.uol.com.br/cotidiano/index.rss", "BR", "São Paulo"),
+    # [DEAD] ("Terra Brasil", "https://rss.terra.com.br/0,,EI306,00.xml", "BR", "São Paulo"),
+    # [DEAD] ("Yahoo Brasil", "https://br.noticias.yahoo.com/rss/brasil", "BR", "São Paulo"),
 
     # ========================================
     # 🆕🆕 第三波：30+ 新 RSS 源
     # ========================================
     # 小报 / 民生类
     ("Brasil 247", "https://www.brasil247.com/rss", "BR", "São Paulo"),
-    ("Brasil de Fato", "https://www.brasildefato.com.br/rss2.xml", "BR", "São Paulo"),
+    # [DEAD] ("Brasil de Fato", "https://www.brasildefato.com.br/rss2.xml", "BR", "São Paulo"),
     ("Carta Capital", "https://www.cartacapital.com.br/feed/", "BR", "São Paulo"),
     ("Veja", "https://veja.abril.com.br/feed", "BR", "São Paulo"),
     ("IstoÉ", "https://istoe.com.br/feed/", "BR", "São Paulo"),
-    ("Exame", "https://exame.com/feed/", "BR", "São Paulo"),
+    # [DEAD] ("Exame", "https://exame.com/feed/", "BR", "São Paulo"),
     ("BBC Brasil", "https://feeds.bbci.co.uk/portuguese/rss.xml", "BR", "São Paulo"),
-    ("DW Brasil", "https://rss.dw.com/rdf/rss-br-all", "BR", "São Paulo"),
+    # [DEAD] ("DW Brasil", "https://rss.dw.com/rdf/rss-br-all", "BR", "São Paulo"),
     ("CNN Brasil", "https://www.cnnbrasil.com.br/feed/", "BR", "São Paulo"),
     ("Poder360", "https://www.poder360.com.br/feed/", "BR", "Brasília"),
 
@@ -248,14 +248,14 @@ RSS_FEEDS = [
     ("G1 Norte PR", "https://g1.globo.com/rss/g1/pr/norte-noroeste/", "PR", "Maringá"),
 
     # 国际/地方更多
-    ("O Tempo", "https://www.otempo.com.br/rss/cidades", "MG", "Belo Horizonte"),
-    ("Hoje em Dia", "https://www.hojeemdia.com.br/rss", "MG", "Belo Horizonte"),
-    ("Folha Vitória", "https://www.folhavitoria.com.br/rss/", "ES", "Vitória"),
-    ("Correio Braziliense", "https://www.correiobraziliense.com.br/rss/cidadesdf.xml", "DF", "Brasília"),
-    ("Correio do Povo", "https://www.correiodopovo.com.br/rss/policia", "RS", "Porto Alegre"),
-    ("Zero Hora Polícia", "https://gauchazh.clicrbs.com.br/seguranca/rss.xml", "RS", "Porto Alegre"),
-    ("Diário Catarinense", "https://www.nsctotal.com.br/seguranca/feed/", "SC", "Florianópolis"),
-    ("Tribuna PR", "https://www.tribunapr.com.br/rss/policia/", "PR", "Curitiba"),
+    # [DEAD] ("O Tempo", "https://www.otempo.com.br/rss/cidades", "MG", "Belo Horizonte"),
+    # [DEAD] ("Hoje em Dia", "https://www.hojeemdia.com.br/rss", "MG", "Belo Horizonte"),
+    # [DEAD] ("Folha Vitória", "https://www.folhavitoria.com.br/rss/", "ES", "Vitória"),
+    # [DEAD] ("Correio Braziliense", "https://www.correiobraziliense.com.br/rss/cidadesdf.xml", "DF", "Brasília"),
+    # [DEAD] ("Correio do Povo", "https://www.correiodopovo.com.br/rss/policia", "RS", "Porto Alegre"),
+    # [DEAD] ("Zero Hora Polícia", "https://gauchazh.clicrbs.com.br/seguranca/rss.xml", "RS", "Porto Alegre"),
+    # [DEAD] ("Diário Catarinense", "https://www.nsctotal.com.br/seguranca/feed/", "SC", "Florianópolis"),
+    # [DEAD] ("Tribuna PR", "https://www.tribunapr.com.br/rss/policia/", "PR", "Curitiba"),
 ]
 
 # ============================================================
@@ -467,7 +467,11 @@ CRIME_TYPES = {
 # 工具函数
 # ============================================================
 def fetch_url(url, timeout=10):
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    req = urllib.request.Request(url, headers={
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*;q=0.9',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.5',
+    })
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read().decode('utf-8', errors='ignore')
