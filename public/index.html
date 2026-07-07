@@ -833,7 +833,7 @@ const CITY_COORDS={
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
 
 // 🔖 当前页面构建版本（每次发布自动替换）
-const __APP_BUILD__ = '348d5a8-1782792546';
+const __APP_BUILD__ = '0a82556-1783394343';
 
 // 🔒 客户端 7 天过滤兜底（双保险，即使后端没过滤干净）
 function filterRecent(arr, days=7){
@@ -895,12 +895,25 @@ function timeAgo(isoStr){
 }
 
 function initMap(){
-  map=L.map('map',{zoomControl:false,attributionControl:true}).setView([-14.235,-51.925],4);
-  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19}).addTo(map);
-  // 📏 比例尺（公制 km / 米）
+  // 🚀 preferCanvas: 用 Canvas 绘制 marker 代替 DOM，Kwai WebView 上从千级 DOM → 0 DOM
+  map=L.map('map',{
+    zoomControl:false,
+    attributionControl:true,
+    preferCanvas:true,
+    zoomAnimation:false,      // 缩放动画在 Kwai WebView 上极卡，关闭
+    fadeAnimation:false,
+    markerZoomAnimation:false,
+    wheelDebounceTime:80,
+  }).setView([-14.235,-51.925],4);
+  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19, updateWhenZooming:false, keepBuffer:1}).addTo(map);
   L.control.scale({position:'bottomleft',metric:true,imperial:false,maxWidth:120}).addTo(map);
-  // 🔍 缩放按钮（右下角，不挡顶部 UI）
   L.control.zoom({position:'bottomright'}).addTo(map);
+  // moveend/zoomend 触发视口重绘（节流）
+  let moveTimer=null;
+  map.on('moveend zoomend',()=>{
+    clearTimeout(moveTimer);
+    moveTimer=setTimeout(()=>renderMarkersInView(),120);
+  });
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
 }
@@ -1044,8 +1057,9 @@ function switchCity(city){
     }
   }
   renderTypeBar();
-  renderMarkers();
-  renderList();
+  // 🚀 切城市：flyTo 会触发 moveend → 自动重绘 markers（视口内渲染）
+  const doWork=()=>{ renderMarkersInView(); renderList(); };
+  ('requestIdleCallback' in window) ? requestIdleCallback(doWork,{timeout:200}) : requestAnimationFrame(doWork);
   showToast(`📍 ${city}`);
   __CM_COUNTERS.city_switch_count++;
   track('city_switch',{from_city:from,city_name:city,result_count:getFilteredData().length});
@@ -1055,8 +1069,8 @@ function switchType(t){
   const from=curType;
   curType=t;
   renderTypeBar();
-  renderMarkers();
-  renderList();
+  const doWork=()=>{ renderMarkersInView(); renderList(); };
+  ('requestIdleCallback' in window) ? requestIdleCallback(doWork,{timeout:200}) : requestAnimationFrame(doWork);
   __CM_COUNTERS.type_switch_count++;
   track('type_filter',{from_type:from,crime_type:t,city_name:curCity,result_count:getFilteredData().length});
 }
@@ -1083,39 +1097,114 @@ function getFilteredData(){
   return d;
 }
 
-function renderMarkers(){
-  markers.forEach(m=>map.removeLayer(m));
-  markers=[];
-  const data=getFilteredData();
-  data.forEach((d,idx)=>{
-    const icon=L.divIcon({className:'',html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,iconSize:[32,32],iconAnchor:[16,16]});
-    const m=L.marker([d.lat,d.lng],{icon}).addTo(map);
-    const html=`
-      <span class="pop-type" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>${d.llm_verified?'<span class="pop-type" style="background:#16a34a;margin-left:4px" title="Verificado por IA">✓ IA</span>':''}
-      <div class="pop-title">${escapeHtml(d.title)}</div>
-      <div class="pop-meta">📍 ${escapeHtml(d.city)}${d.neighborhood?' · '+escapeHtml(d.neighborhood):''} · ${escapeHtml(d.source||'')}${d.pub_date?' · '+timeAgo(d.pub_date).text:''}</div>
-      <a class="pop-link" href="${escapeHtml(d.link)}" target="_blank" rel="noopener" data-news-id="${escapeHtml(d.id||'')}" data-crime-type="${escapeHtml(d.type||'')}" data-source="${escapeHtml(d.source||'')}">Ler notícia →</a>
-    `;
-    m.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-8]});
-    m.on('click',()=>{
-      highlightItem(idx);
-      __CM_COUNTERS.marker_click_count++;
-      track('marker_click',{news_id:d.id||'',crime_type:d.type,city_name:d.city,source:d.source||''});
-    });
-    markers.push(m);
-  });
+// 🚀 Canvas 圆点 marker：0 DOM 节点，Kwai WebView 上快 20 倍
+// 用 canvasRenderer 全局复用，所有 marker 走同一层
+let _canvasRenderer=null;
+function getCanvasRenderer(){
+  if(!_canvasRenderer) _canvasRenderer=L.canvas({padding:0.2});
+  return _canvasRenderer;
 }
 
-function renderList(){
+// 视口范围内的 marker 才渲染（视口外的数据保留在 markers 数组但不 addTo）
+function renderMarkers(){
+  markers.forEach(m=>{ if(m._map) map.removeLayer(m); });
+  markers=[];
+  renderMarkersInView();
+}
+
+function renderMarkersInView(){
+  if(!map) return;
+  // 先清
+  markers.forEach(m=>{ if(m._map) map.removeLayer(m); });
+  markers=[];
   const data=getFilteredData();
-  document.getElementById('sheetCount').textContent=`${data.length} ocorrências`;
+  const bounds=map.getBounds().pad(0.15);
+  const z=map.getZoom();
+  // 🔥 低缩放级别时抽稀：z<5 只画 top 300，z<7 top 600，否则全画
+  const cap = z<5?300 : z<7?600 : z<10?1200 : data.length;
+  // 🎨 混合方案：z<11 Canvas 圆点（宏观快），z>=11 emoji divIcon（微观精致）
+  const useEmoji = z >= 11;
+  const renderer = useEmoji ? null : getCanvasRenderer();
+  let drawn=0;
+  for(let i=0;i<data.length && drawn<cap;i++){
+    const d=data[i];
+    if(d.lat==null || d.lng==null) continue;
+    if(!bounds.contains([d.lat,d.lng])) continue;
+    let m;
+    if(useEmoji){
+      // 🎯 微观模式：emoji marker（DOM）— 此时视口内点通常 <200 个，性能没问题
+      const icon=L.divIcon({
+        className:'',
+        html:`<div class="pm ${d.type}">${TYPE_EMOJI[d.type]||'❗'}</div>`,
+        iconSize:[32,32],iconAnchor:[16,16]
+      });
+      m=L.marker([d.lat,d.lng],{icon});
+    }else{
+      // 🚀 宏观模式：Canvas 圆点（0 DOM）
+      const color=TYPE_COLOR[d.type]||'#666';
+      m=L.circleMarker([d.lat,d.lng],{
+        renderer,
+        radius:6,
+        color:'#fff',
+        weight:1.5,
+        fillColor:color,
+        fillOpacity:0.95,
+      });
+    }
+    m._idx=i; m._d=d;
+    m.on('click',function(){
+      const dd=this._d, idx=this._idx;
+      const html=`
+        <span class="pop-type" style="background:${TYPE_COLOR[dd.type]}">${TYPE_LABEL[dd.type]||dd.type}</span>${dd.llm_verified?'<span class="pop-type" style="background:#16a34a;margin-left:4px" title="Verificado por IA">✓ IA</span>':''}
+        <div class="pop-title">${escapeHtml(dd.title)}</div>
+        <div class="pop-meta">📍 ${escapeHtml(dd.city)}${dd.neighborhood?' · '+escapeHtml(dd.neighborhood):''} · ${escapeHtml(dd.source||'')}${dd.pub_date?' · '+timeAgo(dd.pub_date).text:''}</div>
+        <a class="pop-link" href="${escapeHtml(dd.link)}" target="_blank" rel="noopener">Ler notícia →</a>`;
+      this.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-6]}).openPopup();
+      highlightItem(idx);
+      __CM_COUNTERS.marker_click_count++;
+      track('marker_click',{news_id:dd.id||'',crime_type:dd.type,city_name:dd.city,source:dd.source||''});
+    });
+    m.addTo(map);
+    markers.push(m);
+    drawn++;
+  }
+}
+
+// 🚀 虚拟列表：首屏 30 条，滚动到底加载下一批（不再一次性 innerHTML 上千 DOM）
+const LIST_PAGE_SIZE=30;
+let _listData=[], _listRendered=0, _listScrollBound=false;
+
+function renderList(){
+  _listData=getFilteredData();
+  _listRendered=0;
+  document.getElementById('sheetCount').textContent=`${_listData.length} ocorrências`;
   document.getElementById('sheetTitle').textContent=curCity==='Brasil'?'🇧🇷 Brasil':'📍 '+curCity;
-  
   const list=document.getElementById('list');
-  if(data.length===0){list.innerHTML='<div class="empty">Nenhuma ocorrência</div>';return}
-  
-  list.innerHTML=data.map((d,idx)=>`
-    <div class="it" data-idx="${idx}">
+  list.innerHTML='';
+  if(_listData.length===0){list.innerHTML='<div class="empty">Nenhuma ocorrência</div>';return}
+  appendListChunk();
+  if(!_listScrollBound){
+    _listScrollBound=true;
+    // 监听 sheet 滚动容器（list 的父级）
+    const scroller = list.parentElement || list;
+    scroller.addEventListener('scroll',()=>{
+      if(scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 200){
+        appendListChunk();
+      }
+    },{passive:true});
+  }
+}
+
+function appendListChunk(){
+  if(_listRendered>=_listData.length) return;
+  const list=document.getElementById('list');
+  const end=Math.min(_listRendered+LIST_PAGE_SIZE, _listData.length);
+  const frag=document.createDocumentFragment();
+  const tmp=document.createElement('div');
+  tmp.innerHTML=_listData.slice(_listRendered,end).map((d,i)=>{
+    const idx=_listRendered+i;
+    const t=timeAgo(d.pub_date);
+    return `<div class="it" data-idx="${idx}">
       <div class="it-row">
         <span class="it-emoji">${TYPE_EMOJI[d.type]||'❗'}</span>
         <span class="it-tag" style="background:${TYPE_COLOR[d.type]}">${TYPE_LABEL[d.type]||d.type}</span>
@@ -1123,28 +1212,29 @@ function renderList(){
         ${d._dist!=null?`<span class="dist-tag">📍 ${fmtDist(d._dist)}</span>`:''}
       </div>
       <div class="it-title">${escapeHtml(d.title)}</div>
-      <div class="it-source"><span>${escapeHtml(d.source||'')}</span>${(()=>{const t=timeAgo(d.pub_date);return t.text?`<span class="it-time ${t.cls}">${t.text}</span>`:''})()}</div>
-    </div>
-  `).join('');
-  
-  list.querySelectorAll('.it').forEach(el=>{
+      <div class="it-source"><span>${escapeHtml(d.source||'')}</span>${t.text?`<span class="it-time ${t.cls}">${t.text}</span>`:''}</div>
+    </div>`;
+  }).join('');
+  while(tmp.firstChild){
+    const el=tmp.firstChild;
     const idx=+el.dataset.idx;
-    const d=data[idx];
-    // 📊 列表项曝光
-    if(window.__CM_EXPOSE){
-      window.__CM_EXPOSE(el,'list_item_exposure',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx});
-    }
-    el.onclick=()=>{
-      const idx=+el.dataset.idx;
-      const d=data[idx];
-      map.flyTo([d.lat,d.lng],14,{duration:.6});
-      const m=markers[idx];
-      setTimeout(()=>m&&m.openPopup(),650);
+    const d=_listData[idx];
+    el.addEventListener('click',()=>{
+      map.setView([d.lat,d.lng],14);   // setView 比 flyTo 便宜
+      renderMarkersInView();
+      const m=markers.find(x=>x._idx===idx);
+      if(m) setTimeout(()=>m.openPopup(),120);
       highlightItem(idx);
       __CM_COUNTERS.list_click_count++;
       track('list_item_click',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx,source:d.source||''});
-    };
-  });
+    },{passive:true});
+    if(window.__CM_EXPOSE){
+      window.__CM_EXPOSE(el,'list_item_exposure',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx});
+    }
+    frag.appendChild(el);
+  }
+  list.appendChild(frag);
+  _listRendered=end;
 }
 
 function highlightItem(idx){
@@ -1365,15 +1455,22 @@ async function init(){
     if(!localStorage.getItem('geo_asked') && navigator.geolocation){
       setTimeout(showGeoModal, 1500);
     }
-    // 🔄 后台拉完整版（1920 条），加载完静默替换 + 重渲染
-    fetch('/rss_incidents.json?_='+Date.now())
-      .then(r=>r.json())
-      .then(full=>{
-        allData=filterRecent(full);  // 🔒 客户端兜底：仅 7 天内
-        renderTypeBar();
-        renderMarkers();
-        renderList();
-      }).catch(()=>{});
+    // 🔄 后台拉完整版（1920 条）—— Kwai WebView 上用 requestIdleCallback 避免阻塞首屏交互
+    const loadFull = ()=>{
+      fetch('/rss_incidents.json?_='+Date.now())
+        .then(r=>r.json())
+        .then(full=>{
+          allData=filterRecent(full);
+          renderTypeBar();
+          renderMarkers();
+          renderList();
+        }).catch(()=>{});
+    };
+    if('requestIdleCallback' in window){
+      requestIdleCallback(loadFull,{timeout:5000});
+    }else{
+      setTimeout(loadFull, 2000);
+    }
 
     // ⏰ 自动后台刷新（每 5 分钟拉一次，静默更新，不弹任何 UI）
     setInterval(async ()=>{
