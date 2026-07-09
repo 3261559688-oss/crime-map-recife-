@@ -1160,7 +1160,7 @@ function renderMarkersInView(){
         <div class="pop-meta">📍 ${escapeHtml(dd.city)}${dd.neighborhood?' · '+escapeHtml(dd.neighborhood):''} · ${escapeHtml(dd.source||'')}${dd.pub_date?' · '+timeAgo(dd.pub_date).text:''}</div>
         <a class="pop-link" href="${escapeHtml(dd.link)}" target="_blank" rel="noopener">Ler notícia →</a>`;
       this.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-6]}).openPopup();
-      highlightItem(idx);
+      highlightItemByData(dd);
       __CM_COUNTERS.marker_click_count++;
       track('marker_click',{news_id:dd.id||'',crime_type:dd.type,city_name:dd.city,source:dd.source||''});
     });
@@ -1238,13 +1238,43 @@ function appendListChunk(){
 }
 
 function highlightItem(idx){
-  document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
-  const el=document.querySelector(`.it[data-idx="${idx}"]`);
-  if(el){
-    el.classList.add('active');
-    el.scrollIntoView({behavior:'smooth',block:'center'});
+  // idx 是 _listData 里的索引（列表内点击用）
+  while(_listRendered <= idx && _listRendered < _listData.length){
+    appendListChunk();
   }
+  document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
   expandSheet();
+  setTimeout(()=>{
+    const el=document.querySelector(`.it[data-idx="${idx}"]`);
+    if(el){
+      el.classList.add('active');
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }, 160);
+}
+
+// marker 点击专用：按数据对象反查列表位置
+function highlightItemByData(d){
+  let target = _listData.indexOf(d);
+  if(target < 0){
+    // 当前筛选看不到该条 → 用 link/id 兜底找
+    target = _listData.findIndex(x=>x.link===d.link || (x.id && x.id===d.id));
+  }
+  if(target < 0){
+    // 还找不到 → 清空 city/type 过滤，重新渲染列表再找一次
+    curCity='Brasil'; curType='all';
+    document.querySelectorAll('.type-chip').forEach(c=>c.classList.remove('active'));
+    document.querySelector('.type-chip[data-type="all"]')?.classList.add('active');
+    document.getElementById('cityBtnLabel').textContent='Brasil';
+    renderList();
+    target = _listData.findIndex(x=>x.link===d.link || (x.id && x.id===d.id));
+  }
+  if(target >= 0){
+    highlightItem(target);
+  }else{
+    // 极端情况：allData 里都没有（数据 stale） → 只展开 sheet 提示存在
+    expandSheet();
+  }
 }
 
 // ========== Sheet 拖拽实现 ==========
