@@ -413,7 +413,7 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 .pop-link{display:block;padding:8px;background:#dc2626;color:#fff;text-align:center;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600}
 
 /* 底部 sheet（可拖拽） */
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--bg-sheet);border-radius:18px 18px 0 0;box-shadow:var(--shadow-sheet);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--border-soft);transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s;height:60%;will-change:transform;touch-action:none}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--bg-sheet);border-radius:18px 18px 0 0;box-shadow:var(--shadow-sheet);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--border-soft);transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s;height:45%;will-change:transform;touch-action:none}
 .sheet.no-trans{transition:none}
 .sheet-handle{display:flex;justify-content:center;padding:12px 10px 8px;cursor:grab;touch-action:none}
 .sheet-handle:active{cursor:grabbing}
@@ -1400,11 +1400,27 @@ function showGeoModal(){
     if(!navigator.geolocation){showToast('❌ GPS não suportado');return;}
     showToast('📍 Buscando localização...');
     navigator.geolocation.getCurrentPosition(p=>{
-      // ✅ 真实经纬度到手 → 放蓝色脉冲点 + 飞过去 + 启用附近模式
+      // ✅ 真实经纬度到手 → 放蓝色脉冲点 + 定位到最近城市（不启用圈选）
       const lat=p.coords.latitude, lng=p.coords.longitude;
+      localStorage.setItem('user_lat', lat);
+      localStorage.setItem('user_lng', lng);
       placeUserLocationDot(lat, lng);
-      enableGeoMode(lat, lng);
-      track('geo_granted',{lat,lng});
+      // 找最近的城市
+      let nearestCity='Brasil', minDist=Infinity;
+      for(const [cName, coords] of Object.entries(CITY_COORDS)){
+        if(cName==='Brasil') continue;
+        const d=haversine(lat,lng,coords[0],coords[1]);
+        if(d<minDist){minDist=d; nearestCity=cName;}
+      }
+      // 只有 100km 内才切城市，否则只飞过去
+      if(minDist<=100 && nearestCity!=='Brasil'){
+        switchCity(nearestCity);
+        showToast(`📍 Você está em ${nearestCity}`);
+      }else{
+        map.flyTo([lat,lng], 12, {duration:.8});
+        showToast(`📍 Localização definida`);
+      }
+      track('geo_granted',{lat,lng,nearest_city:nearestCity,dist_km:minDist.toFixed(1)});
     },err=>{
       const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
       showToast(msgs[err.code]||'❌ Erro de localização');
