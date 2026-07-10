@@ -58,6 +58,13 @@ RSS_FEEDS = [
     ("G1 Brasil", "https://g1.globo.com/rss/g1/", "BR", "Brasil"),
     ("G1 Política", "https://g1.globo.com/rss/g1/politica/", "BR", "Brasil"),
 
+    # === 🆕 新增高活跃源（2026-07 补充，G1 RSS 内容变空后的替补）===
+    ("Agência Brasil",  "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml", "BR", "Brasil"),
+    ("CNN Brasil",      "https://www.cnnbrasil.com.br/feed/",      "BR", "Brasil"),
+    ("JovemPan",        "https://jovempan.com.br/feed",            "BR", "Brasil"),
+    ("Poder360",        "https://www.poder360.com.br/feed/",       "BR", "Brasil"),
+    ("ND Mais",         "https://ndmais.com.br/feed/",             "SC", "Florianópolis"),
+
     # === Folha de São Paulo ===
     ("Folha Cotidiano", "https://feeds.folha.uol.com.br/cotidiano/rss091.xml", "SP", "São Paulo"),
 
