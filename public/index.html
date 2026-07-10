@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f9fafb">
 <title>Mapa do Crime · Brasil</title>
+<script defer src="https://umami-crime-map.vercel.app/script.js" data-website-id="61577869-2bce-41a4-bb9d-9993608e6e58"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 /* === 用户位置蓝点（脉冲） === */
@@ -717,6 +718,11 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
       if(!cfg)return;
       const props=e.props||{};
       if(cfg.area)props.click_area=cfg.area;
+
+      // 🅳 自建 Umami（独立看板，不走 Kwai Trinity）
+      if(window.umami && typeof window.umami.track==='function'){
+        try{ window.umami.track(e.event, Object.assign({}, props, {city: typeof curCity!=='undefined'?curCity:''})); }catch(_){}
+      }
 
       // 🅰️ Kwai App 内 / 已接入 @kibt/weblogger（生产）
       const kw=window.kwailog;
