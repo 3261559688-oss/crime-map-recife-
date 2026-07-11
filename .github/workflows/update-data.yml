@@ -118,11 +118,22 @@ jobs:
           print(f'Latest: {ts[0] if ts else \"?\"}')
           "
 
+      - name: 🩺 Generate Ops Dashboard Health JSON
+        env:
+          UMAMI_URL: ${{ secrets.UMAMI_URL }}
+          UMAMI_TOKEN: ${{ secrets.UMAMI_TOKEN }}
+          UMAMI_WEBSITE_ID: ${{ secrets.UMAMI_WEBSITE_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          python3 scripts/gen_health.py || echo "⚠️ health JSON 生成失败（不阻塞主流程）"
+          ls -la public/health/ || true
+
       - name: 💾 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/rss_incidents.json public/rss_incidents_lite.json public/raw_incidents.json public/raw_meta.json public/version.json public/index.html
+          git add public/rss_incidents.json public/rss_incidents_lite.json public/raw_incidents.json public/raw_meta.json public/version.json public/index.html public/health/
           if git diff --staged --quiet; then
             echo "📭 无变化"
           else

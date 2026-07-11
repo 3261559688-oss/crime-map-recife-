@@ -10,6 +10,11 @@ LLM 三阶段调用脚本 v2（A=is_crime, B=type, C=geo）
   python3 scripts/llm_call_v2.py --stage c --provider deepseek --limit 100
 """
 import os, sys, json, time, argparse, sqlite3, urllib.request
+try:
+    import requests
+    _HAS_REQ = True
+except ImportError:
+    _HAS_REQ = False
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -93,10 +98,18 @@ def call_llm(prompt_text, provider, api_key):
             'max_tokens': 4096,  # 🔥 GLM 有 thinking 链，必须大
             'messages': [{'role': 'user', 'content': prompt_text + '\n\n请严格只输出一行 JSON，不要任何其他文字。'}]
         }
-        req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'),
-            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'})
-        with urllib.request.urlopen(req, timeout=120) as r:
-            resp = json.loads(r.read())
+        # 🔒 用 requests（urllib timeout 在某些 socket 状态下不可靠）
+        if _HAS_REQ:
+            r = requests.post(url, json=body,
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                timeout=(10, 60))  # (connect=10s, read=60s)
+            r.raise_for_status()
+            resp = r.json()
+        else:
+            req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'),
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                resp = json.loads(r.read())
         # Anthropic 协议：content 是 list，每项 {type:text|thinking, ...}
         text = ''
         thinking_text = ''

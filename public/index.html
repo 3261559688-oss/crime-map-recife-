@@ -1589,16 +1589,24 @@ async function init(){
     window.addEventListener('popstate',()=>{_exitType='back';});
     function _reportSessionEnd(){
       __CM_COUNTERS.max_scroll_pct=maxScroll;
-      track('session_end',{
+      const payload={
         duration_ms:Date.now()-startedAt,
         active_ms:window.__CM_GET_ACTIVE_MS(),
         ...__CM_COUNTERS,
         last_city:curCity,
         last_type:curType,
         exit_type:_exitType,
-      });
+      };
+      // 走标准队列（可能来不及）
+      track('session_end',payload);
+      // ⚡ 兜底：直接同步打到 Umami（pagehide 时队列 flush 可能来不及）
+      try{ if(window.umami) window.umami.track('session_end', Object.assign({}, payload, {city:curCity||''})); }catch(_){}
     }
     window.addEventListener('pagehide',_reportSessionEnd);
+    // 补一个 visibilitychange=hidden 兜底（移动端切后台常触发）
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='hidden') _reportSessionEnd();
+    });
   }catch(e){
     document.getElementById('loading').innerHTML=`<div style="color:#ef4444">Erro: ${e.message}</div>`;
     track('error',{message:String(e.message||e),stack:String(e.stack||'').slice(0,500)});

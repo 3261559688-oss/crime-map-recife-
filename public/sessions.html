@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Sessions · 用户行为回放</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://umami-crime-map.vercel.app/script.js" data-website-id="61577869-2bce-41a4-bb9d-9993608e6e58"></script>
+<style>
+  :root{--purple:#6b5be7;--mint:#4ecdc4;--pink:#ff6b8a;--amber:#ffab5c;}
+  body{background:#f4f2fc;font-family:-apple-system,'PingFang SC',sans-serif;color:#2d2b45}
+  .card{background:#fff;border-radius:20px;padding:16px 18px;box-shadow:0 4px 20px rgba(102,89,192,.08)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700}
+  .b-mobile{background:#ffe1ea;color:#e05676}
+  .b-desktop{background:#dff5ee;color:#2ea89f}
+  .b-laptop{background:#dff5ee;color:#2ea89f}
+  .b-BR{background:#fff2dc;color:#c47f2b}
+  .sess-row{cursor:pointer;padding:12px 14px;border-radius:14px;transition:all .15s;border:2px solid transparent}
+  .sess-row:hover{background:#f4f2fc}
+  .sess-row.active{background:linear-gradient(135deg,#e8e3ff,#f4f2fc);border-color:var(--purple)}
+  .ev{display:flex;gap:12px;padding:12px;border-radius:12px;border:1px solid #eee;margin-bottom:8px;position:relative}
+  .ev:hover{background:#faf9ff}
+  .ev-time{font-family:ui-monospace,monospace;font-size:11px;color:#94a3b8;min-width:70px}
+  .ev-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ev-page{background:#e8e3ff;color:var(--purple)}
+  .ev-click{background:#dff5ee;color:var(--mint)}
+  .ev-show{background:#fff2dc;color:var(--amber)}
+  .filter-chip{padding:6px 12px;border-radius:12px;font-size:12px;cursor:pointer;background:#fff;color:#64748b;border:2px solid transparent}
+  .filter-chip.on{background:var(--purple);color:#fff}
+  .stat-num{font-size:22px;font-weight:800;color:var(--purple)}
+  .stat-lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+  .empty{padding:40px;text-align:center;color:#94a3b8}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .ev{animation:fadeIn .2s}
+  .pulse{animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="px-6 py-4 flex justify-between items-center">
+  <div class="flex items-center gap-3">
+    <a href="./ops.html" class="text-slate-400 hover:text-purple-600 text-sm">← Ops Dashboard</a>
+    <h1 class="text-xl font-bold ml-4">👥 Sessions · 用户行为回放</h1>
+    <span id="badge-fresh" class="badge b-desktop">加载中...</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-slate-400" id="last-refresh"></span>
+    <button onclick="location.reload()" class="text-xs px-3 py-1.5 rounded-lg bg-white hover:bg-purple-50">🔄 刷新</button>
+  </div>
+</header>
+
+<!-- Stats bar -->
+<div class="px-6 pb-4">
+  <div class="grid grid-cols-4 gap-3">
+    <div class="card"><div class="stat-lbl">Sessions</div><div class="stat-num" id="s-total">--</div></div>
+    <div class="card"><div class="stat-lbl">总事件</div><div class="stat-num" id="s-events">--</div></div>
+    <div class="card"><div class="stat-lbl">平均停留</div><div class="stat-num" id="s-avg">--<span class="text-sm">s</span></div></div>
+    <div class="card"><div class="stat-lbl">Top 城市</div><div class="stat-num" id="s-topcity" style="font-size:16px">--</div></div>
+  </div>
+</div>
+
+<!-- 主内容：两列 -->
+<div class="px-6 pb-8 grid gap-4" style="grid-template-columns:380px 1fr">
+
+  <!-- 左：session 列表 -->
+  <div class="card" style="height:calc(100vh - 220px);overflow-y:auto">
+    <div class="flex justify-between items-center mb-3 sticky top-0 bg-white pb-2 z-10">
+      <div class="font-bold text-sm">🔍 会话列表</div>
+      <div class="flex gap-1">
+        <span class="filter-chip on" data-filter="all">全部</span>
+        <span class="filter-chip" data-filter="mobile">📱</span>
+        <span class="filter-chip" data-filter="desktop">💻</span>
+        <span class="filter-chip" data-filter="rich">≥3事件</span>
+      </div>
+    </div>
+    <div class="flex gap-1 mb-2 text-[10px]">
+      <span class="text-slate-400 self-center mr-1">排序：</span>
+      <span class="filter-chip on" data-sort="duration">⏱️ 停留 ↓</span>
+      <span class="filter-chip" data-sort="recent">🕒 最近</span>
+      <span class="filter-chip" data-sort="events">👆 事件 ↓</span>
+    </div>
+    <input id="q" placeholder="搜索城市/浏览器..." class="w-full px-3 py-2 mb-3 rounded-xl bg-slate-50 text-sm border-none outline-none">
+    <div id="sess-list"></div>
+  </div>
+
+  <!-- 右：时间线详情 -->
+  <div class="card" style="height:calc(100vh - 220px);overflow-y:auto">
+    <div id="detail-empty" class="empty">
+      <div class="text-4xl mb-2">👈</div>
+      <div>选择左边一个会话查看时间线</div>
+    </div>
+    <div id="detail" class="hidden">
+      <div class="flex justify-between items-start mb-4 pb-4 border-b">
+        <div>
+          <div class="flex items-center gap-2 mb-1" id="d-title"></div>
+          <div class="text-xs text-slate-500" id="d-meta"></div>
+        </div>
+        <div class="text-right">
+          <div class="stat-num" id="d-duration">--</div>
+          <div class="stat-lbl">停留</div>
+        </div>
+      </div>
+      <div class="flex gap-3 mb-4 text-sm">
+        <div class="px-3 py-2 rounded-xl bg-slate-50 flex-1 text-center">
+          <div class="text-lg font-bold" id="d-views">0</div><div class="text-[10px] text-slate-400">Page Views</div>
+        </div>
+        <div class="px-3 py-2 rounded-xl bg-slate-50 flex-1 text-center">
+          <div class="text-lg font-bold" id="d-events">0</div><div class="text-[10px] text-slate-400">Events</div>
+        </div>
+        <div class="px-3 py-2 rounded-xl bg-slate-50 flex-1 text-center">
+          <div class="text-lg font-bold" id="d-visits">0</div><div class="text-[10px] text-slate-400">Visits</div>
+        </div>
+      </div>
+      <div class="font-bold text-sm mb-2">🎬 时间轴</div>
+      <div id="timeline"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ALL=[], CURRENT_FILTER='all', CURRENT_Q='', ACTIVE_ID=null, SORT_BY='duration';
+
+const DEVICE_ICON={mobile:'📱',desktop:'💻',laptop:'💻',tablet:'📲'};
+const OS_EMOJI={'iOS':'🍎','Android OS':'🤖','Windows':'🪟','Mac OS':'💻','Linux':'🐧'};
+const EV_ICON={
+  // 曝光类
+  'page_view':         {icon:'📄',cls:'ev-page', label:'页面浏览'},
+  'city_button_show':  {icon:'👁️',cls:'ev-show', label:'城市按钮曝光'},
+  'type_filter_show':  {icon:'👁️',cls:'ev-show', label:'类型筛选曝光'},
+  'list_item_exposure':{icon:'👁️',cls:'ev-show', label:'新闻卡片曝光'},
+  'geo_modal_show':    {icon:'📍',cls:'ev-show', label:'定位弹窗曝光'},
+  // 城市/筛选
+  'city_switch':       {icon:'🏙️',cls:'ev-click',label:'切换城市'},
+  'city_modal_open':   {icon:'🏙️',cls:'ev-click',label:'打开城市列表'},
+  'city_modal_cancel': {icon:'❎',cls:'ev-click',label:'关闭城市列表'},
+  'city_search':       {icon:'🔍',cls:'ev-click',label:'搜索城市'},
+  'type_filter':       {icon:'🏷️',cls:'ev-click',label:'切换类型筛选'},
+  // 新闻交互（关键"结束"信号）
+  'marker_click':      {icon:'📍',cls:'ev-click',label:'点击地图标记'},
+  'list_item_click':   {icon:'📰',cls:'ev-click',label:'点击新闻卡片'},
+  'news_open':         {icon:'🔗',cls:'ev-click',label:'🚪 打开外链新闻（离开）'},
+  'sheet_toggle':      {icon:'📜',cls:'ev-click',label:'底部抽屉'},
+  // 定位
+  'geo_enable':        {icon:'📡',cls:'ev-click',label:'开启定位'},
+  'geo_disable':       {icon:'📡',cls:'ev-click',label:'关闭定位'},
+  'geo_granted':       {icon:'✅',cls:'ev-click',label:'授权定位'},
+  'geo_denied':        {icon:'🚫',cls:'ev-click',label:'拒绝定位'},
+  'geo_modal_allow':   {icon:'✅',cls:'ev-click',label:'允许定位弹窗'},
+  'geo_modal_deny':    {icon:'🚫',cls:'ev-click',label:'拒绝定位弹窗'},
+  // 系统
+  'auto_refresh':      {icon:'🔄',cls:'ev-show', label:'自动刷新'},
+  'session_end':       {icon:'🚪',cls:'ev-page', label:'🚪 会话结束'},
+  'error':             {icon:'⚠️',cls:'ev-show', label:'⚠️ 页面报错'}
+};
+// 标记"离开"类事件（用于统计 & 显示）
+const EXIT_EVENTS = new Set(['news_open','session_end']);
+
+function fmtDur(sec){
+  if(!sec||sec<0)return '0s';
+  if(sec<60)return sec+'s';
+  if(sec<3600)return Math.floor(sec/60)+'m '+(sec%60)+'s';
+  return Math.floor(sec/3600)+'h '+Math.floor((sec%3600)/60)+'m';
+}
+function fmtTime(iso){
+  const d=new Date(iso);
+  return d.toLocaleTimeString('zh-CN',{hour12:false});
+}
+function fmtRelative(iso){
+  const diff=(Date.now()-new Date(iso).getTime())/1000;
+  if(diff<60)return Math.floor(diff)+'s ago';
+  if(diff<3600)return Math.floor(diff/60)+'min ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+async function load(){
+  try{
+    const r=await fetch('./health/sessions.json?t='+Date.now());
+    const d=await r.json();
+    if(d.error){
+      document.getElementById('sess-list').innerHTML='<div class="empty">❌ '+d.error+'</div>';
+      document.getElementById('badge-fresh').textContent='加载失败';
+      return;
+    }
+    ALL=d.sessions||[];
+    // 顶部统计
+    document.getElementById('s-total').textContent=ALL.length;
+    document.getElementById('s-events').textContent=ALL.reduce((s,x)=>s+(x.events||0),0);
+    const dur=ALL.filter(x=>x.duration_sec>0);
+    document.getElementById('s-avg').innerHTML=(dur.length?Math.floor(dur.reduce((s,x)=>s+x.duration_sec,0)/dur.length):0)+'<span class="text-sm">s</span>';
+    const cityCnt={};
+    ALL.forEach(s=>{if(s.city)cityCnt[s.city]=(cityCnt[s.city]||0)+1});
+    const top=Object.entries(cityCnt).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('s-topcity').textContent=top?`${top[0]} (${top[1]})`:'—';
+    // 时间戳
+    document.getElementById('badge-fresh').textContent='最近 '+(d.hours||24)+'h · '+ALL.length+' sessions';
+    document.getElementById('last-refresh').textContent='数据于 '+fmtRelative(d.generated_at);
+    renderList();
+  }catch(e){
+    document.getElementById('sess-list').innerHTML='<div class="empty">❌ '+e.message+'</div>';
+  }
+}
+
+function renderList(){
+  const list=document.getElementById('sess-list');
+  let items=ALL.filter(s=>{
+    if(CURRENT_FILTER==='mobile'&&s.device!=='mobile')return false;
+    if(CURRENT_FILTER==='desktop'&&s.device!=='desktop'&&s.device!=='laptop')return false;
+    if(CURRENT_FILTER==='rich'&&(s.events||0)<3)return false;
+    if(CURRENT_Q){
+      const q=CURRENT_Q.toLowerCase();
+      if(!((s.city||'').toLowerCase().includes(q)||
+           (s.browser||'').toLowerCase().includes(q)||
+           (s.country||'').toLowerCase().includes(q)))return false;
+    }
+    return true;
+  });
+  if(!items.length){list.innerHTML='<div class="empty">没有匹配的 session</div>';return}
+  // 排序
+  if(SORT_BY==='duration')items.sort((a,b)=>(b.duration_sec||0)-(a.duration_sec||0));
+  else if(SORT_BY==='events')items.sort((a,b)=>(b.events||0)-(a.events||0));
+  else items.sort((a,b)=>new Date(b.last_at)-new Date(a.last_at));
+  list.innerHTML=items.map(s=>`
+    <div class="sess-row ${s.id===ACTIVE_ID?'active':''}" data-id="${s.id}">
+      <div class="flex justify-between items-center mb-1">
+        <div class="flex items-center gap-2 min-w-0">
+          <span>${DEVICE_ICON[s.device]||'❓'}</span>
+          <span>${OS_EMOJI[s.os]||''}</span>
+          <span class="text-sm font-semibold truncate">${s.city||s.region||'?'}</span>
+          <span class="badge b-${s.country||'BR'}">${s.country||'?'}</span>
+        </div>
+        <span class="text-[10px] text-slate-400">${fmtRelative(s.last_at)}</span>
+      </div>
+      <div class="text-[11px] text-slate-500 flex gap-2">
+        <span>👁️ ${s.views||0}</span>
+        <span>👆 ${s.events||0}</span>
+        <span>⏱️ ${fmtDur(s.duration_sec)}</span>
+        <span class="truncate">${s.browser||''}</span>
+      </div>
+    </div>`).join('');
+  list.querySelectorAll('.sess-row').forEach(r=>r.addEventListener('click',()=>{
+    ACTIVE_ID=r.dataset.id;renderList();showDetail(r.dataset.id);
+  }));
+}
+
+function showDetail(sid){
+  const s=ALL.find(x=>x.id===sid);if(!s)return;
+  document.getElementById('detail-empty').classList.add('hidden');
+  document.getElementById('detail').classList.remove('hidden');
+  document.getElementById('d-title').innerHTML=`
+    <span class="text-2xl">${DEVICE_ICON[s.device]||'❓'}</span>
+    <span class="text-lg font-bold">${s.city||s.region||'?'}</span>
+    <span class="badge b-BR">${s.country||'?'}</span>
+    <span class="text-slate-400 text-xs">${s.language||''}</span>`;
+  document.getElementById('d-meta').textContent=`${s.os||''} · ${s.browser||''} · ${s.screen||''} · session ${s.id.slice(0,8)}`;
+  document.getElementById('d-duration').textContent=fmtDur(s.duration_sec);
+  document.getElementById('d-views').textContent=s.views||0;
+  document.getElementById('d-events').textContent=s.events||0;
+  document.getElementById('d-visits').textContent=s.visits||0;
+  // Timeline
+  const tl=document.getElementById('timeline');
+  const acts=s.activity||[];
+  if(!acts.length){tl.innerHTML='<div class="empty">无 activity 数据</div>';return}
+  const t0=new Date(acts[0].createdAt).getTime();
+  tl.innerHTML=acts.map(a=>{
+    let meta;
+    if(a.eventType===1 && !a.eventName){
+      meta={icon:'🔵',cls:'ev-page',label:'页面心跳'};
+    }else{
+      meta=EV_ICON[a.eventName]||{icon:'⚡',cls:'ev-show',label:a.eventName||'其他事件'};
+    }
+    const rel=((new Date(a.createdAt).getTime()-t0)/1000).toFixed(1);
+    return `
+    <div class="ev">
+      <div class="ev-time">
+        <div>${fmtTime(a.createdAt)}</div>
+        <div class="text-[10px] text-slate-300">+${rel}s</div>
+      </div>
+      <div class="ev-icon ${meta.cls}">${meta.icon}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold">${meta.label}</div>
+        <div class="text-[11px] text-slate-500 truncate">
+          ${a.eventName?`<code class="bg-slate-100 px-1 rounded">${a.eventName}</code>`:''}
+          ${a.urlPath?` · path: <code class="bg-slate-100 px-1 rounded">${a.urlPath}${a.urlQuery?'?'+a.urlQuery:''}</code>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.querySelectorAll('.filter-chip').forEach(c=>c.addEventListener('click',()=>{
+  if(c.dataset.sort){
+    document.querySelectorAll('.filter-chip[data-sort]').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');SORT_BY=c.dataset.sort;
+  }else{
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');CURRENT_FILTER=c.dataset.filter;
+  }
+  renderList();
+}));
+document.getElementById('q').addEventListener('input',e=>{CURRENT_Q=e.target.value;renderList()});
+
+load();
+</script>
+</body>
+</html>
