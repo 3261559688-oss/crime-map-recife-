@@ -80,23 +80,24 @@ jobs:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         run: |
           if [ -z "$WQ_API_KEY" ]; then
-            echo "⚠️ WQ_API_KEY 未配置，跳过 LLM"
-            exit 0
+            echo "::error::❌ WQ_API_KEY 未配置！workflow 会静默跳过 LLM，请到 GitHub Secrets 添加"
+            echo "::error::访问：https://github.com/${{ github.repository }}/settings/secrets/actions"
+            exit 1
           fi
           # 单步 5 分钟内必须返回（避免某条卡死整个流水线）
-          timeout 300 python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 100 --workers 5 || echo "⚠️ A 段超时或部分失败，下次继续"
+          timeout 500 python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 300 --workers 10 || echo "⚠️ A 段超时或部分失败，下次继续"
 
       - name: 🧠 Step 5 - LLM B (type) [incremental, max 100]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         if: env.WQ_API_KEY != ''
-        run: timeout 300 python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 100 --workers 5 || echo "⚠️ B 段超时或部分失败"
+        run: timeout 500 python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 300 --workers 10 || echo "⚠️ B 段超时或部分失败"
 
       - name: 🧠 Step 6 - LLM C (geo) [incremental, max 100]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         if: env.WQ_API_KEY != ''
-        run: timeout 300 python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 100 --workers 5 || echo "⚠️ C 段超时或部分失败"
+        run: timeout 500 python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 300 --workers 10 || echo "⚠️ C 段超时或部分失败"
 
       - name: 🔄 Step 7 - Refresh published layer
         run: python3 scripts/refresh_published.py
