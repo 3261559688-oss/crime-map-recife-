@@ -74,7 +74,7 @@
           <div class="text-2xl font-bold" id="page-title">总览 Dashboard</div>
         </div>
         <div class="flex items-center gap-3">
-          <span class="pill pill-green">🟢 ALL OK</span>
+          <span class="pill pill-green" id="status-pill">⏳ 加载中</span>
           <div class="bg-slate-100 rounded-full px-4 py-2 flex items-center gap-2">
             <span class="text-slate-400 text-sm">🔍</span>
             <input class="bg-transparent outline-none text-sm w-32" placeholder="Search">
@@ -90,11 +90,11 @@
           <div class="text-xs text-slate-400 uppercase font-bold mb-2 tracking-wider">系统健康 · Health Lights</div>
           <div class="grid grid-cols-6 gap-2">
             <div class="light ok" data-jump="pipeline" id="light-pipeline"><span class="light-dot ok"></span><div class="min-w-0"><div class="text-xs font-bold">抓取管线</div><div class="text-[10px] text-slate-400 truncate desc">--/-- 源</div></div></div>
-            <div class="light warn" data-jump="pipeline"><span class="light-dot warn"></span><div class="min-w-0"><div class="text-xs font-bold">LLM 处理</div><div class="text-[10px] text-slate-400 truncate">超时 4 次</div></div></div>
-            <div class="light ok" data-jump="frontend"><span class="light-dot ok"></span><div class="min-w-0"><div class="text-xs font-bold">前端可用</div><div class="text-[10px] text-slate-400 truncate">220ms · 200</div></div></div>
-            <div class="light err" data-jump="analytics"><span class="light-dot err"></span><div class="min-w-0"><div class="text-xs font-bold">用户埋点</div><div class="text-[10px] text-slate-400 truncate">24h 无数据 ⚠️</div></div></div>
-            <div class="light ok" data-jump="business"><span class="light-dot ok"></span><div class="min-w-0"><div class="text-xs font-bold">业务指标</div><div class="text-[10px] text-slate-400 truncate">DAU ↑15%</div></div></div>
-            <div class="light ok" data-jump="infra"><span class="light-dot ok"></span><div class="min-w-0"><div class="text-xs font-bold">基础设施</div><div class="text-[10px] text-slate-400 truncate">配额 &lt;10%</div></div></div>
+            <div class="light" data-jump="pipeline"><span class="light-dot"></span><div class="min-w-0"><div class="text-xs font-bold">LLM 处理</div><div class="text-[10px] text-slate-400 truncate" id="light-llm-desc">加载中...</div></div></div>
+            <div class="light" data-jump="frontend"><span class="light-dot"></span><div class="min-w-0"><div class="text-xs font-bold">前端可用</div><div class="text-[10px] text-slate-400 truncate" id="light-fe-desc">加载中...</div></div></div>
+            <div class="light" data-jump="analytics"><span class="light-dot"></span><div class="min-w-0"><div class="text-xs font-bold">用户埋点</div><div class="text-[10px] text-slate-400 truncate" id="light-analytics-desc">加载中...</div></div></div>
+            <div class="light" data-jump="business"><span class="light-dot"></span><div class="min-w-0"><div class="text-xs font-bold">业务指标</div><div class="text-[10px] text-slate-400 truncate" id="light-biz-desc">加载中...</div></div></div>
+            <div class="light" data-jump="infra"><span class="light-dot"></span><div class="min-w-0"><div class="text-xs font-bold">基础设施</div><div class="text-[10px] text-slate-400 truncate" id="light-infra-desc">加载中...</div></div></div>
           </div>
         </div>
 
@@ -190,61 +190,46 @@
         <!-- 顶部流水线可视化 -->
         <div class="card mb-4">
           <div class="flex justify-between items-center mb-4">
-            <div class="font-bold">🔄 数据流水线（点击每个节点查看详情）</div>
-            <span class="text-xs text-slate-400">今日 · 2026-07-11</span>
+            <div class="font-bold">🔄 数据流水线（数据来自 health/llm_stats.json）</div>
+            <span class="text-xs text-slate-400" id="pl-generated-at">加载中...</span>
           </div>
           <div class="flex items-stretch gap-1">
-            <div class="flex-1 rounded-2xl p-4 text-center cursor-pointer hover:shadow-md transition" style="background:linear-gradient(135deg,#eeecfa,#f4f2fc)" onclick="scrollTo({top:document.getElementById('sec-rss').offsetTop-20,behavior:'smooth'})">
+            <div class="flex-1 rounded-2xl p-4 text-center" style="background:linear-gradient(135deg,#eeecfa,#f4f2fc)">
               <div class="text-3xl mb-1">📡</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">RSS 源</div>
-              <div class="text-xl font-bold mt-1" style="color:#6b5be7">12<span class="text-sm text-slate-400">/15</span></div>
-              <div class="text-[10px] text-red-500 mt-1">⚠️ 3 down</div>
+              <div class="text-[10px] text-slate-500 uppercase font-bold">RSS 抓取</div>
+              <div class="text-xl font-bold mt-1" style="color:#6b5be7" id="pl-rss-out">--</div>
+              <div class="text-[10px] text-slate-400 mt-1">条原始新闻</div>
             </div>
             <div class="flex items-center text-slate-300 text-2xl px-1">→</div>
-            <div class="flex-1 rounded-2xl p-4 text-center cursor-pointer hover:shadow-md transition" style="background:linear-gradient(135deg,#e8f5f2,#f0f9f6)">
-              <div class="text-3xl mb-1">📥</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">原始新闻</div>
-              <div class="text-xl font-bold mt-1" style="color:#2ea89f">120</div>
-              <div class="text-[10px] text-slate-400 mt-1">今日抓取</div>
+            <div class="flex-1 rounded-2xl p-4 text-center" style="background:linear-gradient(135deg,#e8f5f2,#f0f9f6)">
+              <div class="text-3xl mb-1">🏷️</div>
+              <div class="text-[10px] text-slate-500 uppercase font-bold">LLM A · 犯罪判断</div>
+              <div class="text-xl font-bold mt-1" style="color:#2ea89f" id="pl-llm-a">--</div>
+              <div class="text-[10px]"><span class="pill pill-green" id="pl-llm-a-rate" style="padding:1px 6px">--%</span></div>
             </div>
             <div class="flex items-center text-slate-300 text-2xl px-1">→</div>
-            <div class="flex-1 rounded-2xl p-4 text-center cursor-pointer hover:shadow-md transition" style="background:linear-gradient(135deg,#feeaf0,#fdf3f6)" onclick="scrollTo({top:document.getElementById('sec-llm').offsetTop-20,behavior:'smooth'})">
-              <div class="text-3xl mb-1">🤖</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">LLM ×3</div>
-              <div class="text-xl font-bold mt-1" style="color:#e05676">110<span class="text-sm text-slate-400">/120</span></div>
-              <div class="text-[10px] text-amber-500 mt-1">成功率 91.7%</div>
+            <div class="flex-1 rounded-2xl p-4 text-center" style="background:linear-gradient(135deg,#feeaf0,#fdf3f6)">
+              <div class="text-3xl mb-1">🗂️</div>
+              <div class="text-[10px] text-slate-500 uppercase font-bold">LLM B · 类型分类</div>
+              <div class="text-xl font-bold mt-1" style="color:#e05676" id="pl-llm-b">--</div>
+              <div class="text-[10px]"><span class="pill pill-green" id="pl-llm-b-rate" style="padding:1px 6px">--%</span></div>
             </div>
             <div class="flex items-center text-slate-300 text-2xl px-1">→</div>
-            <div class="flex-1 rounded-2xl p-4 text-center cursor-pointer hover:shadow-md transition" style="background:linear-gradient(135deg,#fff2dc,#fff8ea)">
+            <div class="flex-1 rounded-2xl p-4 text-center" style="background:linear-gradient(135deg,#dff5ee,#ecf9f4)">
               <div class="text-3xl mb-1">💾</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">入库</div>
-              <div class="text-xl font-bold mt-1" style="color:#c47f2b">110</div>
-              <div class="text-[10px] text-slate-400 mt-1">今日发布</div>
+              <div class="text-[10px] text-slate-500 uppercase font-bold">发布层</div>
+              <div class="text-xl font-bold mt-1" style="color:#2ea89f" id="pl-published">--</div>
+              <div class="text-[10px] text-slate-400 mt-1">最终上架</div>
             </div>
-            <div class="flex items-center text-slate-300 text-2xl px-1">→</div>
-            <div class="flex-1 rounded-2xl p-4 text-center cursor-pointer hover:shadow-md transition" style="background:linear-gradient(135deg,#dff5ee,#ecf9f4)" onclick="scrollTo({top:document.getElementById('sec-city').offsetTop-20,behavior:'smooth'})">
-              <div class="text-3xl mb-1">🗺️</div>
-              <div class="text-[10px] text-slate-500 uppercase font-bold">城市分布</div>
-              <div class="text-xl font-bold mt-1" style="color:#2ea89f">10</div>
-              <div class="text-[10px] text-slate-400 mt-1">Recife 领先</div>
-            </div>
-          </div>
-          <!-- 转化率标注 -->
-          <div class="grid grid-cols-5 gap-1 mt-3 text-center text-[10px] text-slate-400">
-            <div>—</div>
-            <div>抓取率 100%</div>
-            <div>LLM 91.7%</div>
-            <div>发布率 100%</div>
-            <div>覆盖 10 城市</div>
           </div>
         </div>
 
         <!-- 4 个 KPI 卡 -->
         <div class="grid grid-cols-4 gap-4 mb-4">
-          <div class="card"><div class="lbl">总条数</div><div class="kpi mt-2">2,634</div></div>
-          <div class="card"><div class="lbl">24h 新增</div><div class="kpi mt-2 text-green-500">+87</div></div>
-          <div class="card"><div class="lbl">最新新闻</div><div class="kpi mt-2">15m</div></div>
-          <div class="card"><div class="lbl">RSS 源</div><div class="kpi mt-2">12<span class="text-slate-400 text-lg">/15</span></div></div>
+          <div class="card"><div class="lbl">总条数</div><div class="kpi mt-2" id="pl-kpi-total">--</div></div>
+          <div class="card"><div class="lbl">7天内</div><div class="kpi mt-2" id="pl-kpi-7d">--</div></div>
+          <div class="card"><div class="lbl">最新新闻</div><div class="kpi mt-2" id="pl-kpi-latest">--</div></div>
+          <div class="card"><div class="lbl">RSS 源</div><div class="kpi mt-2" id="pl-kpi-feeds">--</div></div>
         </div>
 
         <!-- 城市供给量（移到这里）-->
@@ -273,132 +258,35 @@
           <div style="height:160px"><canvas id="pl-daily"></canvas></div>
         </div>
 
-        <!-- LLM 处理管线 -->
+        <!-- LLM 处理管线（数据来自 health/llm_stats.json）-->
         <div id="sec-llm" class="card mb-4">
           <div class="flex justify-between items-center mb-4">
-            <div class="font-bold">🤖 LLM 处理管线（今日）</div>
-            <span class="pill pill-green">总成功率 96.3%</span>
+            <div class="font-bold">🤖 LLM 处理管线（DB 真实数据）</div>
+            <span class="pill pill-green" id="llm-overall-rate">加载中...</span>
           </div>
-
-          <!-- 4 阶段横向流程 -->
-          <div class="flex items-center gap-2">
-            <!-- 阶段 0: RSS -->
-            <div class="flex-1 rounded-2xl p-3 text-center" style="background:linear-gradient(135deg,#eeecfa,#f4f2fc)">
-              <div class="text-2xl mb-1">📡</div>
-              <div class="text-[10px] text-slate-500 uppercase font-semibold">RSS 抓取</div>
-              <div class="text-lg font-bold mt-1" style="color:#6b5be7">120</div>
-              <div class="text-[10px] text-slate-400">条原始新闻</div>
-            </div>
-
-            <div class="text-slate-300 text-xl">→</div>
-
-            <!-- 阶段 1: LLM 分类 -->
-            <div class="flex-1 rounded-2xl p-3 text-center" style="background:linear-gradient(135deg,#e8f5f2,#f0f9f6)">
-              <div class="text-2xl mb-1">🏷️</div>
-              <div class="text-[10px] text-slate-500 uppercase font-semibold">LLM 1 · 分类</div>
-              <div class="text-lg font-bold mt-1" style="color:#2ea89f">117 / 120</div>
-              <div class="text-[10px]"><span class="pill pill-green" style="padding:1px 6px">97.5%</span></div>
-            </div>
-
-            <div class="text-slate-300 text-xl">→</div>
-
-            <!-- 阶段 2: LLM 地理提取 -->
-            <div class="flex-1 rounded-2xl p-3 text-center" style="background:linear-gradient(135deg,#feeaf0,#fdf3f6)">
-              <div class="text-2xl mb-1">🗺️</div>
-              <div class="text-[10px] text-slate-500 uppercase font-semibold">LLM 2 · 地理</div>
-              <div class="text-lg font-bold mt-1" style="color:#e05676">113 / 117</div>
-              <div class="text-[10px]"><span class="pill pill-green" style="padding:1px 6px">96.6%</span></div>
-            </div>
-
-            <div class="text-slate-300 text-xl">→</div>
-
-            <!-- 阶段 3: LLM 摘要翻译 -->
-            <div class="flex-1 rounded-2xl p-3 text-center" style="background:linear-gradient(135deg,#fff2dc,#fff8ea)">
-              <div class="text-2xl mb-1">✍️</div>
-              <div class="text-[10px] text-slate-500 uppercase font-semibold">LLM 3 · 摘要</div>
-              <div class="text-lg font-bold mt-1" style="color:#c47f2b">110 / 113</div>
-              <div class="text-[10px]"><span class="pill pill-green" style="padding:1px 6px">97.3%</span></div>
-            </div>
-
-            <div class="text-slate-300 text-xl">→</div>
-
-            <!-- 阶段 4: 入库 -->
-            <div class="flex-1 rounded-2xl p-3 text-center" style="background:linear-gradient(135deg,#dff5ee,#ecf9f4)">
-              <div class="text-2xl mb-1">💾</div>
-              <div class="text-[10px] text-slate-500 uppercase font-semibold">入库</div>
-              <div class="text-lg font-bold mt-1" style="color:#2ea89f">110</div>
-              <div class="text-[10px] text-slate-400">最终发布</div>
-            </div>
-          </div>
-
-          <!-- 详细指标 -->
-          <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
-            <div>
-              <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1">LLM 1 分类</div>
-              <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">成功 117</span><span class="text-red-400">失败 3</span></div>
-              <div class="progress-bar"><div class="progress-fill" style="width:97.5%;background:#4ecdc4"></div></div>
-              <div class="text-[10px] text-slate-400 mt-1">平均 1.2s · tokens 340/req</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1">LLM 2 地理</div>
-              <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">成功 113</span><span class="text-red-400">失败 4</span></div>
-              <div class="progress-bar" style="background:#feeaf0"><div class="progress-fill" style="width:96.6%;background:#ff6b8a"></div></div>
-              <div class="text-[10px] text-slate-400 mt-1">平均 1.8s · tokens 520/req</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1">LLM 3 摘要</div>
-              <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">成功 110</span><span class="text-red-400">失败 3</span></div>
-              <div class="progress-bar" style="background:#fff2dc"><div class="progress-fill" style="width:97.3%;background:#ffab5c"></div></div>
-              <div class="text-[10px] text-slate-400 mt-1">平均 2.4s · tokens 780/req</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1">今日消耗</div>
-              <div class="kpi" style="font-size:22px">$0.42</div>
-              <div class="text-[10px] text-slate-400 mt-1">≈ 187k tokens</div>
-            </div>
-          </div>
-
-          <!-- 失败原因 -->
-          <div class="mt-4 pt-4 border-t border-slate-100">
-            <div class="text-xs text-slate-400 uppercase font-semibold mb-2">⚠️ 失败原因分布</div>
-            <div class="flex gap-2 flex-wrap">
-              <span class="pill pill-red">timeout · 4</span>
-              <span class="pill pill-amber">rate_limit · 3</span>
-              <span class="pill pill-red">parse_error · 2</span>
-              <span class="pill pill-amber">token_overflow · 1</span>
-            </div>
-          </div>
+          <div class="text-center text-slate-400 text-sm py-6" id="llm-loading">⏳ 从 health/llm_stats.json 加载中...</div>
+          <div id="llm-real-content" class="hidden"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div id="sec-rss" class="card">
-            <div class="font-bold mb-3">📡 RSS 源健康（15 源）</div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>G1 PE</span><span class="pill pill-green">12 · 30m</span></div>
-            <div class="row"><span><span class="dot" style="background:#ef4444"></span>G1 SP</span><span class="pill pill-red">0 · 3d empty</span></div>
-            <div class="row"><span><span class="dot" style="background:#ef4444"></span>G1 RJ</span><span class="pill pill-red">0 · 2d empty</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>G1 BA</span><span class="pill pill-green">7</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>G1 MG</span><span class="pill pill-green">9</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>CNN Brasil</span><span class="pill pill-green">8</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>Metrópoles</span><span class="pill pill-green">3</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>Poder360</span><span class="pill pill-green">6</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>JovemPan</span><span class="pill pill-green">5</span></div>
-            <div class="row"><span><span class="dot" style="background:#4ecdc4"></span>Agência Brasil</span><span class="pill pill-green">11</span></div>
-            <div class="row"><span><span class="dot" style="background:#f59e0b"></span>ND Mais</span><span class="pill pill-amber">1 · low</span></div>
+            <div class="font-bold mb-3">📡 RSS 源健康（来自 meta.json）</div>
+            <div id="rss-source-list"><div class="text-center text-slate-400 py-4">⏳ 加载中...</div></div>
           </div>
           <div class="flex flex-col gap-4">
             <div class="card">
               <div class="font-bold mb-3">⏱️ GitHub Actions</div>
-              <div class="row"><span>上次成功</span><span class="text-green-500 font-semibold">14m ago ✅</span></div>
-              <div class="row"><span>近 10 次</span><span>✅✅✅✅✅✅✅✅✅✅</span></div>
-              <div class="row"><span>平均耗时</span><span>47s</span></div>
-              <div class="row"><span>本月用量</span><span>360 / 2000 min</span></div>
+              <div class="row"><span>上次 GHA push</span><span id="gha-last" class="text-green-500 font-semibold">--</span></div>
+              <div class="row"><span>最新 commit</span><span id="gha-sha" class="font-mono text-xs">--</span></div>
+              <div class="row"><span>数据条数</span><span id="gha-count">--</span></div>
+              <a href="https://github.com/3261559688-oss/crime-map-recife-/actions" target="_blank" class="mt-2 text-xs text-purple-500 block">→ 查看 Actions 详情</a>
             </div>
             <div class="card-amber">
-              <div class="font-semibold mb-3">🏙️ 地理覆盖</div>
+              <div class="font-semibold mb-3">🏙️ 地理覆盖（来自 meta.json）</div>
               <div class="grid grid-cols-3 text-center">
-                <div><div class="text-2xl font-bold">18</div><div class="text-[11px] opacity-80">州 / 27</div></div>
-                <div><div class="text-2xl font-bold">156</div><div class="text-[11px] opacity-80">城市</div></div>
-                <div><div class="text-2xl font-bold">3%</div><div class="text-[11px] opacity-80">无定位</div></div>
+                <div><div class="text-2xl font-bold" id="geo-states">--</div><div class="text-[11px] opacity-80">州</div></div>
+                <div><div class="text-2xl font-bold" id="geo-cities">--</div><div class="text-[11px] opacity-80">城市</div></div>
+                <div><div class="text-2xl font-bold" id="geo-total">--</div><div class="text-[11px] opacity-80">总条数</div></div>
               </div>
             </div>
           </div>
@@ -408,25 +296,18 @@
       <!-- ========== TAB 3: 前端可用性 ========== -->
       <section id="tab-frontend" class="tab-panel hidden">
         <div class="grid grid-cols-3 gap-4 mb-4">
-          <div class="card-mint"><div class="text-[11px] opacity-80">HTTP 状态</div><div class="text-3xl font-bold mt-1">200</div><div class="text-[11px] opacity-80 mt-1">✅ 正常</div></div>
-          <div class="card-purple"><div class="text-[11px] opacity-80">响应时间</div><div class="text-3xl font-bold mt-1">220<span class="text-sm">ms</span></div><div class="text-[11px] opacity-80 mt-1">TTFB</div></div>
-          <div class="card-pink"><div class="text-[11px] opacity-80">JS 错误率</div><div class="text-3xl font-bold mt-1">0.3%</div><div class="text-[11px] opacity-80 mt-1">3 errors</div></div>
+          <div class="card-mint"><div class="text-[11px] opacity-80">HTTP 状态</div><div class="text-3xl font-bold mt-1" id="fe-http-status">--</div><div class="text-[11px] opacity-80 mt-1" id="fe-http-desc">检测中...</div></div>
+          <div class="card-purple"><div class="text-[11px] opacity-80">最新条数</div><div class="text-3xl font-bold mt-1" id="fe-count">--</div><div class="text-[11px] opacity-80 mt-1">线上 JSON</div></div>
+          <div class="card-pink"><div class="text-[11px] opacity-80">最新新闻时间</div><div class="text-xl font-bold mt-1" id="fe-latest">--</div><div class="text-[11px] opacity-80 mt-1">pub_date</div></div>
         </div>
         <div class="card mb-4">
-          <div class="font-bold mb-3">⚡ Web Vitals · 30d</div>
-          <div style="height:180px"><canvas id="fe-perf"></canvas></div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="card">
-            <div class="font-bold mb-3">⚠️ Top JS 错误</div>
-            <div class="row"><span>tile_load_fail</span><span class="pill pill-amber">2</span></div>
-            <div class="row"><span>map_init_timeout</span><span class="pill pill-amber">1</span></div>
-          </div>
-          <div class="card">
-            <div class="font-bold mb-3">🚀 Vercel 部署</div>
-            <div class="row"><span>最新 commit</span><span>abc1234</span></div>
-            <div class="row"><span>状态</span><span class="pill pill-green">READY ✅</span></div>
-            <div class="row"><span>近 10 次</span><span>✅✅✅✅✅✅✅✅✅✅</span></div>
+          <div class="font-bold mb-3">🚀 Vercel 部署（来自 git log）</div>
+          <div class="row"><span>最新 commit</span><span id="fe-sha" class="font-mono text-xs">--</span></div>
+          <div class="row"><span>commit 信息</span><span id="fe-commit-msg" class="text-xs text-slate-500 truncate max-w-xs">--</span></div>
+          <div class="row"><span>数据来源</span><span class="pill pill-green">Vercel + GitHub</span></div>
+          <div class="mt-3 flex gap-2">
+            <a href="https://crime-map-recife.vercel.app" target="_blank" class="pill pill-green">↗ 线上主页</a>
+            <a href="https://vercel.com/dongyuhan03s-projects/crime-map-recife/deployments" target="_blank" class="pill pill-purple">↗ Deployments</a>
           </div>
         </div>
       </section>
@@ -445,112 +326,42 @@
           <div class="text-2xl text-purple-400">›</div>
         </a>
 
-        <!-- 异常告警条 -->
-        <div class="card mb-4" style="background:linear-gradient(135deg,#fff5f7,#ffeef2);border:2px solid #ffe1ea">
-          <div class="flex items-center gap-3">
-            <div class="text-3xl">🚨</div>
-            <div class="flex-1">
-              <div class="font-bold text-red-500">埋点异常检测（2 项）</div>
-              <div class="text-xs text-slate-500 mt-1">
-                • <b>city_switch</b> 今日 0 次触发（往日均 40+）→ 可能埋点挂了 &nbsp; · &nbsp;
-                • <b>news_open</b> CTR 跌到 30%（往日 45%）→ 可能地图卡顿或列表异常
-              </div>
-            </div>
-            <button class="pill pill-red">去排查</button>
-          </div>
-        </div>
-
-        <!-- 4 通道 -->
+        <!-- Umami 真实数据入口 -->
         <div class="card-purple mb-4">
-          <div class="font-semibold mb-3">📡 4 通道上报状态</div>
-          <div class="grid grid-cols-4 gap-3">
-            <div class="bg-white/10 rounded-2xl p-4"><div class="text-xs opacity-70">🅰️ Kwai kwailog</div><div class="text-lg font-bold mt-1">—</div><div class="text-[10px] opacity-70">App 内 · 不可测</div></div>
-            <div class="bg-white/10 rounded-2xl p-4"><div class="text-xs opacity-70">🅱️ HTTP fallback</div><div class="text-lg font-bold mt-1">✅ 1,890</div><div class="text-[10px] opacity-70">Radar 24h</div></div>
-            <div class="bg-white/10 rounded-2xl p-4"><div class="text-xs opacity-70">🅲 Debug console</div><div class="text-lg font-bold mt-1">✅</div><div class="text-[10px] opacity-70">Dev only</div></div>
-            <div class="bg-white/10 rounded-2xl p-4"><div class="text-xs opacity-70">🅳 Umami</div><div class="text-lg font-bold mt-1">1,234 PV</div><div class="text-[10px] opacity-70">24h</div></div>
+          <div class="font-semibold mb-3">📊 Umami 埋点数据（真实）</div>
+          <div id="analytics-umami-real">
+            <div class="text-center py-4">⏳ 从 health/analytics.json 加载中...</div>
           </div>
+          <a href="https://umami-crime-map.vercel.app" target="_blank" class="mt-3 text-white/80 text-xs block text-center">→ 打开 Umami 后台查看完整数据</a>
         </div>
 
-        <!-- 事件表格 -->
-        <div class="card">
-          <div class="flex justify-between items-center mb-3">
-            <div class="font-bold">📋 20 个事件 · 今日 vs 昨日</div>
-            <div class="text-xs text-slate-400">🟢 正常 · 🟡 偏离 · 🔴 异常</div>
+        <!-- Session 回放 -->
+        <a href="./sessions.html" class="card mb-4 flex items-center justify-between hover:shadow-lg transition" style="background:linear-gradient(135deg,#e8e3ff,#f4f2fc);border:2px solid #c8b8f5;text-decoration:none;color:inherit">
+          <div class="flex items-center gap-3">
+            <div class="text-3xl">👥</div>
+            <div>
+              <div class="font-bold" style="color:#6b5be7">Session 行为回放 →</div>
+              <div class="text-xs text-slate-500 mt-1">看每个真实用户在你页面上的完整时间线</div>
+            </div>
           </div>
-          <div class="grid grid-cols-2 gap-x-6" id="ev-list"></div>
-        </div>
+          <div class="text-2xl text-purple-400">›</div>
+        </a>
       </section>
 
       <!-- ========== TAB 5: 业务指标 ========== -->
       <section id="tab-business" class="tab-panel hidden">
         <div class="grid grid-cols-4 gap-4 mb-4">
-          <div class="card-purple"><div class="text-[11px] opacity-80">DAU</div><div class="text-3xl font-bold mt-1">234</div><div class="text-[11px] opacity-80 mt-1">↑15%</div></div>
-          <div class="card-pink"><div class="text-[11px] opacity-80">WAU</div><div class="text-3xl font-bold mt-1">892</div></div>
-          <div class="card-mint"><div class="text-[11px] opacity-80">MAU</div><div class="text-3xl font-bold mt-1">2,341</div></div>
-          <div class="card-amber"><div class="text-[11px] opacity-80">D1 留存</div><div class="text-3xl font-bold mt-1">28%</div></div>
+          <div class="card-purple"><div class="text-[11px] opacity-80">今日 UV</div><div class="text-3xl font-bold mt-1" id="biz-uv">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
+          <div class="card-pink"><div class="text-[11px] opacity-80">今日 PV</div><div class="text-3xl font-bold mt-1" id="biz-pv">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
+          <div class="card-mint"><div class="text-[11px] opacity-80">7天 UV</div><div class="text-3xl font-bold mt-1" id="biz-uv-7d">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
+          <div class="card-amber"><div class="text-[11px] opacity-80">跳出率</div><div class="text-3xl font-bold mt-1" id="biz-bounce">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
         </div>
 
-        <!-- 业务转化漏斗 -->
+        <!-- 业务数据（来自 Umami + health/analytics.json）-->
         <div class="card mb-4">
-          <div class="flex justify-between items-center mb-4">
-            <div class="font-bold">🎯 用户转化漏斗（今日 1000 打开）</div>
-            <span class="text-xs text-slate-400">从 Kwai 进入 → 最终回流</span>
-          </div>
-          <div class="space-y-2">
-            <div class="funnel-bar" style="background:linear-gradient(90deg,#6b5be7,#8a7cff);width:100%;border-radius:12px">
-              <span>🚪 打开页面</span><span>1,000 · 100%</span>
-            </div>
-            <div class="text-center text-[10px] text-slate-400">↓ 70%（30% 首屏白屏或退出）</div>
-            <div class="funnel-bar" style="background:linear-gradient(90deg,#7a6cee,#9989ff);width:85%;margin-left:7.5%;border-radius:12px">
-              <span>🗺️ 看到地图</span><span>700 · 70%</span>
-            </div>
-            <div class="text-center text-[10px] text-slate-400">↓ 71%（29% 只看不点）</div>
-            <div class="funnel-bar" style="background:linear-gradient(90deg,#8a7cff,#a89aff);width:65%;margin-left:17.5%;border-radius:12px">
-              <span>📍 点标记 / 列表</span><span>500 · 50%</span>
-            </div>
-            <div class="text-center text-[10px] text-slate-400">↓ 40%（60% 只看卡片不点新闻）</div>
-            <div class="funnel-bar" style="background:linear-gradient(90deg,#ff8fb0,#ffa8c1);width:35%;margin-left:32.5%;border-radius:12px">
-              <span>📰 点开新闻</span><span>200 · 20%</span>
-            </div>
-            <div class="text-center text-[10px] text-slate-400">↓ 20%（80% 直接关闭或返回）</div>
-            <div class="funnel-bar" style="background:linear-gradient(90deg,#4ecdc4,#8ee0d8);width:15%;margin-left:42.5%;border-radius:12px">
-              <span>🔄 回 Kwai</span><span>40 · 4%</span>
-            </div>
-          </div>
-          <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-4 text-center">
-            <div><div class="text-xs text-slate-400">最大流失点</div><div class="text-sm font-bold text-red-500 mt-1">点标记 → 点新闻（60%）</div></div>
-            <div><div class="text-xs text-slate-400">整体转化率</div><div class="text-sm font-bold" style="color:#6b5be7">4.0%</div></div>
-            <div><div class="text-xs text-slate-400">vs 昨日</div><div class="text-sm font-bold text-red-500">↓ 1.2%</div></div>
-          </div>
-        </div>
-
-        <!-- DAU 趋势 -->
-        <div class="card mb-4">
-          <div class="font-bold mb-3">📈 DAU 趋势（30 天）</div>
-          <div style="height:180px"><canvas id="bz-dau"></canvas></div>
-        </div>
-
-        <!-- 用户画像 & 退出方式 -->
-        <div class="grid grid-cols-3 gap-4">
-          <div class="card">
-            <div class="font-bold mb-3">👥 用户画像</div>
-            <div class="row"><span>首次访问</span><span class="pill pill-purple">68%</span></div>
-            <div class="row"><span>回访用户</span><span class="pill pill-purple">32%</span></div>
-            <div class="row"><span>iOS</span><span class="font-semibold">58%</span></div>
-            <div class="row"><span>Android</span><span class="font-semibold">42%</span></div>
-          </div>
-          <div class="card">
-            <div class="font-bold mb-3">🚪 退出方式</div>
-            <div class="row"><span>back（退回 Kwai）</span><span class="pill pill-purple">68%</span></div>
-            <div class="row"><span>switch_tab</span><span class="pill pill-purple">18%</span></div>
-            <div class="row"><span>close</span><span class="pill pill-purple">14%</span></div>
-          </div>
-          <div class="card">
-            <div class="font-bold mb-3">🏆 Top 城市</div>
-            <div class="row"><span>Recife</span><span class="font-bold">34%</span></div>
-            <div class="row"><span>São Paulo</span><span class="font-bold">22%</span></div>
-            <div class="row"><span>Rio</span><span class="font-bold">15%</span></div>
-            <div class="row"><span>Salvador</span><span class="font-bold">8%</span></div>
+          <div class="font-bold mb-3">📊 Umami 真实数据</div>
+          <div id="biz-umami-detail">
+            <div class="text-center text-slate-400 py-6">⏳ 从 health/analytics.json 加载中...<br><a href="https://umami-crime-map.vercel.app" target="_blank" class="text-purple-400 text-xs mt-2 block">→ 直接查看 Umami 后台</a></div>
           </div>
         </div>
       </section>
@@ -558,22 +369,14 @@
       <!-- ========== TAB 6: 基础设施 ========== -->
       <section id="tab-infra" class="tab-panel hidden">
         <div class="card mb-4">
-          <div class="font-bold mb-4">💰 免费额度使用</div>
-          <div class="mb-4">
-            <div class="flex justify-between text-sm mb-2"><span>Vercel 带宽</span><span class="font-semibold">3.2 / 100 GB</span></div>
-            <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:3.2%;background:linear-gradient(90deg,#6b5be7,#8a7cff)"></div></div>
-          </div>
-          <div class="mb-4">
-            <div class="flex justify-between text-sm mb-2"><span>GitHub Actions</span><span class="font-semibold">360 / 2000 min</span></div>
-            <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:18%;background:linear-gradient(90deg,#ff6b8a,#ff8fb0)"></div></div>
-          </div>
-          <div class="mb-4">
-            <div class="flex justify-between text-sm mb-2"><span>Neon Storage</span><span class="font-semibold">0.2 / 3 GB</span></div>
-            <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:6.7%;background:linear-gradient(90deg,#4ecdc4,#8ee0d8)"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-sm mb-2"><span>Neon Compute</span><span class="font-semibold">12 / 191 h</span></div>
-            <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:6.3%;background:linear-gradient(90deg,#ffab5c,#ffcb87)"></div></div>
+          <div class="font-bold mb-4">💰 免费额度使用（手动记录，待补充真实数据）</div>
+          <div class="text-center text-slate-400 py-4" id="infra-quota">
+            <div class="text-sm">Vercel 带宽 / GHA 用量 / Umami PostgreSQL</div>
+            <div class="text-xs mt-2">待接入真实监控数据</div>
+            <div class="flex gap-3 justify-center mt-3">
+              <a href="https://vercel.com/dongyuhan03s-projects" target="_blank" class="pill pill-purple">↗ Vercel 后台</a>
+              <a href="https://github.com/3261559688-oss/crime-map-recife-/actions" target="_blank" class="pill pill-green">↗ GHA 用量</a>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -734,38 +537,7 @@ document.querySelectorAll('.side-btn[data-tab]').forEach(t=>t.addEventListener('
 const mkLine=(id,labels,data,color,fill=true)=>{const el=document.getElementById(id);if(!el)return;new Chart(el,{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'33',tension:.45,fill,pointRadius:0,borderWidth:3}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,.7)',font:{size:10}},grid:{display:false}},y:{display:false}}}})};
 const mkBar=(id,labels,data,color)=>{const el=document.getElementById(id);if(!el)return;new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:color,borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,.7)',font:{size:9}},grid:{display:false}},y:{display:false}}}})};
 
-mkLine('ov-main',['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'],[20,45,30,90,55,70,50,80,45,65],'#ff8fb0');
-mkBar('pl-daily',Array.from({length:30},(_,i)=>i+1),[40,55,60,45,80,65,70,85,72,66,90,78,82,75,68,95,88,73,80,86,92,78,84,90,76,82,88,95,82,87],'rgba(255,255,255,.6)');
-mkLine('fe-perf',['1','5','10','15','20','25','30'],[2.1,1.9,1.8,2.0,1.7,1.8,1.8],'#6b5be7',false);
-mkLine('bz-dau',Array.from({length:30},(_,i)=>i+1),[120,135,142,150,165,180,175,190,205,220,215,230,225,240,238,245,250,248,255,242,238,245,250,258,265,260,255,270,265,234],'#6b5be7',false);
-
-// 城市数据（mock）
-const CITY_DATA=[
-  {city:'Recife',state:'PE',count:42,color:'#ff6b8a'},
-  {city:'São Paulo',state:'SP',count:38,color:'#6b5be7'},
-  {city:'Rio de Janeiro',state:'RJ',count:31,color:'#4ecdc4'},
-  {city:'Salvador',state:'BA',count:24,color:'#ffab5c'},
-  {city:'Belo Horizonte',state:'MG',count:19,color:'#8a7cff'},
-  {city:'Fortaleza',state:'CE',count:15,color:'#ff8fb0'},
-  {city:'Manaus',state:'AM',count:11,color:'#8ee0d8'},
-  {city:'Curitiba',state:'PR',count:9,color:'#ffcb87'},
-  {city:'Porto Alegre',state:'RS',count:7,color:'#c8b8f5'},
-  {city:'Brasília',state:'DF',count:6,color:'#4ecdc4'}
-];
-const NEWS_MOCK={
-  'Recife':[
-    {type:'homicídio',t:'Homem é morto a tiros no bairro de Boa Viagem',time:'2h ago',src:'G1 PE'},
-    {type:'roubo',t:'Assalto a joalheria no shopping Recife termina em prisão',time:'5h ago',src:'CNN Brasil'},
-    {type:'tráfico',t:'Polícia apreende 200kg de maconha na BR-101',time:'8h ago',src:'G1 PE'},
-    {type:'feminicídio',t:'Mulher é encontrada morta em Olinda',time:'12h ago',src:'Metrópoles'},
-    {type:'operação',t:'Megaoperação prende 15 suspeitos em Jaboatão',time:'1d ago',src:'G1 PE'}
-  ],
-  'São Paulo':[
-    {type:'roubo',t:'Latrocínio em posto de gasolina na Zona Sul',time:'1h ago',src:'G1 SP'},
-    {type:'homicídio',t:'Jovem morto em briga de trânsito',time:'4h ago',src:'CNN Brasil'},
-    {type:'tráfico',t:'Cracolândia: 30 detidos em operação',time:'6h ago',src:'Metrópoles'}
-  ]
-};
+// 城市数据从 meta.json 动态加载
 const TYPE_COLORS={'homicídio':'#e05676','roubo':'#c47f2b','tráfico':'#6b5be7','feminicídio':'#e05676','operação':'#2ea89f','apreensão':'#2ea89f','prisão':'#4ecdc4','outros':'#94a3b8'};
 
 // 渲染城市列表（在 tab2 内两列网格）—— 初始占位，随后被 loadRealData 覆盖
@@ -802,20 +574,8 @@ document.getElementById('city-modal').addEventListener('click',e=>{if(e.target.i
 // ========== 事件流 ==========
 // severity: critical=红 / warning=黄 / info=蓝 / good=绿
 // category: pipeline / llm / deploy / business / alert
-const FEED=[
-  {id:1,sev:'critical',cat:'pipeline',icon:'🔴',t:'G1 SP 抓取失败',d:'连续 3 天空 feed',time:'2h ago',ts:2,link:'https://github.com/dongyuhan03/crime-map-recife/actions',unread:true},
-  {id:2,sev:'critical',cat:'alert',icon:'🚨',t:'Umami 24h 无数据',d:'埋点可能已断',time:'1h ago',ts:1,link:'https://umami-crime-map.vercel.app',unread:true},
-  {id:3,sev:'warning',cat:'llm',icon:'🟡',t:'LLM2 地理超时 ×4',d:'今日失败率 3.4%',time:'1h ago',ts:1,link:'#tab-pipeline',unread:true},
-  {id:4,sev:'good',cat:'pipeline',icon:'🟢',t:'抓取成功 +23 条',d:'RSS 12/15 源正常',time:'14min ago',ts:0.2,link:'https://github.com/dongyuhan03/crime-map-recife/actions'},
-  {id:5,sev:'good',cat:'deploy',icon:'🚀',t:'Vercel 部署完成',d:'commit abc1234',time:'2h ago',ts:2,link:'https://vercel.com/dongyuhan03/crime-map-recife'},
-  {id:6,sev:'good',cat:'business',icon:'📈',t:'DAU 涨 15%',d:'234 → 270',time:'3h ago',ts:3,link:'#tab-business'},
-  {id:7,sev:'warning',cat:'business',icon:'📉',t:'news_open CTR 跌到 30%',d:'昨天 45%',time:'4h ago',ts:4,link:'#tab-business'},
-  {id:8,sev:'warning',cat:'llm',icon:'💰',t:'今日 LLM 成本 $0.42',d:'环比涨 30%',time:'5h ago',ts:5,link:'#tab-pipeline'},
-  {id:9,sev:'info',cat:'pipeline',icon:'🔵',t:'新 RSS 源接入',d:'Poder360',time:'1d ago',ts:24,link:'#'},
-  {id:10,sev:'warning',cat:'alert',icon:'⚠️',t:'Vercel 带宽 85%',d:'85 / 100 GB · 快到额度',time:'6h ago',ts:6,link:'https://vercel.com/dongyuhan03/crime-map-recife/settings/billing'},
-  {id:11,sev:'good',cat:'pipeline',icon:'✅',t:'GHA 抓取任务 ×12',d:'今日全部通过',time:'6h ago',ts:6,link:'https://github.com/dongyuhan03/crime-map-recife/actions'},
-  {id:12,sev:'good',cat:'business',icon:'🚪',t:'退回 Kwai 68%',d:'转化健康',time:'8h ago',ts:8,link:'#tab-business'}
-];
+// FEED 从 health/feed.json 动态加载，初始为空
+const FEED=[];
 const SEV_STYLE={critical:{bg:'linear-gradient(135deg,#ff6b8a,#ff8fb0)',border:'#ffe1ea'},warning:{bg:'linear-gradient(135deg,#ffab5c,#ffcb87)',border:'#fff2dc'},info:{bg:'linear-gradient(135deg,#8a7cff,#a8b6f7)',border:'#eeecfa'},good:{bg:'linear-gradient(135deg,#4ecdc4,#8ee0d8)',border:'#dff5ee'}};
 let curFilter='24h';
 function renderFeed(){
@@ -1042,12 +802,7 @@ async function loadHealth(){
 }
 loadHealth();
 
-// ========== Sidebar 告警徽标 ==========
-const BADGES={overview:0,pipeline:2,frontend:0,analytics:2,business:0,infra:0};
-Object.entries(BADGES).forEach(([k,v])=>{
-  const b=document.querySelector(`.badge[data-badge="${k}"]`);
-  if(b&&v>0){b.textContent=v;b.classList.add('show')}
-});
+// Sidebar 告警徽标由 loadHealth() 动态写入
 
 // ========== 总览红绿灯 → 跳对应 tab ==========
 document.querySelectorAll('.light[data-jump]').forEach(l=>l.addEventListener('click',()=>{
@@ -1062,42 +817,7 @@ document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',()=>{
   if(p)p.textContent=`${done}/${total}`;
 }));
 
-// ========== Tab4 事件列表（带趋势 + 异常）==========
-const EVENTS=[
-  {name:'page_view',today:1234,y:1102,unit:''},
-  {name:'session_end',today:856,y:775,unit:''},
-  {name:'marker_click',today:423,y:459,unit:''},
-  {name:'list_item_click',today:312,y:298,unit:''},
-  {name:'news_open',today:187,y:220,unit:''},
-  {name:'type_filter',today:98,y:105,unit:''},
-  {name:'city_switch',today:0,y:42,unit:'',anomaly:'critical'},
-  {name:'geo_granted',today:72,y:68,unit:''},
-  {name:'geo_denied',today:28,y:30,unit:''},
-  {name:'sheet_toggle',today:145,y:132,unit:''},
-  {name:'auto_refresh',today:1890,y:1750,unit:''},
-  {name:'error',today:3,y:1,unit:'',anomaly:'warn'},
-  {name:'map_load',today:1200,y:1090,unit:''},
-  {name:'map_zoom',today:340,y:325,unit:''},
-  {name:'search_query',today:56,y:60,unit:''},
-  {name:'share_click',today:12,y:15,unit:''},
-  {name:'refresh_click',today:88,y:82,unit:''},
-  {name:'tutorial_show',today:45,y:48,unit:''},
-  {name:'tutorial_skip',today:38,y:40,unit:''},
-  {name:'feedback_open',today:2,y:3,unit:''}
-];
-const evList=document.getElementById('ev-list');
-if(evList){
-  evList.innerHTML=EVENTS.map(e=>{
-    const diff=e.y===0?0:((e.today-e.y)/e.y*100);
-    let dot='#4ecdc4',arrow='→',arrowColor='#94a3b8',diffText='';
-    if(e.anomaly==='critical'){dot='#ef4444';arrow='!!';arrowColor='#ef4444';diffText='<span class="pill pill-red">异常</span>'}
-    else if(e.anomaly==='warn'){dot='#f59e0b';arrow='↑↑';arrowColor='#f59e0b';diffText='<span class="pill pill-amber">偏高</span>'}
-    else if(diff>10){arrow='↑';arrowColor='#2ea89f';diffText=`<span style="color:#2ea89f">↑${diff.toFixed(0)}%</span>`}
-    else if(diff<-10){arrow='↓';arrowColor='#e05676';diffText=`<span style="color:#e05676">↓${Math.abs(diff).toFixed(0)}%</span>`}
-    else{diffText=`<span class="text-slate-400 text-xs">${diff>=0?'+':''}${diff.toFixed(0)}%</span>`}
-    return `<div class="row"><span class="flex items-center gap-2"><span class="dot" style="background:${dot}"></span><span class="font-mono text-xs">${e.name}</span></span><span class="flex items-center gap-2"><span class="font-semibold">${e.today.toLocaleString()}</span>${diffText}</span></div>`;
-  }).join('');
-}
+// Tab4 事件数据待从 Umami 真实 API 拉取（需配置 UMAMI_TOKEN）
   }));
 }
 function markAllRead(){FEED.forEach(f=>f.unread=false);renderFeed()}
