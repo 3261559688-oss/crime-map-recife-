@@ -714,9 +714,10 @@ async function loadRealData(){
     set('pl-kpi-latest', minsAgo<60?`${minsAgo}m ago`:`${Math.round(minsAgo/60)}h ago`);
     set('pl-kpi-feeds', meta.feeds_success+'/'+meta.feeds_count);
 
-    // ---- Pipeline 流水线数字（RSS 抓取量）----
-    set('pl-rss-out', meta.total.toLocaleString());
-    set('pl-published', total7d.toLocaleString());
+    // ---- Pipeline 流水线数字 ----
+    // RSS 抓取原始量从 llm_stats.json 的 RSS stage 来（在下方 LLM 区块绑定）
+    // 发布层上架数 = meta.total（已过 LLM 过滤的真实发布数）
+    set('pl-published', meta.total.toLocaleString());
     const plGenAt=document.getElementById('pl-generated-at');
     if(plGenAt)plGenAt.textContent=`数据更新于 ${genDt.toLocaleString('zh-CN')}`;
 
@@ -822,20 +823,22 @@ async function loadHealth(){
   // ---- LLM 三阶段 ----
   if(llm && llm.stages){
     const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
-    // stages 结构: [{name:'RSS',in:0,out:N}, {name:'A',in:N,out:N,success:N,rate:N}, {name:'B',...}]
+    // stages 结构: [{name:'RSS',out:N}, {name:'LLM2_type'|'A'|'LLM_A',in,success,rate}, {name:'LLM3_geo'|'B'|'LLM_B',...}]
     const rssStage=llm.stages.find(s=>s.name==='RSS');
-    const aStage=llm.stages.find(s=>s.name==='A'||s.name==='LLM_A');
-    const bStage=llm.stages.find(s=>s.name==='B'||s.name==='LLM_B');
+    const aStage=llm.stages.find(s=>s.name==='LLM_A'||s.name==='A'||s.name==='LLM_A'||s.name==='LLM1_classify');
+    const bStage=llm.stages.find(s=>s.name==='LLM_B'||s.name==='B'||s.name==='LLM2_type');
+    const cStage=llm.stages.find(s=>s.name==='LLM_C'||s.name==='C'||s.name==='LLM3_geo');
     if(rssStage){setEl('pl-rss-out',(rssStage.out||llm.total_rows||0).toLocaleString())}
     if(aStage){
-      setEl('pl-llm-a',`${aStage.success||0}/${aStage.in||0}`);
-      setEl('pl-llm-a-rate',(aStage.rate||0)+'%');
+      setEl('pl-llm-a',`${(aStage.success||0).toLocaleString()}/${(aStage.in||0).toLocaleString()}`);
+      setEl('pl-llm-a-rate',(aStage.rate||0).toFixed(1)+'%');
     }
     if(bStage){
-      setEl('pl-llm-b',`${bStage.success||0}/${bStage.in||0}`);
-      setEl('pl-llm-b-rate',(bStage.rate||0)+'%');
+      setEl('pl-llm-b',`${(bStage.success||0).toLocaleString()}/${(bStage.in||0).toLocaleString()}`);
+      setEl('pl-llm-b-rate',(bStage.rate||0).toFixed(1)+'%');
     }
-    setEl('pl-published',(llm.total_rows||0).toLocaleString());
+    // 发布层显示真实上架数（来自 meta.json，不用 llm total_rows）
+    // pl-published 已在 loadRealData 里用 meta.total 设置，此处不再覆盖
     // 生成时间
     const plGenAt=document.getElementById('pl-generated-at');
     if(plGenAt&&llm.generated_at)plGenAt.textContent=`数据更新于 ${new Date(llm.generated_at).toLocaleString('zh-CN')}`;

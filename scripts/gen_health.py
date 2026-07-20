@@ -52,18 +52,27 @@ def gen_llm_stats():
         if dwd:
             cols = [r[1] for r in cur.execute(f"PRAGMA table_info({dwd})")]
             total = cur.execute(f"SELECT COUNT(*) FROM {dwd}").fetchone()[0]
-            # 假设有 is_crime / crime_type / city / lat 字段判断三阶段完成情况
+            # 实际字段： llm_a_is_crime / llm_b_type / llm_c_city
             stats['stages'].append({'name':'RSS','in':0,'out':total})
-            if 'is_crime' in cols:
+            if 'llm_a_is_crime' in cols:
+                n1 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE llm_a_is_crime IS NOT NULL").fetchone()[0]
+                stats['stages'].append({'name':'LLM_A','in':total,'success':n1,'failed':total-n1,'rate':round(n1/total*100,1) if total else 0})
+            elif 'is_crime' in cols:
                 n1 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE is_crime IS NOT NULL").fetchone()[0]
-                stats['stages'].append({'name':'LLM1_classify','in':total,'success':n1,'failed':total-n1,'rate':round(n1/total*100,1) if total else 0})
-            if 'crime_type' in cols:
+                stats['stages'].append({'name':'LLM_A','in':total,'success':n1,'failed':total-n1,'rate':round(n1/total*100,1) if total else 0})
+            if 'llm_b_type' in cols:
+                n2 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE llm_b_type IS NOT NULL AND llm_b_type != ''").fetchone()[0]
+                stats['stages'].append({'name':'LLM_B','in':total,'success':n2,'failed':total-n2,'rate':round(n2/total*100,1) if total else 0})
+            elif 'crime_type' in cols:
                 n2 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE crime_type IS NOT NULL AND crime_type != ''").fetchone()[0]
-                stats['stages'].append({'name':'LLM2_type','in':total,'success':n2,'failed':total-n2,'rate':round(n2/total*100,1) if total else 0})
-            if 'lat' in cols or 'city' in cols:
+                stats['stages'].append({'name':'LLM_B','in':total,'success':n2,'failed':total-n2,'rate':round(n2/total*100,1) if total else 0})
+            if 'llm_c_city' in cols:
+                n3 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE llm_c_city IS NOT NULL AND llm_c_city != ''").fetchone()[0]
+                stats['stages'].append({'name':'LLM_C','in':total,'success':n3,'failed':total-n3,'rate':round(n3/total*100,1) if total else 0})
+            elif 'lat' in cols or 'city' in cols:
                 col = 'lat' if 'lat' in cols else 'city'
                 n3 = cur.execute(f"SELECT COUNT(*) FROM {dwd} WHERE {col} IS NOT NULL").fetchone()[0]
-                stats['stages'].append({'name':'LLM3_geo','in':total,'success':n3,'failed':total-n3,'rate':round(n3/total*100,1) if total else 0})
+                stats['stages'].append({'name':'LLM_C','in':total,'success':n3,'failed':total-n3,'rate':round(n3/total*100,1) if total else 0})
             stats['total_rows'] = total
         c.close()
         return stats
