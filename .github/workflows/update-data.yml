@@ -1,9 +1,7 @@
 name: 🚨 Auto Update + LLM (30min full pipeline)
-
 # ✅ 每 30 分钟完整跑：抓 RSS → 合并 DB → 跑 LLM → 刷展示层 → 更新前端 JSON
 # 需要 GitHub Secret: WQ_API_KEY (万擎 API key)
 # 在 https://github.com/3261559688-oss/crime-map-recife-/settings/secrets/actions 配置
-
 on:
   schedule:
     - cron: '*/30 * * * *'
@@ -14,25 +12,20 @@ on:
       - 'scripts/fetch_all.py'
       - 'scripts/llm_call_v2.py'
       - '.github/workflows/update-data.yml'
-
 concurrency:
   group: update-data
   cancel-in-progress: false
-
 # 🔑 关键：给 GITHUB_TOKEN 写权限，否则 git push 会 403
 permissions:
   contents: write
-
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
+    timeout-minutes: 25
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
         with:
-          # 拿完整 token，后续 push 用
           persist-credentials: true
           fetch-depth: 0
 
@@ -44,18 +37,17 @@ jobs:
       - name: 📦 Install deps
         run: pip install requests feedparser python-dateutil pytz
 
-      - name: 💾 Cache DB
-        uses: actions/cache@v4
-        with:
-          path: data/crime_map.db
-          key: crime-map-db-${{ github.run_id }}
-          restore-keys: |
-            crime-map-db-
-
+      # ✅ Fix: DB 直接来自 git checkout（不用 cache，永远有完整历史数据）
       - name: 🔧 Ensure DB exists (rebuild from ndjson if missing)
         run: |
           if [ ! -f data/crime_map.db ] && [ -f public/api/incidents.ndjson ]; then
             python3 scripts/rebuild_db_from_ndjson.py
+          fi
+          if [ -f data/crime_map.db ]; then
+            echo "✅ DB 存在: $(du -sh data/crime_map.db | cut -f1)"
+            python3 -c "import sqlite3; c=sqlite3.connect('data/crime_map.db'); print('DB 行数:', c.execute('SELECT COUNT(*) FROM dwd_intl_crime_incident_di').fetchone()[0])" 2>/dev/null || echo "(表不存在，将新建)"
+          else
+            echo "⚠️ DB 不存在，将从头创建"
           fi
 
       - name: 📡 Step 1 - Fetch RSS
@@ -71,33 +63,32 @@ jobs:
       - name: 🔗 Step 3 - Merge raw → DB
         run: python3 scripts/merge_raw_to_db.py
 
-      # ⚡ 策略 A：增量跑 LLM
-      # 每次只跑 100 条，保证 25min 内能跑完（即使万擎接口慢）
-      # 新数据每 30min 通常 < 50 条，所以一两轮就追平
-      # 旧的未跑数据会在每轮里慢慢被消化
-      - name: 🧠 Step 4 - LLM A (is_crime) [incremental, max 100]
+      # ⚡ 增量跑 LLM：每次最多 300 条，保证 20min 内跑完
+      - name: 🧠 Step 4 - LLM A (is_crime) [incremental, max 300]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
         run: |
           if [ -z "$WQ_API_KEY" ]; then
-            echo "::error::❌ WQ_API_KEY 未配置！workflow 会静默跳过 LLM，请到 GitHub Secrets 添加"
+            echo "::error::❌ WQ_API_KEY 未配置！请到 GitHub Secrets 添加"
             echo "::error::访问：https://github.com/${{ github.repository }}/settings/secrets/actions"
             exit 1
           fi
-          # 单步 5 分钟内必须返回（避免某条卡死整个流水线）
-          timeout 500 python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 300 --workers 10 || echo "⚠️ A 段超时或部分失败，下次继续"
+          timeout 600 python3 scripts/llm_call_v2.py --stage a --provider wanqing --limit 300 --workers 10 || echo "⚠️ A 段超时或部分失败，下次继续"
 
-      - name: 🧠 Step 5 - LLM B (type) [incremental, max 100]
+      # ✅ Fix: 用 secrets 直接判断，不用 env.WQ_API_KEY（env 在 if 条件里拿不到 secret）
+      - name: 🧠 Step 5 - LLM B (type) [incremental, max 300]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
-        if: env.WQ_API_KEY != ''
-        run: timeout 500 python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 300 --workers 10 || echo "⚠️ B 段超时或部分失败"
+        run: |
+          if [ -z "$WQ_API_KEY" ]; then echo "⚠️ 跳过 B 段（无 API key）"; exit 0; fi
+          timeout 600 python3 scripts/llm_call_v2.py --stage b --provider wanqing --limit 300 --workers 10 || echo "⚠️ B 段超时或部分失败"
 
-      - name: 🧠 Step 6 - LLM C (geo) [incremental, max 100]
+      - name: 🧠 Step 6 - LLM C (geo) [incremental, max 300]
         env:
           WQ_API_KEY: ${{ secrets.WQ_API_KEY }}
-        if: env.WQ_API_KEY != ''
-        run: timeout 500 python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 300 --workers 10 || echo "⚠️ C 段超时或部分失败"
+        run: |
+          if [ -z "$WQ_API_KEY" ]; then echo "⚠️ 跳过 C 段（无 API key）"; exit 0; fi
+          timeout 600 python3 scripts/llm_call_v2.py --stage c --provider wanqing --limit 300 --workers 10 || echo "⚠️ C 段超时或部分失败"
 
       - name: 🔄 Step 7 - Refresh published layer
         run: python3 scripts/refresh_published.py
@@ -118,6 +109,17 @@ jobs:
           print(f'Total: {len(d)} incidents')
           print(f'Latest: {ts[0] if ts else \"?\"}')
           "
+          echo "=== DB 统计 ==="
+          python3 -c "
+          import sqlite3
+          c = sqlite3.connect('data/crime_map.db')
+          total = c.execute('SELECT COUNT(*) FROM dwd_intl_crime_incident_di').fetchone()[0]
+          a_done = c.execute('SELECT COUNT(*) FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime IS NOT NULL').fetchone()[0]
+          b_done = c.execute('SELECT COUNT(*) FROM dwd_intl_crime_incident_di WHERE llm_b_type IS NOT NULL AND llm_b_type != \"\"').fetchone()[0]
+          print(f'DB 总行数: {total}')
+          print(f'A 完成: {a_done} ({a_done*100//total if total else 0}%)')
+          print(f'B 完成: {b_done} ({b_done*100//total if total else 0}%)')
+          " 2>/dev/null || echo "(DB 统计失败)"
 
       - name: 🩺 Generate Ops Dashboard Health JSON
         env:
@@ -130,18 +132,22 @@ jobs:
           python3 scripts/gen_health.py || echo "⚠️ health JSON 生成失败（不阻塞主流程）"
           ls -la public/health/ || true
 
+      # ✅ Fix: 加入 data/crime_map.db，确保 LLM 结果持久化到 git
       - name: 💾 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/rss_incidents.json public/rss_incidents_lite.json public/raw_incidents.json public/raw_meta.json public/version.json public/index.html public/health/
+          git add public/rss_incidents.json public/rss_incidents_lite.json \
+                  public/raw_incidents.json public/raw_meta.json \
+                  public/version.json public/index.html public/health/ \
+                  data/crime_map.db
           if git diff --staged --quiet; then
-            echo "📭 无变化"
+            echo "📭 无变化，跳过 push"
           else
             COUNT=$(python3 -c "import json; print(len(json.load(open('public/rss_incidents.json'))))" 2>/dev/null || echo "?")
             LATEST=$(python3 -c "import json; d=json.load(open('public/rss_incidents.json')); ts=sorted([x.get('pub_date','') for x in d if x.get('pub_date')],reverse=True); print(ts[0] if ts else '?')" 2>/dev/null || echo "?")
             git commit -m "🤖 auto: ${COUNT} incidents (latest ${LATEST})"
-            # 🔁 防止与你的本地 push 冲突：先 rebase，再 push；失败重试 3 次
+            # 🔁 防止与本地 push 冲突：先 rebase，再 push；失败重试 3 次
             for i in 1 2 3; do
               git pull --rebase origin main && git push && { echo "✅ 已推送"; break; } || echo "⚠️ push 第 $i 次失败，重试..."
               sleep 5

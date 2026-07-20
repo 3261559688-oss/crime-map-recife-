@@ -41,7 +41,7 @@ WHERE
     AND COALESCE(llm_c_city, city) IS NOT NULL
     AND COALESCE(llm_c_state, state) IS NOT NULL
     AND (llm_b_score IS NULL OR llm_b_score >= 30)  -- 🚮 B 段判定明显非犯罪的剔除
-    -- 🆕 只保留 7 天内的（pub_ts 单位是秒级 unix timestamp）
+    -- 只保留 7 天内的（pub_ts 单位是秒级 unix timestamp）
     AND pub_ts >= strftime('%s','now','-7 days')
 """)
 new = cur.execute("SELECT COUNT(*) FROM incidents_published").fetchone()[0]

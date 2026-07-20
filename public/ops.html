@@ -59,6 +59,7 @@
       <div class="side-btn" data-tab="analytics"><span class="ic">📊</span><span class="lb">埋点</span><span class="badge" data-badge="analytics"></span></div>
       <div class="side-btn" data-tab="business"><span class="ic">🎯</span><span class="lb">业务</span><span class="badge" data-badge="business"></span></div>
       <div class="side-btn" data-tab="infra"><span class="ic">🔧</span><span class="lb">基础设施</span><span class="badge" data-badge="infra"></span></div>
+      <div class="side-btn" data-tab="arch"><span class="ic">🧭</span><span class="lb">架构复盘</span><span class="badge" data-badge="arch"></span></div>
       <div class="flex-1"></div>
       <div class="side-btn"><span class="ic">🚪</span><span class="lb">退出</span></div>
     </aside>
@@ -141,6 +142,45 @@
               </div>
             </div>
             <div class="mt-3 text-[11px] text-slate-400" id="build-info">数据加载中...</div>
+          </div>
+        </div>
+
+        <!-- 快捷入口 · 4 张跳转卡 -->
+        <div>
+          <div class="text-xs text-slate-400 uppercase font-bold mb-2 tracking-wider">🔗 快捷跳转 · Quick Links</div>
+          <div class="grid grid-cols-4 gap-3">
+            <a href="https://crime-map-recife.vercel.app/" target="_blank" class="card-purple flex items-center gap-3 no-underline hover:opacity-90 transition-opacity" style="text-decoration:none">
+              <div style="width:44px;height:44px;background:rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px">🗺️</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">犯罪地图</div>
+                <div class="text-[11px] opacity-85">线上主页</div>
+              </div>
+              <div class="opacity-70">↗</div>
+            </a>
+            <a href="https://github.com/3261559688-oss/crime-map-recife-" target="_blank" class="card-pink flex items-center gap-3 no-underline hover:opacity-90 transition-opacity" style="text-decoration:none">
+              <div style="width:44px;height:44px;background:rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px">💾</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">GitHub 仓库</div>
+                <div class="text-[11px] opacity-85">源码 · 工作流</div>
+              </div>
+              <div class="opacity-70">↗</div>
+            </a>
+            <a href="https://umami-crime-map.vercel.app" target="_blank" class="card-mint flex items-center gap-3 no-underline hover:opacity-90 transition-opacity" style="text-decoration:none">
+              <div style="width:44px;height:44px;background:rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px">📊</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">看板仓库</div>
+                <div class="text-[11px] opacity-85">Umami 埋点</div>
+              </div>
+              <div class="opacity-70">↗</div>
+            </a>
+            <a href="https://vercel.com/dongyuhan03s-projects/crime-map-recife/deployments" target="_blank" class="card-amber flex items-center gap-3 no-underline hover:opacity-90 transition-opacity" style="text-decoration:none">
+              <div style="width:44px;height:44px;background:rgba(255,255,255,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px">🚀</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">Vercel 部署</div>
+                <div class="text-[11px] opacity-85">Deployments</div>
+              </div>
+              <div class="opacity-70">↗</div>
+            </a>
           </div>
         </div>
       </section>
@@ -545,6 +585,92 @@
         </div>
       </section>
 
+      <!-- ========== TAB 7: 架构全景 & 演进复盘 ========== -->
+      <section id="tab-arch" class="tab-panel hidden">
+        <style>
+          .arch-timeline{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;position:relative}
+          .arch-timeline::before{content:"";position:absolute;top:22px;left:2%;right:2%;height:2px;background:linear-gradient(90deg,#6b5be7,#ff6b8a);opacity:.25;z-index:0}
+          .arch-phase{background:#fff;border-radius:20px;padding:14px 8px;cursor:pointer;transition:all .25s;position:relative;z-index:1;box-shadow:0 4px 12px -6px rgba(102,89,192,.15);border:2px solid transparent}
+          .arch-phase:hover{transform:translateY(-3px);box-shadow:0 12px 24px -8px rgba(102,89,192,.25);border-color:#8a7cff}
+          .arch-phase.active{border-color:#6b5be7;background:linear-gradient(135deg,#eeecfa,#fff)}
+          .arch-phase .num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b5be7,#8a7cff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin:0 auto 8px}
+          .arch-phase .name{font-size:12px;font-weight:700;text-align:center;color:#2d2b55}
+          .arch-phase .date{font-size:10px;color:#94a3b8;text-align:center;margin-top:2px}
+          .arch-phase .st{position:absolute;top:6px;right:8px;width:8px;height:8px;border-radius:50%}
+          .arch-phase .st.ok{background:#4ecdc4}
+          .arch-phase .st.warn{background:#f59e0b}
+          .arch-phase .st.err{background:#ef4444;animation:pulse 1.5s infinite}
+
+          .arch-layer{display:grid;grid-template-columns:60px 1fr;gap:14px;align-items:center;background:#fff;border-radius:18px;padding:14px 18px;margin-bottom:10px;transition:all .2s;box-shadow:0 3px 10px -4px rgba(102,89,192,.1)}
+          .arch-layer:hover{transform:translateX(4px);box-shadow:0 8px 18px -6px rgba(102,89,192,.2)}
+          .arch-layer .layer-num{font-size:26px;font-weight:800;background:linear-gradient(135deg,#6b5be7,#ff6b8a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+          .arch-layer .layer-title{font-size:14px;font-weight:700;color:#2d2b55;margin-right:14px;min-width:96px}
+          .arch-modules{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+          .arch-mod{padding:5px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;border:1.5px solid transparent}
+          .arch-mod:hover{transform:translateY(-1px)}
+          .arch-mod.ok{background:#dff5ee;color:#2ea89f;border-color:#b3e6db}
+          .arch-mod.warn{background:#fff2dc;color:#c47f2b;border-color:#ffd89e}
+          .arch-mod.err{background:#ffe1ea;color:#e05676;border-color:#ffb8cc}
+          .arch-mod.todo{background:#eeecfa;color:#6b5be7;border-color:#c8bfef}
+
+          .arch-drawer{position:fixed;top:0;right:-640px;width:600px;max-width:92vw;height:100vh;background:#fff;transition:right .3s cubic-bezier(.4,0,.2,1);z-index:1000;overflow-y:auto;box-shadow:-12px 0 40px rgba(45,43,85,.15);border-radius:32px 0 0 32px}
+          .arch-drawer.open{right:0}
+          .arch-drawer-head{position:sticky;top:0;background:linear-gradient(135deg,#6b5be7,#8a7cff);color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;z-index:2;border-radius:32px 0 0 0}
+          .arch-drawer-head h3{font-size:18px;font-weight:700}
+          .arch-drawer-head button{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+          .arch-drawer-head button:hover{background:rgba(255,255,255,.35)}
+          .arch-drawer-body{padding:24px;color:#2d2b55}
+          .arch-drawer-body h4{font-size:12px;font-weight:700;color:#6b5be7;text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px}
+          .arch-drawer-body h4:first-child{margin-top:0}
+          .arch-drawer-body ul{list-style:none;padding:0}
+          .arch-drawer-body li{padding:10px 14px;background:#f4f2fc;border-radius:12px;margin-bottom:6px;font-size:13px;color:#2d2b55;line-height:1.55;border-left:4px solid #6b5be7}
+          .arch-drawer-body li.ok{border-color:#4ecdc4;background:#dff5ee}
+          .arch-drawer-body li.warn{border-color:#f59e0b;background:#fff8e6}
+          .arch-drawer-body li.err{border-color:#ef4444;background:#ffe8ee}
+          .arch-drawer-body li.todo{border-color:#c084fc;background:#f4efff}
+          .arch-drawer-body code{background:#fff;padding:2px 8px;border-radius:6px;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:#e05676;border:1px solid rgba(224,86,118,.15)}
+          .arch-mask{position:fixed;inset:0;background:rgba(45,43,85,.5);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s;z-index:999}
+          .arch-mask.open{opacity:1;pointer-events:auto}
+          .arch-legend{display:flex;gap:14px;font-size:12px;color:#64748b;flex-wrap:wrap;align-items:center}
+          .arch-legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+        </style>
+
+        <!-- 顶部 hero -->
+        <div class="card-purple mb-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="text-xs opacity-80 mb-1 uppercase tracking-wider">Single Source of Truth</div>
+              <div class="text-xl font-bold mb-1">🗺️ 项目单一真相源</div>
+              <div class="text-xs opacity-90">从 6/15 竞品调研到现在 · 每次改动都会更新到这里</div>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl font-bold" id="arch-total-days">27</div>
+              <div class="text-xs opacity-80">天</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 演进时间线 -->
+        <div class="card mb-4">
+          <div class="flex justify-between items-center mb-3">
+            <div class="font-bold">📅 演进时间线</div>
+            <div class="arch-legend">
+              <span><span class="dot" style="background:#4ecdc4"></span>已完成</span>
+              <span><span class="dot" style="background:#f59e0b"></span>需关注</span>
+              <span><span class="dot" style="background:#ef4444"></span>问题/阻塞</span>
+              <span><span class="dot" style="background:#c084fc"></span>待办</span>
+            </div>
+          </div>
+          <div class="arch-timeline" id="arch-timeline"></div>
+        </div>
+
+        <!-- 9 层数据流 -->
+        <div class="card">
+          <div class="font-bold mb-3">🔀 运行时数据流 · 9 层架构</div>
+          <div id="arch-layers"></div>
+        </div>
+      </section>
+
     </main>
 
     <!-- 右侧事件流（仅总览 tab 显示）-->
@@ -593,7 +719,7 @@ window.addEventListener('error',e=>{
   if(b){b.textContent=msg;b.style.color='red';b.style.fontSize='12px'}
 });
 window.__OPS_TRACE__.push('script start ok');
-const TITLES={overview:'总览 Dashboard',pipeline:'数据抓取 · Pipeline',frontend:'前端可用性 · Frontend',analytics:'用户埋点 · Analytics',business:'业务指标 · Business',infra:'基础设施 · Infra'};
+const TITLES={overview:'总览 Dashboard',pipeline:'数据抓取 · Pipeline',frontend:'前端可用性 · Frontend',analytics:'用户埋点 · Analytics',business:'业务指标 · Business',infra:'基础设施 · Infra',arch:'架构全景 & 演进复盘'};
 document.querySelectorAll('.side-btn[data-tab]').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.side-btn').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
@@ -981,6 +1107,200 @@ document.querySelectorAll('.feed-tab').forEach(t=>t.addEventListener('click',()=
   curFilter=t.dataset.filter;renderFeed();
 }));
 renderFeed();
+
+/* ========== TAB 7: 架构复盘 数据 & 渲染 ========== */
+const ARCH_PHASES=[
+  {id:'p1',num:1,name:'MVP',date:'6/15',status:'ok',title:'🌱 阶段 1 · MVP 快速验证',subtitle:'一天完成 · 49 → 2007 条',body:[
+    {h:'📌 目标',type:'ok',items:['竞品调研发现巴西无实时犯罪地图产品','用最简技术栈做出可用 H5']},
+    {h:'🛠️ 关键决策',items:['Leaflet + OpenStreetMap · 免费瓦片','iOS 手机边框 mock（桌面端体验）','GHA 30min 自动更新','城市切换 + 底部 sheet']},
+    {h:'📈 数据爆炸',items:['49 → 84 → 657 → 1033 → 2007（同一天）','+30 RSS 源 · +5 crime types']},
+    {h:'⚠️ 教训',type:'warn',items:['marker clustering 反而在手机端更卡 → 已 revert','完全靠关键词过滤 → 后期误杀严重（需要 LLM）']}
+  ]},
+  {id:'p2',num:2,name:'埋点',date:'6/22',status:'ok',title:'📊 阶段 2 · 埋点接入',subtitle:'Kwai Trinity → 后被 Umami 替代',body:[
+    {h:'🛠️ 首版',items:['集成 @kibt/weblogger SDK','事件：pv / click / geo_granted / geo_denied']},
+    {h:'📁 代码变化',items:['index.html 拆分为 html/css/js/telemetry 4 段（可维护性）']},
+    {h:'🔄 后续换掉',type:'warn',items:['Trinity 是内网协议 · 站外用户看不到数据','7/11 换成 Umami self-hosted']}
+  ]},
+  {id:'p3',num:3,name:'数仓',date:'6/22~24',status:'ok',title:'🗄️ 阶段 3 · 数仓分层',subtitle:'SQLite ods+dwd + DuckDB',body:[
+    {h:'🏗️ 双层架构',items:['<code>ods_raw_rss</code> · 原始 RSS 落盘','<code>dwd_intl_crime_incident_di</code> · 清洗主表 9643 行']},
+    {h:'📥 入口脚本',items:['fetch_all.py · 并发拉 100+ RSS','merge_raw.py · 去重 + 落 raw']},
+    {h:'📊 分析层',items:['DuckDB 零成本 OLAP','事件回溯 CSV/XLSX/MD 三件套']},
+    {h:'🔌 外部接口',items:['开放 4 个标准接口']}
+  ]},
+  {id:'p4',num:4,name:'LLM',date:'6/22~24',status:'warn',title:'🧠 阶段 4 · LLM 三段流水线',subtitle:'Luigi 工作流 · 万擎 GLM',body:[
+    {h:'⛓️ 三阶段',items:['Stage A · is_crime? (0/1)','Stage B · type + score','Stage C · state/city/neighbor/lat/lng']},
+    {h:'🔧 技术栈',items:['万擎 GLM 内网 API：<code>wanqing-api.corp.kuaishou.com</code>','模型：<code>ep-7zifa0-1777001276406194677</code>']},
+    {h:'⚠️ 当前问题',type:'err',items:['429 限流严重 · 单 Key ~1 QPS','单条 20-25s（GLM thinking chain）','积压：A 4623 · B 6209 · C 8471']},
+    {h:'✅ 已实施 fix',type:'ok',items:['429 重试 exp backoff 8 次','<code>--throttle</code> 参数控制间隔','WQ_API_KEY 缺失时 exit 1（原静默跳过）']}
+  ]},
+  {id:'p5',num:5,name:'定位UX',date:'6/22~25',status:'ok',title:'📍 阶段 5 · 用户定位 UX',subtitle:'试 3 版失败 · 最终定型',body:[
+    {h:'❌ 尝试 1',type:'err',items:['附近模式圈选 · 认知成本太高']},
+    {h:'❌ 尝试 2',type:'err',items:['顶部 geoBtn · 用户看不到']},
+    {h:'❌ 尝试 3',type:'err',items:['底部引导条 · 影响列表']},
+    {h:'✅ 最终版',type:'ok',items:['1.5s 后居中弹窗（地图先出来）','<code>geo_asked</code> 只弹一次','允许 → 蓝色脉冲点','100km 内自动切最近城市']}
+  ]},
+  {id:'p6',num:6,name:'前端优化',date:'6/24~26',status:'ok',title:'⚡ 阶段 6 · 前端性能优化',subtitle:'首屏秒出 · 无感更新',body:[
+    {h:'🚀 首屏',items:['200 条精选秒出 (114KB) + 后台懒加载','JSON 3MB → 1MB','marker cluster 已 revert']},
+    {h:'🗺️ 瓦片源',items:['cartocdn（国内墙）→ ArcGIS World Street']},
+    {h:'🔄 自动刷新',items:['5min 后台拉最新 JSON','版本检测 · 无感重载']},
+    {h:'🔒 7 天铁律',items:['pub_ts >= now-7d · 双保险']},
+    {h:'🎯 交互',items:['marker 点击 → 底部列表联动']}
+  ]},
+  {id:'p7',num:7,name:'源治理',date:'6/29~7/11',status:'ok',title:'🔧 阶段 7 · 数据源治理',subtitle:'旧源死了 · 加新源救场',body:[
+    {h:'🚨 关键事件 7/8',type:'err',items:['G1 全国 feeds 突然返回空 · 数据断流']},
+    {h:'🛠️ 修复',type:'ok',items:['UA 升级 Chrome 120','屏蔽 50+ 失效源（R7/UOL/Estadão）','新增 5 个源：Agência Brasil / CNN / JovemPan / Poder360 / ND Mais','GHA contents:write + rebase 重试（修 403）']}
+  ]},
+  {id:'p8',num:8,name:'本次优化',date:'7/11',status:'warn',title:'🚀 阶段 8 · 本次会话优化',subtitle:'Umami + 铁律漏洞 + catchup 中',body:[
+    {h:'✅ 已完成',type:'ok',items:['Umami self-hosted 接入（website id <code>61577869</code>）','sessions.html 用户回放页 + session_end 修复','ops.html 6 tabs 运维看板','workflow: limit 100→300 · workers 5→10 · timeout 500','ops.html 新增架构复盘 tab（本页）']},
+    {h:'🔍 关键发现',type:'err',items:['<code>refresh_published.py</code> 有铁律漏洞：<code>WHERE (llm_a_is_crime = 1 OR llm_a_is_crime IS NULL)</code>','2749 条上架但 LLM 三段全 NULL']},
+    {h:'🔄 进行中',type:'warn',items:['本地 catchup（PID 81291）','A 700/4623 · 12-20 条/分钟 · ETA 4h+']},
+    {h:'📌 待做',type:'todo',items:['<code>refresh_published.py</code> 改严格版','cron 改 <code>0 9,11,13,15,17,19,21,23 * * *</code>','commit + push · GHA 接管']}
+  ]}
+];
+
+const ARCH_LAYERS=[
+  {id:'L1',num:'①',title:'调度层',modules:[
+    {name:'GHA cron · 每 2h（待改）',status:'todo',detail:{title:'① 调度层 · GHA Cron',body:[
+      {h:'📁 文件',items:['<code>.github/workflows/update-data.yml</code>']},
+      {h:'⏰ 当前',type:'err',items:['<code>*/30 * * * *</code> · 一天 48 次','LLM 限流跑不完 · 常 timeout']},
+      {h:'🎯 待改',type:'todo',items:['<code>0 9,11,13,15,17,19,21,23 * * *</code>','UTC 9-23 每 2h = 巴西 06-20 每 2h','覆盖全天 93.7% 新闻流量']},
+      {h:'💰 GHA 额度',type:'ok',items:['仓库 public → 完全免费无限制']}
+    ]}}
+  ]},
+  {id:'L2',num:'②',title:'抓取层',modules:[
+    {name:'fetch_all.py',status:'ok',detail:{title:'② 抓取层 · RSS 爬虫',body:[
+      {h:'📁 文件',items:['<code>scripts/fetch_all.py</code>','<code>scripts/merge_raw.py</code>']},
+      {h:'🌐 数据源',items:['100+ RSS · G1/CNN Brasil/JovemPan/Agência Brasil/Poder360/ND Mais']},
+      {h:'🛠️ 实现',items:['asyncio 并发','UA Chrome 120','去重 by url_hash']}
+    ]}},
+    {name:'merge_raw.py',status:'ok'}
+  ]},
+  {id:'L3',num:'③',title:'存储层',modules:[
+    {name:'ods_raw_rss',status:'ok'},
+    {name:'dwd · 9643 行',status:'ok',detail:{title:'③ 存储层 · SQLite',body:[
+      {h:'📁 文件',items:['<code>data/crime_map.db</code>']},
+      {h:'🗄️ 表',items:['<code>ods_raw_rss</code>','<code>dwd_intl_crime_incident_di</code> · 9643 行']},
+      {h:'📋 关键字段',items:['id / url / title / summary / pub_ts','source_name / lang','llm_a_is_crime / llm_b_type / llm_b_score','llm_c_state / city / neighbor / lat / lng','llm_processed_at']},
+      {h:'📊 完成率',type:'warn',items:['A: 52%','B: 36%','C: 13%（最卡）']}
+    ]}}
+  ]},
+  {id:'L4',num:'④',title:'LLM 三段',modules:[
+    {name:'Stage A',status:'err'},
+    {name:'Stage B',status:'err'},
+    {name:'Stage C · 最卡',status:'err',detail:{title:'④ LLM 三段 · 万擎 GLM',body:[
+      {h:'📁 文件',items:['<code>scripts/llm_call_v2.py</code>']},
+      {h:'🔗 API',items:['<code>wanqing-api.corp.kuaishou.com/api/gateway/v1/messages</code>','模型 <code>ep-7zifa0-1777001276406194677</code>','max_tokens 4096 · timeout (10,60)']},
+      {h:'⚠️ 限流',type:'err',items:['单 Key ~1 QPS · 15 workers 会 429','推荐：3 workers + <code>--throttle 1</code>','单条 20-25s']},
+      {h:'♻️ 重试',type:'ok',items:['exp backoff 8 次 · max 20s']},
+      {h:'📊 积压',type:'err',items:['A: 4623 · B: 6209 · C: 8471']}
+    ]}}
+  ]},
+  {id:'L5',num:'⑤',title:'投影层',modules:[
+    {name:'refresh_published',status:'err',detail:{title:'⑤ 投影层 · refresh_published',body:[
+      {h:'📁 文件',items:['<code>scripts/refresh_published.py</code>']},
+      {h:'🎯 作用',items:['dwd → <code>incidents_published</code> · 7 天窗口']},
+      {h:'❌ 当前 SQL（漏洞）',type:'err',items:['<code>WHERE (llm_a_is_crime = 1 OR llm_a_is_crime IS NULL)</code>','fallback 允许未过 LLM 上架 · 违反铁律']},
+      {h:'✅ 目标严格版',type:'todo',items:["<code>WHERE llm_a_is_crime = 1</code>","<code>AND llm_b_type IS NOT NULL AND llm_b_type != ''</code>","<code>AND llm_c_city IS NOT NULL AND llm_c_city != ''</code>","<code>AND llm_b_score >= 30</code>","<code>AND pub_ts >= strftime('%s','now','-7 days')</code>"]}
+    ]}},
+    {name:'emit_health',status:'warn'},
+    {name:'incidents_published · 2749',status:'warn'}
+  ]},
+  {id:'L6',num:'⑥',title:'静态文件',modules:[
+    {name:'rss_incidents.json',status:'ok'},
+    {name:'health/*.json · 16.5h 未更',status:'err',detail:{title:'⑥ 静态文件 · public/',body:[
+      {h:'📁 关键文件',items:['<code>rss_incidents.json</code> · 前端地图数据源','<code>health/*.json</code> · 5 个健康数据','<code>version.json</code> · 部署版本追踪']},
+      {h:'🔴 当前',type:'err',items:['health/*.json 停在 07-11 03:15（16.5h）','version.json 卡 <code>efa0527</code>（HEAD 是 <code>bc50789</code>）','rss_incidents.json 停在 07-10 17:19（26h）']},
+      {h:'🔍 原因',type:'warn',items:['GHA 跑绿但 "无变化" 跳过 push','LLM 限流 → 数据无变化 → 无 commit → 无部署']}
+    ]}},
+    {name:'version.json · 卡旧 sha',status:'err'}
+  ]},
+  {id:'L7',num:'⑦',title:'部署',modules:[
+    {name:'Vercel Static',status:'ok',detail:{title:'⑦ 部署 · Vercel',body:[
+      {h:'📁 配置',items:['<code>vercel.json</code> · public/ 为根']},
+      {h:'🔒 缓存',items:['.html: no-cache','JSON: 允许 CDN + 版本号绕过']},
+      {h:'✅ 状态',type:'ok',items:['部署链路正常 · 等 GitHub push 就重部署']}
+    ]}}
+  ]},
+  {id:'L8',num:'⑧',title:'前端',modules:[
+    {name:'index.html · 地图',status:'ok',detail:{title:'⑧ 前端 · 主页',body:[
+      {h:'📁 文件',items:['<code>public/index.html</code>']},
+      {h:'🗺️ 地图',items:['Leaflet + ArcGIS','普通 marker（cluster 已 revert）','marker 点击 → 底部列表联动']},
+      {h:'📱 布局',items:['iOS 手机边框（桌面）','H5 全屏（移动）','底部 sheet 45%']},
+      {h:'📍 定位',items:['1.5s 弹窗','蓝色脉冲点 + 切最近城市']},
+      {h:'🔄 更新',items:['5min 后台刷新 + 版本无感重载']}
+    ]}},
+    {name:'ops.html · 7 tabs',status:'ok'},
+    {name:'sessions.html · 回放',status:'ok'},
+    {name:'nearby.html',status:'ok'}
+  ]},
+  {id:'L9',num:'⑨',title:'埋点分析',modules:[
+    {name:'Umami',status:'ok',detail:{title:'⑨ 埋点 · Umami',body:[
+      {h:'🔗 配置',items:['website id: <code>61577869</code>','self-hosted']},
+      {h:'🗄️ PostgreSQL',items:['<code>website_event</code> · 事件主表','<code>event_data</code> · K-V 参数','<code>session</code> · 会话表']},
+      {h:'📤 事件',items:['自动：pv / referrer / device','geo_modal_show/allow/deny','geo_granted {lat,lng,nearest_city,dist_km}','session_end（离开补发）']},
+      {h:'🔍 查询',items:['Umami 后台看板','REST API','直连 PostgreSQL']}
+    ]}},
+    {name:'PostgreSQL 底表',status:'ok'}
+  ]}
+];
+
+const _tl=document.getElementById('arch-timeline');
+if(_tl){
+  ARCH_PHASES.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='arch-phase';el.dataset.id=p.id;
+    el.innerHTML=`<div class="st ${p.status}"></div><div class="num">${p.num}</div><div class="name">${p.name}</div><div class="date">${p.date}</div>`;
+    el.onclick=()=>archOpen(p);
+    _tl.appendChild(el);
+  });
+}
+const _ly=document.getElementById('arch-layers');
+if(_ly){
+  ARCH_LAYERS.forEach(L=>{
+    const el=document.createElement('div');
+    el.className='arch-layer';
+    const mods=L.modules.map((m,i)=>`<span class="arch-mod ${m.status||''}" data-l="${L.id}" data-i="${i}">${m.name}</span>`).join('');
+    el.innerHTML=`<div class="layer-num">${L.num}</div><div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"><span class="layer-title">${L.title}</span><div class="arch-modules">${mods}</div></div>`;
+    _ly.appendChild(el);
+  });
+  document.querySelectorAll('.arch-mod').forEach(m=>{
+    m.onclick=(e)=>{
+      e.stopPropagation();
+      const L=ARCH_LAYERS.find(x=>x.id===m.dataset.l);
+      const mo=L.modules[+m.dataset.i];
+      if(mo.detail)archOpen({title:mo.detail.title,body:mo.detail.body});
+    };
+  });
+}
+function archOpen(d){
+  let dr=document.getElementById('arch-drawer');
+  if(!dr){
+    const mask=document.createElement('div');mask.className='arch-mask';mask.id='arch-mask';document.body.appendChild(mask);
+    dr=document.createElement('div');dr.className='arch-drawer';dr.id='arch-drawer';
+    dr.innerHTML=`<div class="arch-drawer-head"><h3 id="arch-drawer-title"></h3><button onclick="archClose()">×</button></div><div class="arch-drawer-body" id="arch-drawer-body"></div>`;
+    document.body.appendChild(dr);
+    mask.onclick=archClose;
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')archClose()});
+  }
+  document.getElementById('arch-drawer-title').innerHTML=d.title||d.name;
+  let html='';
+  if(d.subtitle)html+=`<p style="color:#94a3b8;margin-bottom:16px;font-size:13px">${d.subtitle}</p>`;
+  d.body.forEach(sec=>{
+    html+=`<h4>${sec.h}</h4><ul>`;
+    sec.items.forEach(it=>{html+=`<li class="${sec.type||''}">${it}</li>`;});
+    html+='</ul>';
+  });
+  document.getElementById('arch-drawer-body').innerHTML=html;
+  document.getElementById('arch-drawer').classList.add('open');
+  document.getElementById('arch-mask').classList.add('open');
+  document.querySelectorAll('.arch-phase').forEach(x=>x.classList.remove('active'));
+  if(d.id){const a=document.querySelector(`.arch-phase[data-id="${d.id}"]`);if(a)a.classList.add('active');}
+}
+function archClose(){
+  const dr=document.getElementById('arch-drawer'),mk=document.getElementById('arch-mask');
+  if(dr)dr.classList.remove('open');if(mk)mk.classList.remove('open');
+  document.querySelectorAll('.arch-phase').forEach(x=>x.classList.remove('active'));
+}
 </script>
 
 </body>

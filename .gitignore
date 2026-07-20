@@ -5,11 +5,13 @@ node_modules/
 .vercel
 *.log
 
-# SQLite 主库（数据，不进 git；用 frontend-cloud backup 备份）
-data/*.db
+# SQLite 临时/备份库（不进 git）
+data/crime_map_RESCUE.db
+data/incidents.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+# crime_map.db 主库进 git（让 GHA 能拿到完整 LLM 结果做增量）
 
 # 中间产物
 data/crime_for_llm.*
