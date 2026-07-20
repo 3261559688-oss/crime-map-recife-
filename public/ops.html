@@ -699,6 +699,95 @@ async function loadRealData(){
         </div>`).join('');
     }
 
+    // ---- Pipeline tab KPI 卡 ----
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    // 7天内：age_buckets 全部加总（max_age_days=7）
+    const total7d=Object.values(meta.age_buckets||{}).reduce((s,v)=>s+v,0);
+    set('pl-kpi-total', meta.total.toLocaleString());
+    set('pl-kpi-7d', total7d.toLocaleString());
+    // 最新新闻时间：从 meta.generated_at 算
+    const genDt=new Date(meta.generated_at);
+    const minsAgo=Math.round((Date.now()-genDt.getTime())/60000);
+    set('pl-kpi-latest', minsAgo<60?`${minsAgo}m ago`:`${Math.round(minsAgo/60)}h ago`);
+    set('pl-kpi-feeds', meta.feeds_success+'/'+meta.feeds_count);
+
+    // ---- Pipeline 流水线数字（RSS 抓取量）----
+    set('pl-rss-out', meta.total.toLocaleString());
+    set('pl-published', total7d.toLocaleString());
+    const plGenAt=document.getElementById('pl-generated-at');
+    if(plGenAt)plGenAt.textContent=`数据更新于 ${genDt.toLocaleString('zh-CN')}`;
+
+    // ---- 地理覆盖（pipeline tab 右侧卡片）----
+    const cityCount=Object.keys(meta.city_stats||{}).length;
+    set('geo-states', meta.state_count||'--');
+    set('geo-cities', cityCount);
+    set('geo-total', meta.total.toLocaleString());
+
+    // ---- GHA 信息（使用 version.json）----
+    const ghaDt=new Date(ver.ts?ver.ts*1000:meta.generated_at);
+    const ghaAgo=Math.round((Date.now()-ghaDt.getTime())/60000);
+    set('gha-last', ghaAgo<60?`${ghaAgo}m ago ✅`:`${Math.round(ghaAgo/60)}h ago ✅`);
+    set('gha-sha', ver.sha||'--');
+    set('gha-count', meta.total.toLocaleString()+' 条');
+
+    // ---- RSS 源列表（pipeline tab）----
+    const rssListEl=document.getElementById('rss-source-list');
+    if(rssListEl && meta.city_stats){
+      const topCities=Object.entries(meta.city_stats).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      const feedRateVal=meta.feeds_success/meta.feeds_count;
+      const statusColor=feedRateVal>=0.7?'#4ecdc4':feedRateVal>=0.4?'#f59e0b':'#ef4444';
+      rssListEl.innerHTML=`
+        <div class="row"><span>活跃 RSS 源</span><span class="font-bold">${meta.feeds_success}/${meta.feeds_count}</span></div>
+        <div class="row"><span>抓取成功率</span><span style="color:${statusColor};font-weight:700">${(feedRateVal*100).toFixed(0)}%</span></div>
+        <div class="row"><span>总条数（7天）</span><span class="font-bold">${total7d.toLocaleString()}</span></div>
+        <div class="row"><span>覆盖城市</span><span class="font-bold">${cityCount} 个</span></div>
+        <div class="mt-2 text-[10px] text-slate-400 font-semibold uppercase">Top 城市供给</div>
+        ${topCities.map(([city,cnt])=>`<div class="row"><span>${city}</span><span class="pill pill-green">${cnt}</span></div>`).join('')}`;
+    }
+
+    // ---- 前端可用性 tab ----
+    // HTTP 状态：fetch rss_incidents.json 验证
+    fetch('./rss_incidents.json').then(r=>{
+      set('fe-http-status', r.ok?'200':'ERR');
+      set('fe-http-desc', r.ok?'✅ 正常':'❌ 无法访问');
+      return r.ok?r.json():null;
+    }).then(d=>{
+      if(d&&d.features){
+        set('fe-count', d.features.length.toLocaleString());
+        const dates=d.features.map(f=>f.properties&&f.properties.pub_date).filter(Boolean).sort().reverse();
+        if(dates[0]){
+          const latest=new Date(dates[0]);
+          const diff=Math.round((Date.now()-latest.getTime())/3600000);
+          set('fe-latest', diff<24?`${diff}h ago`:dates[0].slice(0,10));
+        }
+      }
+    }).catch(()=>{set('fe-http-status','ERR');set('fe-http-desc','❌ 无法访问')});
+
+    // Vercel commit 信息
+    set('fe-sha', ver.sha||'--');
+    set('fe-commit-msg', `${meta.total} 条 · 更新于 ${genDt.toLocaleString('zh-CN')}`);
+
+    // ---- 红绿灯：前端 ----
+    const feLight=document.querySelector('.light[data-jump="frontend"]');
+    if(feLight){
+      feLight.classList.remove('ok','warn','err');feLight.classList.add('ok');
+      const dot=feLight.querySelector('.light-dot');dot.classList.remove('ok','warn','err');dot.classList.add('ok');
+      const desc=document.getElementById('light-fe-desc');
+      if(desc)desc.textContent=`${meta.total.toLocaleString()} 条 · JSON 可达`;
+    }
+
+    // ---- 红绿灯：数据管线（RSS 成功率）----
+    const feedRatePct=meta.feeds_success/meta.feeds_count;
+    const pipeLight=document.querySelector('.light[data-jump="pipeline"]');
+    if(pipeLight){
+      pipeLight.classList.remove('ok','warn','err');
+      const cls=feedRatePct>=0.7?'ok':feedRatePct>=0.4?'warn':'err';
+      pipeLight.classList.add(cls);
+      const dot=pipeLight.querySelector('.light-dot');dot.classList.remove('ok','warn','err');dot.classList.add(cls);
+      const desc=document.getElementById('light-llm-desc');
+      if(desc)desc.textContent=`RSS ${meta.feeds_success}/${meta.feeds_count} · ${(feedRatePct*100).toFixed(0)}%`;
+    }
+
     // Build info
     const buildEl=document.getElementById('build-info');
     if(buildEl&&ver.sha){
@@ -729,29 +818,49 @@ async function loadHealth(){
 
   // ---- LLM 三阶段 ----
   if(llm && llm.stages){
-    const container=document.querySelector('#sec-llm > div:nth-child(2)'); // flex 流程
-    if(container){
-      // 更新 LLM 数字（保守：只替换成功率文本）
-      const stages=container.querySelectorAll('div.flex-1');
-      llm.stages.forEach((s,i)=>{
-        const el=stages[i];if(!el)return;
-        if(s.rate!==undefined){
-          const numEl=el.querySelector('.text-lg');
-          const pillEl=el.querySelector('.pill');
-          if(numEl)numEl.textContent=`${s.success}/${s.in}`;
-          if(pillEl)pillEl.textContent=`${s.rate}%`;
-        }else if(s.out!==undefined){
-          const numEl=el.querySelector('.text-lg');
-          if(numEl)numEl.textContent=s.out.toLocaleString();
-        }
-      });
-      // 头部总成功率
-      const rates=llm.stages.filter(s=>s.rate!==undefined).map(s=>s.rate);
+    const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    // stages 结构: [{name:'RSS',in:0,out:N}, {name:'A',in:N,out:N,success:N,rate:N}, {name:'B',...}]
+    const rssStage=llm.stages.find(s=>s.name==='RSS');
+    const aStage=llm.stages.find(s=>s.name==='A'||s.name==='LLM_A');
+    const bStage=llm.stages.find(s=>s.name==='B'||s.name==='LLM_B');
+    if(rssStage){setEl('pl-rss-out',(rssStage.out||llm.total_rows||0).toLocaleString())}
+    if(aStage){
+      setEl('pl-llm-a',`${aStage.success||0}/${aStage.in||0}`);
+      setEl('pl-llm-a-rate',(aStage.rate||0)+'%');
+    }
+    if(bStage){
+      setEl('pl-llm-b',`${bStage.success||0}/${bStage.in||0}`);
+      setEl('pl-llm-b-rate',(bStage.rate||0)+'%');
+    }
+    setEl('pl-published',(llm.total_rows||0).toLocaleString());
+    // 生成时间
+    const plGenAt=document.getElementById('pl-generated-at');
+    if(plGenAt&&llm.generated_at)plGenAt.textContent=`数据更新于 ${new Date(llm.generated_at).toLocaleString('zh-CN')}`;
+    // LLM loading 状态切换
+    const llmLoading=document.getElementById('llm-loading');
+    const llmContent=document.getElementById('llm-real-content');
+    if(llmLoading)llmLoading.classList.add('hidden');
+    // 头部总成功率
+    const rates=llm.stages.filter(s=>s.rate!==undefined).map(s=>s.rate);
+    const overallPill=document.getElementById('llm-overall-rate');
+    if(overallPill){
       if(rates.length){
         const avg=(rates.reduce((a,b)=>a+b,0)/rates.length).toFixed(1);
-        const t=document.querySelector('#sec-llm .pill.pill-green');
-        if(t)t.textContent=`总成功率 ${avg}% · 累计 ${llm.total_rows}`;
+        overallPill.textContent=`总成功率 ${avg}% · 累计 ${(llm.total_rows||0).toLocaleString()} 条`;
+      } else {
+        overallPill.textContent=`累计 ${(llm.total_rows||0).toLocaleString()} 条`;
       }
+    }
+    // 红绿灯：LLM 处理
+    const llmLight=document.querySelector('.light[data-jump="pipeline"]');
+    if(llmLight&&rates.length){
+      const avg2=rates.reduce((a,b)=>a+b,0)/rates.length;
+      llmLight.classList.remove('ok','warn','err');
+      const cls2=avg2>=90?'ok':avg2>=70?'warn':'err';
+      llmLight.classList.add(cls2);
+      const dot=llmLight.querySelector('.light-dot');dot.classList.remove('ok','warn','err');dot.classList.add(cls2);
+      const desc=document.getElementById('light-llm-desc');
+      if(desc)desc.textContent=`成功率 ${avg2.toFixed(0)}% · ${(llm.total_rows||0).toLocaleString()} 条`;
     }
   }
 
@@ -781,9 +890,56 @@ async function loadHealth(){
     if(light){
       light.classList.remove('err','warn');light.classList.add('ok');
       const dot=light.querySelector('.light-dot');dot.classList.remove('err','warn');dot.classList.add('ok');
-      const desc=light.querySelector('.text-\\[10px\\]');
+      const desc=document.getElementById('light-analytics-desc');
       if(desc)desc.textContent=`PV ${analytics.pv_24h} · UV ${analytics.uv_24h}`;
     }
+    // 业务指标灯
+    const bizLight=document.querySelector('.light[data-jump="business"]');
+    if(bizLight){
+      bizLight.classList.remove('err','warn');bizLight.classList.add('ok');
+      const dot=bizLight.querySelector('.light-dot');dot.classList.remove('err','warn');dot.classList.add('ok');
+      const desc=document.getElementById('light-biz-desc');
+      if(desc)desc.textContent=`今日 UV ${analytics.uv_24h}`;
+    }
+    // 业务 tab KPI 卡
+    const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    setEl('biz-uv', analytics.uv_24h?.toLocaleString()||'--');
+    setEl('biz-pv', analytics.pv_24h?.toLocaleString()||'--');
+    // 7天 UV：从 daily_pv.sessions 累加
+    const sessions7d=(analytics.daily_pv?.sessions||[]).reduce((s,d)=>s+(d.y||0),0);
+    setEl('biz-uv-7d', sessions7d>0?sessions7d.toLocaleString():'--');
+    // 跳出率
+    const bounceRate=analytics.sessions_24h>0?Math.round(analytics.bounces_24h/analytics.sessions_24h*100):0;
+    setEl('biz-bounce', bounceRate+'%');
+    // 业务详情区块
+    const avgTime=analytics.sessions_24h>0?Math.round(analytics.totaltime_24h/analytics.sessions_24h):0;
+    const bizDetail=document.getElementById('biz-umami-detail');
+    if(bizDetail){
+      const genDt=new Date(analytics.generated_at);
+      bizDetail.innerHTML=`
+        <div class="row"><span>今日 PV / UV</span><span class="font-bold">${analytics.pv_24h} / ${analytics.uv_24h}</span></div>
+        <div class="row"><span>今日 Sessions</span><span class="font-bold">${analytics.sessions_24h}</span></div>
+        <div class="row"><span>跳出率</span><span class="font-bold">${bounceRate}%</span></div>
+        <div class="row"><span>平均停留时长</span><span class="font-bold">${avgTime}s</span></div>
+        <div class="row"><span>7天累计访客</span><span class="font-bold">${sessions7d>0?sessions7d.toLocaleString():'--'}</span></div>
+        <div class="row"><span>数据更新时间</span><span class="text-xs text-slate-400">${genDt.toLocaleString('zh-CN')}</span></div>`;
+    }
+    // analytics tab 的 Umami 数据
+    const analyticsUmami=document.getElementById('analytics-umami-real');
+    if(analyticsUmami){
+      analyticsUmami.innerHTML=`
+        <div class="row"><span>今日 PV</span><span class="font-bold text-white">${analytics.pv_24h}</span></div>
+        <div class="row"><span>今日 UV</span><span class="font-bold text-white">${analytics.uv_24h}</span></div>
+        <div class="row"><span>今日 Sessions</span><span class="font-bold text-white">${analytics.sessions_24h}</span></div>
+        <div class="row"><span>跳出率</span><span class="font-bold text-white">${bounceRate}%</span></div>
+        <div class="row"><span>平均停留</span><span class="font-bold text-white">${avgTime}s</span></div>`;
+    }
+  } else {
+    // Umami 没配置或出错
+    const desc=document.getElementById('light-analytics-desc');
+    if(desc)desc.textContent='未配置 UMAMI_TOKEN';
+    const bizDetail=document.getElementById('biz-umami-detail');
+    if(bizDetail)bizDetail.innerHTML=`<div class="text-center py-4 text-slate-400">⚠️ Umami 数据暂不可用<br><a href="https://umami-crime-map.vercel.app" target="_blank" class="text-purple-400 text-xs">→ 直接查看 Umami 后台</a></div>`;
   }
 
   // ---- Infra ----
@@ -795,8 +951,22 @@ async function loadHealth(){
       light.classList.remove('ok','warn','err');
       light.classList.add(ok?'ok':'err');
       const dot=light.querySelector('.light-dot');dot.classList.remove('ok','warn','err');dot.classList.add(ok?'ok':'err');
-      const desc=light.querySelector('.text-\\[10px\\]');
+      const desc=document.getElementById('light-infra-desc');
       if(desc)desc.textContent=`GHA ${last.conclusion||last.status}`;
+    }
+    // Infra quota 区块用真实 GHA 数据
+    const infraQuota=document.getElementById('infra-quota');
+    if(infraQuota){
+      const runs=infra.gha_runs.slice(0,5);
+      const successCount=runs.filter(r=>r.conclusion==='success').length;
+      infraQuota.innerHTML=`
+        <div class="row"><span>最近 5 次 GHA</span><span class="font-bold">${successCount}/5 ✅</span></div>
+        <div class="row"><span>最新一次</span><span class="${ok?'text-green-600':'text-red-500'} font-semibold">${last.conclusion||last.status} · ${last.run_number?'#'+last.run_number:''}</span></div>
+        ${last.created_at?`<div class="row"><span>运行时间</span><span class="text-xs text-slate-400">${new Date(last.created_at).toLocaleString('zh-CN')}</span></div>`:''}
+        <div class="flex gap-3 justify-center mt-3">
+          <a href="https://vercel.com/dongyuhan03s-projects" target="_blank" class="pill pill-purple">↗ Vercel 后台</a>
+          <a href="https://github.com/3261559688-oss/crime-map-recife-/actions" target="_blank" class="pill pill-green">↗ GHA 用量</a>
+        </div>`;
     }
   }
 }
