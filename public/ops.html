@@ -616,6 +616,9 @@ function renderFeed(){
       }
     }
     renderFeed();
+  }));
+}
+function markAllRead(){FEED.forEach(f=>f.unread=false);renderFeed()}
 
 // ========== 真实数据加载 ==========
 async function loadRealData(){
@@ -988,9 +991,7 @@ document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',()=>{
 }));
 
 // Tab4 事件数据待从 Umami 真实 API 拉取（需配置 UMAMI_TOKEN）
-  }));
-}
-function markAllRead(){FEED.forEach(f=>f.unread=false);renderFeed()}
+
 document.querySelectorAll('.feed-tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.feed-tab').forEach(x=>{x.style.background='';x.style.color='';x.style.boxShadow='';x.classList.add('text-slate-400')});
   t.style.background='#fff';t.style.color='#6b5be7';t.style.boxShadow='0 2px 6px rgba(0,0,0,.05)';t.classList.remove('text-slate-400');
