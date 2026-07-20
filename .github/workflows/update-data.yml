@@ -1,10 +1,11 @@
-name: 🚨 Auto Update + LLM (30min full pipeline)
-# ✅ 每 30 分钟完整跑：抓 RSS → 合并 DB → 跑 LLM → 刷展示层 → 更新前端 JSON
+name: 🚨 Auto Update + LLM (1h full pipeline)
+# ✅ 每 1 小时完整跑：抓 RSS → 合并 DB → 跑 LLM → 刷展示层 → 更新前端 JSON
+# 改为 1h: RSS源本身 1-2h 更新，30min 空跑浪费 GHA 额度且导致 DB lock
 # 需要 GitHub Secret: WQ_API_KEY (万擎 API key)
 # 在 https://github.com/3261559688-oss/crime-map-recife-/settings/secrets/actions 配置
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
@@ -14,7 +15,7 @@ on:
       - '.github/workflows/update-data.yml'
 concurrency:
   group: update-data
-  cancel-in-progress: false
+  cancel-in-progress: true  # 新任务来了取消旧任务，避免 DB lock
 # 🔑 关键：给 GITHUB_TOKEN 写权限，否则 git push 会 403
 permissions:
   contents: write
