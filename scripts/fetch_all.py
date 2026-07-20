@@ -309,10 +309,9 @@ GNEWS_CITIES = [
     ("Caxias do Sul", "RS"), ("Pelotas", "RS"), ("Santa Maria", "RS"),
 ]
 
-# 每个城市生成 2 个不同关键词组合的 Google News RSS，提升覆盖
+# 每个城市生成 1 个关键词组合的 Google News RSS（#2 因含特殊字符在 GHA IP 上大量失败，已移除）
 _GNEWS_QUERIES = [
     'crime+OR+homicidio+OR+assalto+OR+roubo',
-    'tráfico+OR+morto+OR+baleado+OR+polícia',
 ]
 
 for _city, _state in GNEWS_CITIES:
@@ -474,8 +473,20 @@ CRIME_TYPES = {
 # 工具函数
 # ============================================================
 def fetch_url(url, timeout=10):
+    # GNews 使用更多样的 UA，降低被限流概率
+    if 'news.google.com' in url:
+        ua_list = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+            'Feedfetcher-Google; (+http://www.google.com/feedfetcher.html)',
+        ]
+        ua = random.choice(ua_list)
+    else:
+        ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     req = urllib.request.Request(url, headers={
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': ua,
         'Accept': 'application/rss+xml, application/xml, text/xml, */*;q=0.9',
         'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.5',
     })
@@ -577,13 +588,37 @@ def main():
     seen_links = set()
     feed_stats = {}
     
-    # 🚀 并行抓取所有 RSS（20 线程）
+    # 🚀 分两批抓取：G1/媒体源高并发，GNews 低并发+延迟避免限流
     fetched = {}
+    import time
+
+    gnews_feeds = [f for f in RSS_FEEDS if f[0].startswith('GNews')]
+    other_feeds  = [f for f in RSS_FEEDS if not f[0].startswith('GNews')]
+
+    # 第一批：G1 + 其他媒体（20 线程，无延迟）
+    print(f"  📡 第1批：{len(other_feeds)} 个媒体源（20线程）")
     with ThreadPoolExecutor(max_workers=20) as ex:
-        futures = {ex.submit(fetch_one_feed, f): f for f in RSS_FEEDS}
+        futures = {ex.submit(fetch_one_feed, f): f for f in other_feeds}
         for fut in as_completed(futures):
             feed, xml = fut.result()
             fetched[feed] = xml
+
+    # 第二批：GNews（5 线程 + 每批间随机延迟，避免 Google 限流）
+    print(f"  🔍 第2批：{len(gnews_feeds)} 个 GNews 源（5线程+延迟）")
+    GNEWS_BATCH = 15   # 每批 15 个
+    GNEWS_WORKERS = 5  # 并发 5 线程
+    for i in range(0, len(gnews_feeds), GNEWS_BATCH):
+        batch = gnews_feeds[i:i+GNEWS_BATCH]
+        with ThreadPoolExecutor(max_workers=GNEWS_WORKERS) as ex:
+            futures = {ex.submit(fetch_one_feed, f): f for f in batch}
+            for fut in as_completed(futures):
+                feed, xml = fut.result()
+                fetched[feed] = xml
+        # 批次间随机暂停 2-4 秒，降低被限流概率
+        if i + GNEWS_BATCH < len(gnews_feeds):
+            delay = random.uniform(2, 4)
+            print(f"  ⏸ 批次暂停 {delay:.1f}s...")
+            time.sleep(delay)
     
     # 串行处理（解析 + 去重）
     for feed in RSS_FEEDS:
