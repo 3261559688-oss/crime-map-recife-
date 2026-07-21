@@ -133,24 +133,21 @@ jobs:
           python3 scripts/gen_health.py || echo "⚠️ health JSON 生成失败（不阻塞主流程）"
           ls -la public/health/ || true
 
-      # ✅ Fix: 加入 data/crime_map.db，确保 LLM 结果持久化到 git
+      # ✅ Fix: 数据有无变化都强制 push，确保 Vercel 每次都重新部署
       - name: 💾 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/rss_incidents.json public/rss_incidents_lite.json \
                   public/raw_incidents.json public/raw_meta.json \
-                  public/version.json public/index.html public/health/ \
+                  public/version.json public/health/ \
                   data/crime_map.db
-          if git diff --staged --quiet; then
-            echo "📭 无变化，跳过 push"
-          else
-            COUNT=$(python3 -c "import json; print(len(json.load(open('public/rss_incidents.json'))))" 2>/dev/null || echo "?")
-            LATEST=$(python3 -c "import json; d=json.load(open('public/rss_incidents.json')); ts=sorted([x.get('pub_date','') for x in d if x.get('pub_date')],reverse=True); print(ts[0] if ts else '?')" 2>/dev/null || echo "?")
-            git commit -m "🤖 auto: ${COUNT} incidents (latest ${LATEST})"
-            # 🔁 防止与本地 push 冲突：先 rebase，再 push；失败重试 3 次
-            for i in 1 2 3; do
-              git pull --rebase origin main && git push && { echo "✅ 已推送"; break; } || echo "⚠️ push 第 $i 次失败，重试..."
-              sleep 5
-            done
-          fi
+          COUNT=$(python3 -c "import json; print(len(json.load(open('public/rss_incidents.json'))))" 2>/dev/null || echo "?")
+          LATEST=$(python3 -c "import json; d=json.load(open('public/rss_incidents.json')); ts=sorted([x.get('pub_date','') for x in d if x.get('pub_date')],reverse=True); print(ts[0] if ts else '?')" 2>/dev/null || echo "?")
+          # --allow-empty 确保即使数据无变化也会推 commit，Vercel 一定触发部署
+          git commit --allow-empty -m "🤖 auto: ${COUNT} incidents (latest ${LATEST})"
+          # 🔁 先 rebase 再 push，失败重试 3 次
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && { echo "✅ 已推送"; break; } || echo "⚠️ push 第 $i 次失败，重试..."
+            sleep 5
+          done
