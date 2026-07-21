@@ -1058,15 +1058,23 @@ const ARCH_PHASES=[
     {h:'🐛 问题 3 · ops.html 全部 --',type:'err',items:['根因：清理 mock 数据时误删 <code>}));</code> 闭合括号','<code>loadRealData()</code> 被埋进 click 回调，永远不执行','所有 JSON fetch 根本未发出 → 全显示 --']},
     {h:'✅ 修复 3 · ops.html',type:'ok',items:['修复 JS 结构，补回缺失括号','补全所有 -- ID 的数据绑定（Pipeline/RSS/GHA/前端/业务/红绿灯）','接入真实 Umami 数据：今日 PV=381, UV=338','health/*.json 更新到 7/20，UMAMI Secrets 验证生效']},
     {h:'📊 当前数据状态',type:'ok',items:['DB 总条数 13,348 · 发布层 2,695 条（7天）','LLM A 已跑 11,340/13,348 · 待跑 2,008','GHA 每小时自动更新 · 月用量安全']}
+  ]},
+  {id:'p10',num:10,name:'前端+CI',date:'7/21',status:'ok',title:'🎨 阶段 10 · 2026-07-21 前端交互 + CI 数据链路修复',subtitle:'Airbnb 地图交互 + Vercel Deploy Hook + CartoDB 底图',body:[
+    {h:'🐛 问题 1 · Vercel 线上数据 11 天未更新',type:'err',items:['根因：GHA bot commit 不会自动触发 Vercel 部署（Vercel 安全策略）','Commit & Push step 走"无变化跳过"分支 → 从未真正推过数据','main 分支 HEAD 停在 7/10 的人工 commit efa0527']},
+    {h:'✅ 修复 1 · CI 数据链路',type:'ok',items:['去掉 <code>if git diff --staged --quiet</code> 无变化跳过逻辑','改用 <code>git commit --allow-empty</code> 确保每次都有 commit','在 Vercel 创建 Deploy Hook → 存入 GitHub Secret <code>VERCEL_DEPLOY_HOOK</code>','GHA 最后一步主动 <code>POST</code> deploy hook → Vercel 强制拉最新代码部署','链路：GHA 抓取 → push → call hook → Vercel 部署（全自动）']},
+    {h:'🎨 前端交互 · Airbnb 地图模式',type:'ok',items:['默认态：地图全屏 · 底部极细把手（44px）+ 条数文字','选中态：点 marker → 底部弹事件详情卡片（类型色条/标题/来源/阅读原文）','被选中 marker 变大（r=10）+ 白描边视觉区分','点击弹卡片时列表自动收起 · 阻止事件冒泡防止卡片闪关','Sheet 三档 snap：极细(44px) / 列表(30%) / 完全展开(0)']},
+    {h:'🎨 前端交互 · 阅读入口轻量化',type:'ok',items:['"阅读原文"按钮改为透明底 + 细边框（去掉红色实心按钮）','列表每条右下角新增 <code>Ler →</code> 轻量跳转链接','点击 map 空白关闭卡片 · 卡片右上角 ✕ 关闭']},
+    {h:'🗺️ 地图层优化',type:'ok',items:['底图换 CartoDB Voyager（彩色 · 高德风）· CDN 走 Fastly 国内更快','右侧新增自定义控件：+ 放大 · − 缩小 · ⊕ 定位','定位按钮 fixed 定位（top:38%）· 不被底部卡片遮挡','控件用 DOM fixed 方式（非 Leaflet control）防止 z-index 冲突']},
+    {h:'📊 当前状态',type:'ok',items:['GHA 每小时自动跑 + call Vercel hook → 线上数据自动更新 ✅','前端交互本地调试中（尚未合并到线上）','Vercel 通路已验证正常']}
   ]}
 ];
 
 const ARCH_LAYERS=[
   {id:'L1',num:'①',title:'调度层',modules:[
-    {name:'GHA cron · 每 1h · cancel保护',status:'ok',detail:{title:'① 调度层 · GHA Cron',body:[
+    {name:'GHA cron · 每 1h · cancel保护 + Deploy Hook',status:'ok',detail:{title:'① 调度层 · GHA Cron',body:[
       {h:'📁 文件',items:['<code>.github/workflows/update-data.yml</code>']},
-      {h:'✅ 当前（7/20 修复）',type:'ok',items:['<code>0 * * * *</code> · 每小时整点','<code>cancel-in-progress: true</code> · 并发保护','月用量 720 min（免费额度 2000 min 内）']},
-      {h:'⚠️ 旧版问题',type:'err',items:['<code>*/30 * * * *</code> 月用 2160 min 超额','<code>cancel-in-progress: false</code> 并发写 SQLite → DB lock']},
+      {h:'✅ 当前（7/21 修复）',type:'ok',items:['<code>0 * * * *</code> · 每小时整点','<code>cancel-in-progress: true</code> · 并发保护','<code>git commit --allow-empty</code> · 每次必推','末尾主动 POST Vercel Deploy Hook → Vercel 强制部署','月用量 720 min（免费额度 2000 min 内）']},
+      {h:'⚠️ 旧版问题',type:'err',items:['bot commit 不触发 Vercel 自动部署（Vercel 安全策略）','<code>git diff --staged --quiet</code> 无变化跳过 → 数据11天未更新']},
       {h:'💰 GHA 额度',type:'ok',items:['仓库 public → 完全免费无限制']}
     ]}}
   ]},
