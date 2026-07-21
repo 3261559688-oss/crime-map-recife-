@@ -151,3 +151,21 @@ jobs:
             git pull --rebase origin main && git push && { echo "✅ 已推送"; break; } || echo "⚠️ push 第 $i 次失败，重试..."
             sleep 5
           done
+
+      # 🚀 主动触发 Vercel 部署（bot commit 不会自动触发 Vercel，需要 deploy hook）
+      - name: 🚀 Trigger Vercel Deploy
+        if: always()
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$VERCEL_DEPLOY_HOOK")
+            echo "Vercel deploy hook status: $HTTP_STATUS"
+            if [ "$HTTP_STATUS" = "201" ]; then
+              echo "✅ Vercel 部署已触发"
+            else
+              echo "⚠️ Vercel hook 返回 $HTTP_STATUS"
+            fi
+          else
+            echo "⚠️ VERCEL_DEPLOY_HOOK secret 未设置，跳过"
+          fi
