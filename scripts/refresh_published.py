@@ -36,7 +36,7 @@ SELECT
     CASE WHEN llm_b_score IS NOT NULL THEN 1 ELSE 0 END
 FROM dwd_intl_crime_incident_di
 WHERE
-    (llm_a_is_crime = 1 OR llm_a_is_crime IS NULL)
+    llm_a_is_crime = 1
     AND lat IS NOT NULL AND lng IS NOT NULL
     AND COALESCE(llm_c_city, city) IS NOT NULL
     AND COALESCE(llm_c_state, state) IS NOT NULL
