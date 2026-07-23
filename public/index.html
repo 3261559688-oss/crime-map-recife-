@@ -314,7 +314,7 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 }
 @media (max-width:767px){.desktop-hint{display:none}}
 
-#map{position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;background:var(--bg-phone);transition:bottom .3s cubic-bezier(.4,0,.2,1)}
+#map{position:absolute;inset:0;z-index:1;background:var(--bg-phone)}
 
 .statusbar{display:none;position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top);min-height:44px;z-index:200;align-items:center;justify-content:space-between;padding:0 24px;font-size:14px;font-weight:600;color:var(--text-clock);pointer-events:none}
 .statusbar .time{font-size:15px}
@@ -411,31 +411,10 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
 .pop-type{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;text-transform:uppercase;margin-bottom:6px;color:#fff}
 .pop-title{font-size:13px;font-weight:600;color:var(--text-strong);margin-bottom:6px;line-height:1.4}
 .pop-meta{font-size:10px;color:var(--text-muted);margin-bottom:8px}
-.pop-link{display:block;padding:8px;background:transparent;color:var(--text-main);text-align:center;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;border:1px solid var(--border-soft)}
+.pop-link{display:block;padding:8px;background:#dc2626;color:#fff;text-align:center;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600}
 
-/* 底部 sheet（可拖拽） — 三态：A收起(露130px) / C展开(65%viewport) / B隐藏(滑出) */
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--bg-sheet);border-radius:18px 18px 0 0;box-shadow:var(--shadow-sheet);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--border-soft);transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s;height:65%;will-change:transform;touch-action:none}
-.sheet.hidden{transform:translateY(100%)!important}
-
-/* 事件详情卡片（B 态） */
-#event-card{display:none;position:absolute;left:0;right:0;bottom:0;z-index:60;background:var(--bg-sheet);border-radius:18px 18px 0 0;box-shadow:var(--shadow-sheet);border-top:1px solid var(--border-soft);padding-bottom:env(safe-area-inset-bottom);transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-.ec-bar{height:4px;border-radius:18px 18px 0 0}
-.ec-inner{padding:14px 16px 16px}
-.ec-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.ec-type{font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 10px;border-radius:6px;color:#fff;letter-spacing:.5px}
-.ec-close{font-size:20px;color:var(--text-muted);cursor:pointer;padding:2px 6px;line-height:1;user-select:none}
-#ec-title{font-size:15px;font-weight:700;color:var(--text-strong);line-height:1.4;margin-bottom:10px}
-.ec-meta{font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6}
-.ec-read-btn{display:block;padding:11px;background:transparent;color:var(--text-main);border:1px solid var(--border-soft);border-radius:10px;text-align:center;font-size:13px;font-weight:600;text-decoration:none}
-
-/* 右侧自定义控件 */
-#map-controls{position:absolute;right:12px;top:38%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:6px}
-.map-ctrl-btn{width:36px;height:36px;background:var(--bg-sheet);border:1px solid var(--border-soft);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);color:var(--text-main);user-select:none}
-.map-ctrl-btn:active{transform:scale(.94)}
-
-/* 列表 Ler → 链接 */
-.it-ler{font-size:10px;color:#3b82f6;font-weight:600;text-decoration:none;white-space:nowrap;padding:2px 0}
-
+/* 底部 sheet（可拖拽） */
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--bg-sheet);border-radius:18px 18px 0 0;box-shadow:var(--shadow-sheet);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid var(--border-soft);transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s;height:45%;will-change:transform;touch-action:none}
 .sheet.no-trans{transition:none}
 .sheet-handle{display:flex;justify-content:center;padding:12px 10px 8px;cursor:grab;touch-action:none}
 .sheet-handle:active{cursor:grabbing}
@@ -551,7 +530,7 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     </div>
   </div>
 
-  <div class="sheet" id="sheet">
+  <div class="sheet" id="sheet" style="transform:translateY(calc(100% - 56px))">
     <div class="sheet-handle" id="sheetHandle">
       <div class="sheet-handle-bar"></div>
     </div>
@@ -560,27 +539,6 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
       <div class="sheet-count" id="sheetCount">0</div>
     </div>
     <div class="sheet-body" id="list"></div>
-  </div>
-
-  <!-- 事件详情卡片（B 选中态） -->
-  <div id="event-card">
-    <div class="ec-bar" id="ec-bar"></div>
-    <div class="ec-inner">
-      <div class="ec-top">
-        <span class="ec-type" id="ec-type"></span>
-        <span class="ec-close" id="ec-close">✕</span>
-      </div>
-      <div id="ec-title"></div>
-      <div class="ec-meta" id="ec-meta"></div>
-      <a class="ec-read-btn" id="ec-read-btn" href="#" target="_blank" rel="noopener">Ler notícia →</a>
-    </div>
-  </div>
-
-  <!-- 右侧自定义控件 -->
-  <div id="map-controls">
-    <div class="map-ctrl-btn" id="ctrl-zoom-in">+</div>
-    <div class="map-ctrl-btn" id="ctrl-zoom-out">−</div>
-    <div class="map-ctrl-btn" id="ctrl-locate">⊕</div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -881,7 +839,7 @@ const CITY_COORDS={
 let allData=[],map,markers=[],curCity='Brasil',curType='all';
 
 // 🔖 当前页面构建版本（每次发布自动替换）
-const __APP_BUILD__ = '4ac3e18-1784805622';
+const __APP_BUILD__ = 'efa0f83-1784690406';
 
 // 🔒 客户端 7 天过滤兜底（双保险，即使后端没过滤干净）
 function filterRecent(arr, days=7){
@@ -953,8 +911,9 @@ function initMap(){
     markerZoomAnimation:false,
     wheelDebounceTime:80,
   }).setView([-14.235,-51.925],4);
-  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19, updateWhenZooming:false, keepBuffer:1, subdomains:'abcd', attribution:'&copy; <a href="https://carto.com/">CARTO</a>'}).addTo(map);
+  tileLayer = L.tileLayer(getTileUrl(),{maxZoom:19, updateWhenZooming:false, keepBuffer:1}).addTo(map);
   L.control.scale({position:'bottomleft',metric:true,imperial:false,maxWidth:120}).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
   // moveend/zoomend 触发视口重绘（节流）
   let moveTimer=null;
   map.on('moveend zoomend',()=>{
@@ -963,20 +922,6 @@ function initMap(){
   });
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
-
-  map.on('click',()=>{ hideEventCard(); });
-
-  // 自定义右侧控件
-  setTimeout(()=>{
-    document.getElementById('ctrl-zoom-in')?.addEventListener('click',()=>map.zoomIn());
-    document.getElementById('ctrl-zoom-out')?.addEventListener('click',()=>map.zoomOut());
-    document.getElementById('ctrl-locate')?.addEventListener('click',()=>{
-      if(!navigator.geolocation){showToast('GPS não suportado');return;}
-      navigator.geolocation.getCurrentPosition(p=>{
-        map.flyTo([p.coords.latitude,p.coords.longitude],13,{duration:.8});
-      },()=>showToast('❌ Localização negada'),{timeout:10000});
-    });
-  },100);
 }
 
 // ========== 用户位置 ==========
@@ -997,8 +942,9 @@ function placeUserLocationDot(lat, lng){
 // ========== 主题切换 ==========
 let tileLayer=null;
 function getTileUrl(){
-  // CartoDB Voyager 彩色底图（Fastly CDN，国内可访问）
-  return 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  // 🌍 ArcGIS Online 全球可访问（国内不被墙）
+  // 备用：cartocdn 经常被墙
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
 }
 // 固定浅色主题
 document.documentElement.setAttribute('data-theme','light');
@@ -1212,11 +1158,14 @@ function renderMarkersInView(){
       });
     }
     m._idx=i; m._d=d;
-    m.on('click',function(ev){
-      if(ev&&ev.originalEvent) ev.originalEvent.stopPropagation();
-      const dd=this._d;
-      showEventCard(dd);
-      selectMarker(this);
+    m.on('click',function(){
+      const dd=this._d, idx=this._idx;
+      const html=`
+        <span class="pop-type" style="background:${TYPE_COLOR[dd.type]}">${TYPE_LABEL[dd.type]||dd.type}</span>${dd.llm_verified?'<span class="pop-type" style="background:#16a34a;margin-left:4px" title="Verificado por IA">✓ IA</span>':''}
+        <div class="pop-title">${escapeHtml(dd.title)}</div>
+        <div class="pop-meta">📍 ${escapeHtml(dd.city)}${dd.neighborhood?' · '+escapeHtml(dd.neighborhood):''} · ${escapeHtml(dd.source||'')}${dd.pub_date?' · '+timeAgo(dd.pub_date).text:''}</div>
+        <a class="pop-link" href="${escapeHtml(dd.link)}" target="_blank" rel="noopener">Ler notícia →</a>`;
+      this.bindPopup(html,{maxWidth:260,minWidth:220,offset:[0,-6]}).openPopup();
       highlightItemByData(dd);
       __CM_COUNTERS.marker_click_count++;
       track('marker_click',{news_id:dd.id||'',crime_type:dd.type,city_name:dd.city,source:dd.source||''});
@@ -1269,7 +1218,7 @@ function appendListChunk(){
         ${d._dist!=null?`<span class="dist-tag">📍 ${fmtDist(d._dist)}</span>`:''}
       </div>
       <div class="it-title">${escapeHtml(d.title)}</div>
-      <div class="it-source"><span>${escapeHtml(d.source||'')}${t.text?` · <span class="it-time ${t.cls}">${t.text}</span>`:''}</span><a class="it-ler" href="${escapeHtml(d.link||'#')}" target="_blank" rel="noopener" onclick="event.stopPropagation();__CM_COUNTERS.news_open_count=(__CM_COUNTERS.news_open_count||0)+1">Ler →</a></div>
+      <div class="it-source"><span>${escapeHtml(d.source||'')}</span>${t.text?`<span class="it-time ${t.cls}">${t.text}</span>`:''}</div>
     </div>`;
   }).join('');
   while(tmp.firstChild){
@@ -1277,8 +1226,10 @@ function appendListChunk(){
     const idx=+el.dataset.idx;
     const d=_listData[idx];
     el.addEventListener('click',()=>{
-      hideEventCard();   // 确保列表态点击不弹卡片、清掉已有 card
-      map.setView([d.lat,d.lng],14);
+      map.setView([d.lat,d.lng],14);   // setView 比 flyTo 便宜
+      renderMarkersInView();
+      const m=markers.find(x=>x._idx===idx);
+      if(m) setTimeout(()=>m.openPopup(),120);
       highlightItem(idx);
       __CM_COUNTERS.list_click_count++;
       track('list_item_click',{news_id:d.id||'',crime_type:d.type,city_name:d.city,position:idx,source:d.source||''});
@@ -1298,11 +1249,12 @@ function highlightItem(idx){
     appendListChunk();
   }
   document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
+  expandSheet();
   setTimeout(()=>{
     const el=document.querySelector(`.it[data-idx="${idx}"]`);
     if(el){
       el.classList.add('active');
-      if(!isCollapsed()) el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.scrollIntoView({behavior:'smooth',block:'center'});
     }
   }, 160);
 }
@@ -1325,59 +1277,46 @@ function highlightItemByData(d){
   }
   if(target >= 0){
     highlightItem(target);
+  }else{
+    // 极端情况：allData 里都没有（数据 stale） → 只展开 sheet 提示存在
+    expandSheet();
   }
-  // 極端情况都找不到 → 不做任何 sheet 变化（保持当前态）
 }
 
-// ========== Sheet 拖拽（两档：A收起露130px / C展开65%）==========
+// ========== Sheet 拖拽实现 ==========
 const sheet=document.getElementById('sheet');
 const sheetHandle=document.getElementById('sheetHandle');
-const mapEl=document.getElementById('map');
-const SHEET_PEEK=130;
 
-let sheetH=0;
-let curOffset=0;
+let sheetH=0; // sheet 高度
+let curOffset=0; // 当前 transform 偏移（0=完全展开，sheetH-56=收起）
 let dragStartY=0;
 let dragStartOffset=0;
 let isDragging=false;
-let dragMoved=false;
 
 function getSheetH(){return sheet.offsetHeight}
+
 function setOffset(offset, animated=false){
-  const max=getSheetH();
+  const max=getSheetH()-56; // 56 = handle + header 露出高度
   offset=Math.max(0,Math.min(max,offset));
   curOffset=offset;
-  if(animated) sheet.classList.remove('no-trans');
+  if(animated)sheet.classList.remove('no-trans');
   else sheet.classList.add('no-trans');
   sheet.style.transform=`translateY(${offset}px)`;
-  const visible=Math.max(0,getSheetH()-offset);
-  mapEl.style.bottom=visible+'px';
-  if(map && typeof map.invalidateSize==='function'){
-    clearTimeout(setOffset._t);
-    setOffset._t=setTimeout(()=>map.invalidateSize({animate:false,pan:false}), animated?310:60);
-  }
 }
-function expandSheet(){
-  const card=document.getElementById('event-card');
-  card.classList.remove('visible');  // 展开列表时关卡片
-  if(_selectedMarker){try{_selectedMarker.setStyle&&_selectedMarker.setStyle({radius:6,weight:1.5});}catch(_){}_selectedMarker=null;}
-  setOffset(0,true);
-}
-function collapseSheet(){setOffset(getSheetH()-SHEET_PEEK,true)}
-function hideSheet(){setOffset(getSheetH(),true)}
-function isCollapsed(){return curOffset>(getSheetH()-SHEET_PEEK)*0.5}
 
+function expandSheet(){setOffset(0,true)}
+function collapseSheet(){setOffset(getSheetH()-56,true)}
+function isCollapsed(){return curOffset>(getSheetH()-56)*0.5}
+
+// 初始位置：收起
 window.addEventListener('load',()=>{
-  setTimeout(()=>{setOffset(getSheetH()-SHEET_PEEK,false);},50);
-});
-window.addEventListener('resize',()=>{
-  if(curOffset>getSheetH()*0.9) hideSheet();
-  else if(isCollapsed()) collapseSheet();
-  else expandSheet();
+  setTimeout(()=>{
+    setOffset(getSheetH()-56,false);
+  },50);
 });
 
 function onDragStart(e){
-  isDragging=true; dragMoved=false;
+  isDragging=true;
   dragStartY=e.touches?e.touches[0].clientY:e.clientY;
   dragStartOffset=curOffset;
   sheet.classList.add('dragging','no-trans');
@@ -1387,7 +1326,6 @@ function onDragMove(e){
   if(!isDragging)return;
   const y=e.touches?e.touches[0].clientY:e.clientY;
   const dy=y-dragStartY;
-  if(Math.abs(dy)>3) dragMoved=true;
   setOffset(dragStartOffset+dy,false);
   e.preventDefault();
 }
@@ -1395,9 +1333,13 @@ function onDragEnd(){
   if(!isDragging)return;
   isDragging=false;
   sheet.classList.remove('dragging');
-  const mid=(getSheetH()-SHEET_PEEK)/2;
-  if(curOffset<mid) expandSheet();
-  else collapseSheet();
+  // 自动吸附：根据当前位置吸附到最近的端点
+  const max=getSheetH()-56;
+  if(curOffset<max*0.4){
+    expandSheet();
+  }else{
+    collapseSheet();
+  }
 }
 
 sheetHandle.addEventListener('touchstart',onDragStart,{passive:false});
@@ -1407,56 +1349,14 @@ sheetHandle.addEventListener('mousedown',onDragStart);
 window.addEventListener('mousemove',onDragMove);
 window.addEventListener('mouseup',onDragEnd);
 
+// 点击 handle 也能切换
 sheetHandle.addEventListener('click',e=>{
-  if(!dragMoved){
-    if(isCollapsed()){expandSheet();track('sheet_toggle',{action:'expand',from_state:'collapsed'});}
-    else{collapseSheet();track('sheet_toggle',{action:'collapse',from_state:'expanded'});}
+  if(Math.abs(e.clientY-dragStartY)<3){ // 没移动太多 = 点击
+    const _from=isCollapsed()?'collapsed':(sheet.classList.contains('expanded')?'expanded':'collapsed');
+    if(isCollapsed()){expandSheet();track('sheet_toggle',{action:'expand',from_state:_from});}
+    else{collapseSheet();track('sheet_toggle',{action:'collapse',from_state:_from});}
   }
 });
-
-// ========== 事件卡片（B 选中态）==========
-let _selectedMarker=null;
-function showEventCard(d){
-  const card=document.getElementById('event-card');
-  const color=TYPE_COLOR[d.type]||'#666';
-  document.getElementById('ec-bar').style.background=color;
-  const typeEl=document.getElementById('ec-type');
-  typeEl.textContent=TYPE_LABEL[d.type]||d.type;
-  typeEl.style.background=color;
-  document.getElementById('ec-title').textContent=d.title||'';
-  const ago=d.pub_date?timeAgo(d.pub_date):{text:''};
-  document.getElementById('ec-meta').innerHTML=
-    `📍 ${escapeHtml(d.city||'')}${d.neighborhood?' · '+escapeHtml(d.neighborhood):''}<br>`+
-    `${escapeHtml(d.source||'')}${ago.text?' · '+ago.text:''}`;
-  document.getElementById('ec-read-btn').href=d.link||'#';
-  // 动画滑入
-  card.style.display='block';
-  requestAnimationFrame(()=>{ card.style.transform='translateY(0)'; });
-  // sheet 只收起，不消失（card z-index:60 > sheet:50，自然压住）
-  collapseSheet();
-}
-function hideEventCard(){
-  const card=document.getElementById('event-card');
-  card.style.transform='translateY(100%)';
-  setTimeout(()=>{ card.style.display='none'; }, 350);
-  if(_selectedMarker){
-    try{_selectedMarker.setStyle&&_selectedMarker.setStyle({radius:6,weight:1.5});}catch(_){}
-    _selectedMarker=null;
-  }
-  document.querySelectorAll('.it').forEach(el=>el.classList.remove('active'));
-}
-function selectMarker(m){
-  if(_selectedMarker&&_selectedMarker!==m){
-    try{_selectedMarker.setStyle&&_selectedMarker.setStyle({radius:6,weight:1.5});}catch(_){}
-  }
-  _selectedMarker=m;
-  try{if(m&&m.setStyle) m.setStyle({radius:10,weight:3});}catch(_){}
-}
-document.getElementById('ec-close')?.addEventListener('click',()=>{
-  hideEventCard();
-  track('event_card_close',{});
-});
-
 
 // ========== 城市按钮 ==========
 document.getElementById('cityBtn').addEventListener('click',()=>{openCityModal();track('city_modal_open',{from_city:curCity});});
