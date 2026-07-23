@@ -212,11 +212,11 @@ def get_pending_items(conn, stage, limit, state=None, city=None):
     sf = f" AND state='{state}'" if state else ""
     cf = f" AND city='{city}'" if city else ""
     if stage == 'a':
-        sql = f"SELECT event_id,title,description,source_media FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime IS NULL{sf}{cf} ORDER BY pub_ts DESC"
+        sql = f"SELECT event_id,title,description,source_media FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime IS NULL AND pub_ts >= strftime('%s','now','-7 days'){sf}{cf} ORDER BY pub_ts DESC"
     elif stage == 'b':
-        sql = f"SELECT event_id,title,description,crime_type FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime=1 AND llm_b_type IS NULL{sf}{cf} ORDER BY pub_ts DESC"
+        sql = f"SELECT event_id,title,description,crime_type FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime=1 AND llm_b_type IS NULL AND pub_ts >= strftime('%s','now','-7 days'){sf}{cf} ORDER BY pub_ts DESC"
     elif stage == 'c':
-        sql = f"SELECT event_id,title,description,news_url,state,city,city_method FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime=1 AND llm_c_state IS NULL{sf}{cf} ORDER BY pub_ts DESC"
+        sql = f"SELECT event_id,title,description,news_url,state,city,city_method FROM dwd_intl_crime_incident_di WHERE llm_a_is_crime=1 AND llm_c_state IS NULL AND pub_ts >= strftime('%s','now','-7 days'){sf}{cf} ORDER BY pub_ts DESC"
     if limit: sql += f' LIMIT {limit}'
     return cur.execute(sql).fetchall()
 
