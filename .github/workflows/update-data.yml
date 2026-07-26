@@ -12,6 +12,7 @@ on:
     paths:
       - 'scripts/fetch_all.py'
       - 'scripts/llm_call_v2.py'
+      - 'scripts/gen_daily_ops.py'
       - '.github/workflows/update-data.yml'
 concurrency:
   group: update-data
@@ -131,6 +132,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
         run: |
           python3 scripts/gen_health.py || echo "⚠️ health JSON 生成失败（不阻塞主流程）"
+          python3 scripts/gen_daily_ops.py || echo "⚠️ daily_ops JSON 生成失败（不阻塞主流程）"
           ls -la public/health/ || true
 
       # ✅ Fix: 数据有无变化都强制 push，确保 Vercel 每次都重新部署

@@ -334,6 +334,19 @@
           </div>
           <a href="https://umami-crime-map.vercel.app" target="_blank" class="mt-3 text-white/80 text-xs block text-center">→ 打开 Umami 后台查看完整数据</a>
         </div>
+        <!-- 每日漏斗通晒 -->
+        <div class="card mb-4" id="daily-funnel-card">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <div class="font-bold">🧭 每日漏斗通晒 · Daily Funnel</div>
+              <div class="text-xs text-slate-400 mt-1">地图路径和列表路径并行展示；数据来自 <code>health/daily_ops.json</code></div>
+            </div>
+            <span class="pill pill-purple" id="daily-funnel-updated">加载中...</span>
+          </div>
+          <div id="daily-funnel-summary" class="grid grid-cols-4 gap-3 mb-4"></div>
+          <div id="daily-funnel-grid" class="grid grid-cols-2 gap-4"></div>
+          <div id="daily-funnel-notes" class="mt-3 text-xs text-slate-400"></div>
+        </div>
 
         <!-- Session 回放 -->
         <a href="./sessions.html" class="card mb-4 flex items-center justify-between hover:shadow-lg transition" style="background:linear-gradient(135deg,#e8e3ff,#f4f2fc);border:2px solid #c8b8f5;text-decoration:none;color:inherit">
@@ -810,14 +823,73 @@ window.__OPS_TRACE__.push('before loadRealData()');
 loadRealData().then(()=>window.__OPS_TRACE__.push('loadRealData resolved'))
               .catch(e=>{window.__OPS_TRACE__.push('loadRealData REJECTED: '+e.message);document.title='REJECT: '+e.message.slice(0,60)});
 
+// ========== 每日漏斗通晒 ==========
+function fmtNum(v){return (v===null||v===undefined||Number.isNaN(v))?'--':Number(v).toLocaleString('zh-CN')}
+function fmtPct(v){return (v===null||v===undefined)?'--':(Number(v).toFixed(1).replace('.0','')+'%')}
+function fmtSec(v){return (v===null||v===undefined)?'--':(v<60?`${Math.round(v)}s`:`${Math.round(v/60)}m`)}
+function renderDailyFunnel(dailyOps){
+  const updated=document.getElementById('daily-funnel-updated');
+  const summary=document.getElementById('daily-funnel-summary');
+  const grid=document.getElementById('daily-funnel-grid');
+  const notes=document.getElementById('daily-funnel-notes');
+  if(!summary||!grid)return;
+  if(!dailyOps){
+    if(updated)updated.textContent='未生成';
+    summary.innerHTML='<div class="col-span-4 text-center text-slate-400 py-6">⚠️ daily_ops.json 暂不可用，等待下一次 GHA 生成</div>';
+    grid.innerHTML='';
+    return;
+  }
+  if(updated){
+    const dt=dailyOps.generated_at?new Date(dailyOps.generated_at).toLocaleString('zh-CN'):'--';
+    updated.textContent=`更新 ${dt}`;
+  }
+  const ds=dailyOps.data_status||{};
+  const an=dailyOps.analytics_summary||{};
+  const dp=dailyOps.duration_percentiles||{};
+  summary.innerHTML=`
+    <div class="p-3 rounded-2xl" style="background:#f4f2fc"><div class="lbl">前端数据</div><div class="kpi mt-1">${fmtNum(ds.frontend_count)}</div><div class="text-xs text-slate-500 truncate">${ds.latest_pub_date||'--'}</div></div>
+    <div class="p-3 rounded-2xl" style="background:#dff5ee"><div class="lbl">今日 UV / PV</div><div class="text-2xl font-bold mt-1">${fmtNum(an.uv_24h)} / ${fmtNum(an.pv_24h)}</div><div class="text-xs text-slate-500">Sessions ${fmtNum(an.sessions_24h)}</div></div>
+    <div class="p-3 rounded-2xl" style="background:#fff2dc"><div class="lbl">跳出率</div><div class="kpi mt-1">${fmtPct(an.bounce_rate_24h)}</div><div class="text-xs text-slate-500">24h</div></div>
+    <div class="p-3 rounded-2xl" style="background:#ffe1ea"><div class="lbl">停留 P50/P80/P90</div><div class="text-xl font-bold mt-1">${fmtSec(dp.p50_sec)} / ${fmtSec(dp.p80_sec)} / ${fmtSec(dp.p90_sec)}</div><div class="text-xs text-slate-500">样本 ${fmtNum(dp.sample_size)}</div></div>
+  `;
+  const f24=(dailyOps.funnels&&dailyOps.funnels.last_24h)||{};
+  const f7=(dailyOps.funnels&&dailyOps.funnels.last_7d)||{};
+  const order=['entry_geo','map_path','list_path','city_path','filter_path'];
+  const colors=['#6b5be7','#ff6b8a','#4ecdc4','#ffab5c','#8a7cff'];
+  grid.innerHTML=order.map((key,idx)=>{
+    const f=f24[key]; if(!f)return '';
+    const f7d=f7[key]||{};
+    const steps=f.steps||[];
+    const max=Math.max(...steps.map(x=>x.count||0),1);
+    const side=(f.side_steps||[]).filter(x=>x.count!==undefined);
+    const future=(f.future_steps||[]).map(x=>`<span class="pill pill-purple">待补 ${x.label}</span>`).join(' ');
+    return `<div class="rounded-3xl border border-slate-100 p-4 bg-white shadow-sm">
+      <div class="flex justify-between items-start mb-2"><div><div class="font-bold">${idx===1?'🗺️ ':idx===2?'📋 ':idx===0?'📍 ':idx===3?'🏙️ ':'🏷️ '}${f.title}</div><div class="text-[11px] text-slate-400 mt-1">${f.desc||''}</div></div><span class="pill ${idx===0?'pill-amber':'pill-green'}">24h</span></div>
+      <div class="space-y-2 mt-3">
+        ${steps.map((st,i)=>{const w=Math.max(6,Math.round((st.count||0)/max*100)); const rate=i===0?'基准':`上步 ${fmtPct(st.from_prev_rate)}`; const rate7=(f7d.steps&&f7d.steps[i])?`7天 ${fmtNum(f7d.steps[i].count)}`:'7天 --'; return `<div>
+          <div class="flex justify-between text-xs mb-1"><span class="font-semibold">${i+1}. ${st.label}</span><span>${fmtNum(st.count)} · ${rate}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${w}%;background:${colors[idx%colors.length]}"></div></div>
+          <div class="text-[10px] text-slate-400 mt-1">${st.event} · ${rate7}</div>
+        </div>`}).join('')}
+      </div>
+      ${(side.length||future)?`<div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2 text-xs">${side.map(x=>`<span class="pill pill-amber">${x.label}: ${fmtNum(x.count)}</span>`).join(' ')} ${future}</div>`:''}
+    </div>`;
+  }).join('');
+  if(notes){
+    const errs=(dailyOps.event_counts&&dailyOps.event_counts.errors)||{};
+    notes.innerHTML=`${(dailyOps.notes||[]).map(n=>`<div>• ${n}</div>`).join('')} ${(errs['7d']?`<div>• 7天事件 API：${errs['7d']}</div>`:'')}`;
+  }
+}
+
 // ========== 加载 health/* JSON ==========
 async function loadHealth(){
   const tryFetch=async(p)=>{try{const r=await fetch(p);return r.ok?await r.json():null}catch(e){return null}};
-  const [llm,feed,infra,analytics]=await Promise.all([
+  const [llm,feed,infra,analytics,dailyOps]=await Promise.all([
     tryFetch('./health/llm_stats.json'),
     tryFetch('./health/feed.json'),
     tryFetch('./health/infra.json'),
-    tryFetch('./health/analytics.json')
+    tryFetch('./health/analytics.json'),
+    tryFetch('./health/daily_ops.json')
   ]);
 
   // ---- LLM 三阶段 ----
@@ -948,6 +1020,7 @@ async function loadHealth(){
     if(bizDetail)bizDetail.innerHTML=`<div class="text-center py-4 text-slate-400">⚠️ Umami 数据暂不可用<br><a href="https://umami-crime-map.vercel.app" target="_blank" class="text-purple-400 text-xs">→ 直接查看 Umami 后台</a></div>`;
   }
 
+  renderDailyFunnel(dailyOps);
   // ---- Infra ----
   if(infra && infra.gha_runs && infra.gha_runs.length){
     const last=infra.gha_runs[0];
