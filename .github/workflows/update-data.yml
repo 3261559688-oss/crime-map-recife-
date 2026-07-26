@@ -94,8 +94,8 @@ jobs:
       - name: 🔄 Step 7 - Refresh published layer
         run: python3 scripts/refresh_published.py
 
-      - name: 📤 Step 8 - Export front-end JSON
-        run: python3 scripts/export_from_published.py
+      - name: 📤 Step 8 - Export front-end JSON (temporary raw 7d until LLM catch-up)
+        run: python3 scripts/export_raw_7d_for_frontend.py
 
       - name: 🔖 Step 9 - Inject build version
         run: python3 scripts/inject_build_version.py
@@ -139,6 +139,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/rss_incidents.json public/rss_incidents_lite.json \
+                  public/api/incidents.ndjson public/meta.json \
                   public/raw_incidents.json public/raw_meta.json \
                   public/version.json public/health/ \
                   data/crime_map.db

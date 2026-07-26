@@ -1071,6 +1071,7 @@ const ARCH_PHASES=[
     {h:'背景',type:'warn',items:['普通 GitHub-hosted runner 无法访问内网 <code>wanqing-api.corp.kuaishou.com</code>，GHA 里的 LLM A/B/C 会出现 <code>0 成功 / 300 失败</code>','严格发布层 <code>incidents_published</code> 最新仍停在 2026-07-20，线上用户看到的数据过旧','用户要求：LLM 方案后续处理，先把已抓取到的最新数据上线，同时不推前端改动']},
     {h:'本次上线',type:'ok',items:['commit <code>026147e</code>：只提交 4 个数据文件，不提交 <code>public/index.html</code>','变更文件：<code>public/rss_incidents.json</code>、<code>public/rss_incidents_lite.json</code>、<code>public/api/incidents.ndjson</code>、<code>public/meta.json</code>','前端 JSON 临时改为最近 7 天 raw DWD 中有经纬度/城市/州的数据，共 <code>3206</code> 条，最新 <code>2026-07-24T07:30:05+00:00</code>']},
     {h:'口径声明',type:'err',items:['这是临时过渡口径：<code>meta.mode=raw_7d_unverified_until_llm_ready</code>','其中 <code>llm_verified=true</code> 仅 <code>55</code> 条，其余为未完成 LLM A 严格确认的数据','正式严谨口径仍然是 <code>llm_a_is_crime=1</code>，不能把本次 raw 上线视为长期方案']},
+    {h:'已采纳临时方案',type:'ok',items:['2026-07-27 决策：在 LLM 自动化修好前，产品可用性优先，GHA 每小时导出 raw 7d 到前端','新增 <code>scripts/export_raw_7d_for_frontend.py</code>，workflow Step 8 临时改用该脚本','每条保留 <code>llm_verified</code> 字段，避免把未验证数据伪装成已验证']},
     {h:'后续方案',type:'todo',items:['将 LLM job 迁到 Mac/self-hosted runner，保留万擎严谨口径','或使用本地 LLM worker 定时跑 A/B/C → refresh_published → export → push','LLM catch-up 完成后恢复 <code>export_from_published.py</code> / <code>incidents_published</code> 作为唯一前端数据源']}
   ]}
 ];
@@ -1117,7 +1118,7 @@ const ARCH_LAYERS=[
       {h:'📁 文件',items:['<code>scripts/refresh_published.py</code>']},
       {h:'🎯 作用',items:['dwd → <code>incidents_published</code> · 7 天窗口']},
       {h:'✅ 正式严格版',type:'ok',items:["<code>WHERE llm_a_is_crime = 1</code>","<code>AND lat IS NOT NULL AND lng IS NOT NULL</code>","<code>AND COALESCE(llm_c_city, city) IS NOT NULL</code>","<code>AND pub_ts >= strftime('%s','now','-7 days')</code>"]},
-      {h:'⚠️ 7/27 临时绕行',type:'warn',items:['LLM catch-up 前，前端 JSON 暂从 raw DWD 7天有经纬度数据导出','该绕行不改 <code>refresh_published.py</code> 正式口径，只是临时保障用户看到最新日期']}
+      {h:'⚠️ 7/27 临时绕行',type:'warn',items:['LLM catch-up 前，前端 JSON 改由 <code>export_raw_7d_for_frontend.py</code> 从 raw DWD 7天有经纬度数据导出','GHA 每小时自动刷新该 raw 7d JSON，避免再次被严格 published 口径覆盖回旧数据','该绕行不改 <code>refresh_published.py</code> 正式口径，只是临时保障用户看到最新日期']}
     ]}},
     {name:'emit_health',status:'warn'},
     {name:'incidents_published · 严谨口径',status:'warn'}
@@ -1126,7 +1127,7 @@ const ARCH_LAYERS=[
     {name:'rss_incidents.json · raw 7d 临时口径',status:'warn'},
     {name:'health/*.json · GHA 每小时更新',status:'ok',detail:{title:'⑥ 静态文件 · public/',body:[
       {h:'📁 关键文件',items:['<code>rss_incidents.json</code> · 前端地图数据源','<code>health/*.json</code> · 5 个健康数据','<code>version.json</code> · 部署版本追踪']},
-      {h:'⚠️ 当前（7/27）',type:'warn',items:['<code>rss_incidents.json</code> 临时为 raw 7d 数据：3206 条，最新 2026-07-24T07:30:05+00:00','<code>meta.mode=raw_7d_unverified_until_llm_ready</code>','LLM catch-up 后恢复 incidents_published 导出']},
+      {h:'⚠️ 当前（7/27）',type:'warn',items:['<code>rss_incidents.json</code> 临时为 raw 7d 数据，GHA 每小时通过 <code>export_raw_7d_for_frontend.py</code> 自动生成','<code>meta.mode=raw_7d_unverified_until_llm_ready</code>','LLM catch-up 后恢复 incidents_published 导出']},
       {h:'⚠️ 旧版问题',type:'warn',items:['GHA 跑绿但 "无变化" 跳过 push','LLM 限流 → 数据无变化 → 无 commit → 无部署']}
     ]}},
     {name:'version.json · 实时更新',status:'ok'}
