@@ -827,6 +827,77 @@ loadRealData().then(()=>window.__OPS_TRACE__.push('loadRealData resolved'))
 function fmtNum(v){return (v===null||v===undefined||Number.isNaN(v))?'--':Number(v).toLocaleString('zh-CN')}
 function fmtPct(v){return (v===null||v===undefined)?'--':(Number(v).toFixed(1).replace('.0','')+'%')}
 function fmtSec(v){return (v===null||v===undefined)?'--':(v<60?`${Math.round(v)}s`:`${Math.round(v/60)}m`)}
+
+function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=(v===null||v===undefined?'--':v)}
+function applyDailyOpsUnified(dailyOps){
+  if(!dailyOps)return;
+  const ov=dailyOps.overview||{};
+  const k=(ov.kpis)||{};
+  const pl=dailyOps.pipeline||{};
+  const fe=dailyOps.frontend||{};
+  const biz=dailyOps.business||{};
+  const infra=dailyOps.infra||{};
+  const arch=dailyOps.architecture||{};
+  const ds=fe.data_source||{};
+  const inter=fe.interaction||{};
+  const errs=fe.errors||{};
+  const files=fe.files||{};
+  // 总览：统一覆盖核心 KPI
+  setText('kpi-total', fmtNum(k.frontend_count));
+  setText('kpi-24h', fmtNum((pl.age_buckets||{})['<1h'] + (pl.age_buckets||{})['1-6h'] + (pl.age_buckets||{})['6-24h']));
+  setText('kpi-1h', fmtNum((pl.age_buckets||{})['<1h']));
+  const buildInfo=document.getElementById('build-info');
+  if(buildInfo){
+    buildInfo.textContent=`统一日报 ${new Date(dailyOps.generated_at).toLocaleString('zh-CN')} · ${arch.current_mode_label||k.mode||''} · LLM verified ${fmtPct(k.llm_verified_rate)}`;
+  }
+  // 数据抓取：统一数据源摘要
+  setText('pl-kpi-total', fmtNum(pl.raw_7d_count));
+  setText('pl-kpi-7d', fmtNum(pl.raw_7d_count));
+  setText('pl-kpi-latest', pl.latest_pub_date||'--');
+  setText('pl-published', fmtNum(pl.raw_7d_count));
+  // 前端 tab：数据源、交互、错误、文件大小
+  setText('fe-count', fmtNum(ds.count));
+  setText('fe-latest', ds.latest_pub_date||'--');
+  setText('fe-http-status', fe.status==='ok'?'OK':'WARN');
+  setText('fe-http-desc', `${ds.mode||'--'} · verified ${fmtPct(ds.llm_verified_rate)}`);
+  const feCommit=document.getElementById('fe-commit-msg');
+  if(feCommit)feCommit.textContent=`数据 ${fmtNum(ds.count)} 条 · marker ${fmtPct(inter.marker_click_rate)} · list exposure ${fmtPct(inter.list_exposure_rate)} · news ${fmtPct(inter.news_open_rate)} · errors ${fmtNum(errs.count_24h)}`;
+  const feSha=document.getElementById('fe-sha');
+  if(feSha&&infra.gha&&infra.gha.latest)feSha.textContent=(infra.gha.latest.head_sha||'').slice(0,7)||'--';
+  // 业务 tab：产品视角 KPI
+  setText('biz-uv', fmtNum(biz.uv_24h));
+  setText('biz-pv', fmtNum(biz.pv_24h));
+  setText('biz-bounce', fmtPct(biz.bounce_rate_24h));
+  const bizDetail=document.getElementById('biz-umami-detail');
+  if(bizDetail){
+    bizDetail.innerHTML=`
+      <div class="row"><span>今日 PV / UV / Sessions</span><span class="font-bold">${fmtNum(biz.pv_24h)} / ${fmtNum(biz.uv_24h)} / ${fmtNum(biz.sessions_24h)}</span></div>
+      <div class="row"><span>跳出率</span><span class="font-bold">${fmtPct(biz.bounce_rate_24h)}</span></div>
+      <div class="row"><span>内容触达率</span><span class="font-bold">${fmtPct(biz.content_touch_rate)}</span></div>
+      <div class="row"><span>打开原文</span><span class="font-bold">${fmtNum(biz.news_open_count_24h)} · ${fmtPct(biz.news_open_rate_24h)}</span></div>
+      <div class="row"><span>城市切换 / 类型筛选</span><span class="font-bold">${fmtNum(biz.city_switch_24h)} / ${fmtNum(biz.type_filter_24h)}</span></div>
+      <div class="row"><span>数据更新时间</span><span class="text-xs text-slate-400">${new Date(dailyOps.generated_at).toLocaleString('zh-CN')}</span></div>`;
+  }
+  // 基础设施 tab：GHA、文件大小、API 状态
+  const infraQuota=document.getElementById('infra-quota');
+  if(infraQuota){
+    const gha=infra.gha||{};
+    const latest=gha.latest||{};
+    const rssSize=files['public/rss_incidents.json']?Math.round(files['public/rss_incidents.json']/1024)+' KB':'--';
+    const dbSize=infra.db_size_bytes?Math.round(infra.db_size_bytes/1024/1024)+' MB':'--';
+    infraQuota.innerHTML=`
+      <div class="row"><span>最近 GHA 成功率</span><span class="font-bold">${fmtNum(gha.success_5)}/${fmtNum(gha.total_checked)} ✅</span></div>
+      <div class="row"><span>最新 GHA</span><span class="font-semibold ${latest.conclusion==='success'?'text-green-600':'text-amber-600'}">${latest.conclusion||latest.status||'--'}</span></div>
+      <div class="row"><span>Umami API</span><span class="pill ${infra.umami_api==='ok'?'pill-green':'pill-amber'}">${infra.umami_api||'--'}</span></div>
+      <div class="row"><span>JSON / DB 大小</span><span class="font-bold">${rssSize} / ${dbSize}</span></div>
+      <div class="row"><span>当前架构口径</span><span class="text-xs text-slate-500">${arch.current_mode_label||'--'}</span></div>
+      <div class="flex gap-3 justify-center mt-3">
+        <a href="https://vercel.com/dongyuhan03s-projects" target="_blank" class="pill pill-purple">↗ Vercel 后台</a>
+        <a href="https://github.com/3261559688-oss/crime-map-recife-/actions" target="_blank" class="pill pill-green">↗ GHA 用量</a>
+      </div>`;
+  }
+}
+
 function renderDailyFunnel(dailyOps){
   const updated=document.getElementById('daily-funnel-updated');
   const summary=document.getElementById('daily-funnel-summary');
@@ -1021,6 +1092,7 @@ async function loadHealth(){
   }
 
   renderDailyFunnel(dailyOps);
+  applyDailyOpsUnified(dailyOps);
   // ---- Infra ----
   if(infra && infra.gha_runs && infra.gha_runs.length){
     const last=infra.gha_runs[0];

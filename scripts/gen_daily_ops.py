@@ -152,6 +152,129 @@ def build_funnel(config, counts):
         }
     return funnels
 
+
+
+def count_by(items, key, top=10):
+    d = {}
+    for x in items or []:
+        v = x.get(key) or 'Unknown'
+        d[v] = d.get(v, 0) + 1
+    return sorted([{'name': k, 'count': v} for k, v in d.items()], key=lambda x: x['count'], reverse=True)[:top]
+
+def age_buckets(items, now_ts=None):
+    now_ts = now_ts or int(time.time())
+    buckets = {'<1h': 0, '1-6h': 0, '6-24h': 0, '1-3d': 0, '3-7d': 0}
+    for x in items or []:
+        ts = x.get('pub_ts')
+        if not ts:
+            continue
+        h = (now_ts - int(ts)) / 3600
+        if h < 1: buckets['<1h'] += 1
+        elif h < 6: buckets['1-6h'] += 1
+        elif h < 24: buckets['6-24h'] += 1
+        elif h < 72: buckets['1-3d'] += 1
+        else: buckets['3-7d'] += 1
+    return buckets
+
+def stage_map(llm):
+    return {s.get('name'): s for s in (llm or {}).get('stages', [])}
+
+def build_unified_sections(rss, meta, analytics, llm, infra, counts_24h, counts_7d, durations):
+    latest = max([x.get('pub_date','') for x in rss if x.get('pub_date')] or [meta.get('latest')])
+    verified = meta.get('llm_verified_count', sum(1 for x in rss if x.get('llm_verified') is True))
+    count = len(rss)
+    verified_rate = round(verified / count * 100, 1) if count else 0
+    pv = analytics.get('pv_24h')
+    uv = analytics.get('uv_24h')
+    sessions = analytics.get('sessions_24h')
+    bounces = analytics.get('bounces_24h')
+    bounce_rate = round(bounces / sessions * 100, 1) if sessions else None
+    news_open = counts_24h.get('news_open', 0)
+    page_view = counts_24h.get('page_view', 0)
+    marker_click = counts_24h.get('marker_click', 0)
+    list_exp = counts_24h.get('list_item_exposure', 0)
+    list_click = counts_24h.get('list_item_click', 0)
+    error_count = counts_24h.get('error', 0)
+    sm = stage_map(llm)
+    a = sm.get('LLM_A') or sm.get('A') or {}
+    b = sm.get('LLM_B') or sm.get('B') or {}
+    c = sm.get('LLM_C') or sm.get('C') or {}
+    gha_runs = (infra or {}).get('gha_runs', [])
+    latest_run = gha_runs[0] if gha_runs else {}
+    success_5 = sum(1 for r in gha_runs[:5] if r.get('conclusion') == 'success')
+    file_sizes = {}
+    for rel in ['public/rss_incidents.json','public/rss_incidents_lite.json','public/meta.json','public/health/daily_ops.json','data/crime_map.db']:
+        path = ROOT / rel
+        if path.exists(): file_sizes[rel] = path.stat().st_size
+    interaction = {
+        'marker_click_rate': round(marker_click / page_view * 100, 1) if page_view else None,
+        'list_exposure_rate': round(list_exp / page_view * 100, 1) if page_view else None,
+        'list_click_rate': round(list_click / list_exp * 100, 1) if list_exp else None,
+        'news_open_rate': round(news_open / page_view * 100, 2) if page_view else None,
+    }
+    overview = {
+        'generated_at': now_iso(),
+        'health': {
+            'data_freshness': 'ok' if latest else 'warn',
+            'frontend': 'ok' if count > 0 else 'err',
+            'analytics': 'ok' if pv is not None else 'warn',
+            'llm': 'warn' if (meta.get('mode') == 'raw_7d_unverified_until_llm_ready') else 'ok',
+            'infra': 'ok' if latest_run.get('conclusion') == 'success' else 'warn',
+        },
+        'kpis': {
+            'frontend_count': count, 'latest_pub_date': latest, 'mode': meta.get('mode'),
+            'llm_verified_count': verified, 'llm_verified_rate': verified_rate,
+            'uv_24h': uv, 'pv_24h': pv, 'sessions_24h': sessions, 'bounce_rate_24h': bounce_rate,
+            'news_open_24h': news_open, 'news_open_rate_24h': interaction['news_open_rate'],
+        }
+    }
+    pipeline = {
+        'raw_7d_count': count,
+        'latest_pub_date': latest,
+        'mode': meta.get('mode'),
+        'llm_verified_count': verified,
+        'llm_verified_rate': verified_rate,
+        'top_cities': count_by(rss, 'city', 10),
+        'top_types': count_by(rss, 'type', 10),
+        'age_buckets': age_buckets(rss),
+        'llm_stages': {'a': a, 'b': b, 'c': c, 'total_rows': llm.get('total_rows')},
+    }
+    frontend = {
+        'status': 'ok' if count > 0 else 'err',
+        'data_source': {'count': count, 'lite_count': min(200, count), 'latest_pub_date': latest, 'mode': meta.get('mode'), 'llm_verified_count': verified, 'llm_verified_rate': verified_rate},
+        'interaction': interaction,
+        'errors': {'count_24h': error_count, 'error_rate_per_page_view': round(error_count / page_view * 100, 2) if page_view else None},
+        'performance': {'duration_percentiles_source': 'sessions activity sample', 'load_ms_p50': None, 'load_ms_p80': None, 'load_ms_p90': None, 'todo': '接入 page_view.load_ms event_data 后填充'},
+        'files': file_sizes,
+    }
+    business = {
+        'uv_24h': uv, 'pv_24h': pv, 'sessions_24h': sessions, 'bounce_rate_24h': bounce_rate,
+        'engagement': interaction,
+        'content_touch_rate': interaction['list_exposure_rate'],
+        'news_open_count_24h': news_open,
+        'news_open_rate_24h': interaction['news_open_rate'],
+        'city_switch_24h': counts_24h.get('city_switch', 0),
+        'type_filter_24h': counts_24h.get('type_filter', 0),
+    }
+    infra_section = {
+        'gha': {'latest': latest_run, 'success_5': success_5, 'total_checked': len(gha_runs[:5])},
+        'vercel': {'deployments': (infra or {}).get('vercel_deployments', [])[:5]},
+        'data_files': file_sizes,
+        'umami_api': 'ok' if pv is not None else 'warn',
+        'db_size_bytes': file_sizes.get('data/crime_map.db'),
+    }
+    architecture = {
+        'current_mode': meta.get('mode'),
+        'current_mode_label': '临时 raw 7d 前端口径' if meta.get('mode') == 'raw_7d_unverified_until_llm_ready' else '严格 LLM published 口径',
+        'known_risks': [
+            'GHA 公网 runner 无法访问内网万擎，LLM 自动化待 self-hosted runner',
+            'raw 7d 是临时产品可用性口径，准确性低于 llm_a_is_crime=1 正式口径',
+            'geo 定位系统成功率当前为 0，需要拆 geo_denied.code 并优化定位策略',
+        ],
+        'next_steps': ['Mac self-hosted runner 承接 LLM job', '补 geo_denied.code 维度', 'event_card_show 随新版前端上线补埋点'],
+    }
+    return overview, pipeline, frontend, business, infra_section, architecture
+
 def main():
     analytics = load_json(HEALTH / 'analytics.json', {}) or {}
     meta = load_json(ROOT / 'public' / 'meta.json', {}) or {}
@@ -181,9 +304,28 @@ def main():
     if rss:
         latest = max([x.get('pub_date','') for x in rss if x.get('pub_date')] or [None])
 
+    llm = load_json(HEALTH / 'llm_stats.json', {}) or {}
+    infra = load_json(HEALTH / 'infra.json', {}) or {}
+    overview, pipeline, frontend, business, infra_section, architecture = build_unified_sections(
+        rss, meta, analytics, llm, infra, counts_24h, counts_7d, durations
+    )
+
     out = {
         'generated_at': now_iso(),
         'date_tz': 'America/Sao_Paulo',
+        'overview': overview,
+        'pipeline': pipeline,
+        'frontend': frontend,
+        'analytics': {
+            'summary': overview['kpis'],
+            'duration_percentiles': duration_percentiles,
+            'event_counts_24h': counts_24h,
+            'event_counts_7d': counts_7d,
+        },
+        'business': business,
+        'infra': infra_section,
+        'architecture': architecture,
+        # Backward-compatible fields used by current ops.html renderDailyFunnel
         'data_status': {
             'frontend_count': len(rss),
             'latest_pub_date': latest or meta.get('latest'),
