@@ -642,6 +642,15 @@ async function loadRealData(){
       fetch('./meta.json').then(r=>r.json()),
       fetch('./version.json').then(r=>r.json()).catch(()=>({}))
     ]);
+    // ---- meta.json 兼容层：raw 7d 临时口径只有 count/latest/updated_at，旧口径有 total/generated_at/feeds_* 等
+    meta.total = meta.total ?? meta.count ?? 0;
+    meta.generated_at = meta.generated_at || meta.updated_at || new Date().toISOString();
+    meta.feeds_success = meta.feeds_success ?? 0;
+    meta.feeds_count = meta.feeds_count ?? 0;
+    meta.city_stats = meta.city_stats || {};
+    meta.state_count = meta.state_count ?? 0;
+    meta.age_buckets = meta.age_buckets || {};
+
     // ---- 总览 tab ----
     // 关键指标
     const k={
@@ -655,7 +664,7 @@ async function loadRealData(){
     Object.entries(k).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v});
 
     // 红绿灯：RSS 源健康
-    const feedRate=meta.feeds_success/meta.feeds_count;
+    const feedRate=meta.feeds_count ? meta.feeds_success/meta.feeds_count : 0;
     const feedLight=document.getElementById('light-pipeline');
     if(feedLight){
       const dot=feedLight.querySelector('.light-dot');
@@ -751,7 +760,7 @@ async function loadRealData(){
     const rssListEl=document.getElementById('rss-source-list');
     if(rssListEl && meta.city_stats){
       const topCities=Object.entries(meta.city_stats).sort((a,b)=>b[1]-a[1]).slice(0,8);
-      const feedRateVal=meta.feeds_success/meta.feeds_count;
+      const feedRateVal=meta.feeds_count ? meta.feeds_success/meta.feeds_count : 0;
       const statusColor=feedRateVal>=0.7?'#4ecdc4':feedRateVal>=0.4?'#f59e0b':'#ef4444';
       rssListEl.innerHTML=`
         <div class="row"><span>活跃 RSS 源</span><span class="font-bold">${meta.feeds_success}/${meta.feeds_count}</span></div>
@@ -794,7 +803,7 @@ async function loadRealData(){
     }
 
     // ---- 红绿灯：数据管线（RSS 成功率）----
-    const feedRatePct=meta.feeds_success/meta.feeds_count;
+    const feedRatePct=meta.feeds_count ? meta.feeds_success/meta.feeds_count : 0;
     const pipeLight=document.querySelector('.light[data-jump="pipeline"]');
     if(pipeLight){
       pipeLight.classList.remove('ok','warn','err');
