@@ -10,7 +10,8 @@
 """
 import json, os, time, math
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 HEALTH = ROOT / 'public' / 'health'
@@ -123,6 +124,56 @@ def fetch_umami_events(hours):
         return event_counts_from_items(j.get('data') if isinstance(j, dict) else j), None
     except Exception as e:
         return None, str(e)
+
+
+def fetch_umami_events_range(start_ms, end_ms):
+    url = os.environ.get('UMAMI_URL')
+    token = os.environ.get('UMAMI_TOKEN')
+    wid = os.environ.get('UMAMI_WEBSITE_ID')
+    if not (url and token and wid and requests):
+        return None, 'UMAMI env or requests missing'
+    try:
+        r = requests.get(
+            f'{url}/api/websites/{wid}/events',
+            params={'startAt': start_ms, 'endAt': end_ms, 'unit': 'hour', 'timezone': 'America/Sao_Paulo', 'pageSize': 10000},
+            headers={'Authorization': f'Bearer {token}'}, timeout=20)
+        if not r.ok:
+            return None, f'HTTP {r.status_code}: {r.text[:120]}'
+        j = r.json()
+        return event_counts_from_items(j.get('data') if isinstance(j, dict) else j), None
+    except Exception as e:
+        return None, str(e)
+
+def build_daily_history(days=14):
+    """按 America/Sao_Paulo 自然日生成最近 N 天漏斗快照。"""
+    tz = ZoneInfo('America/Sao_Paulo')
+    today = datetime.now(tz).date()
+    history = []
+    errors = {}
+    for i in range(days - 1, -1, -1):
+        day = today - timedelta(days=i)
+        start = datetime(day.year, day.month, day.day, tzinfo=tz)
+        end = start + timedelta(days=1)
+        counts, err = fetch_umami_events_range(int(start.timestamp()*1000), int(end.timestamp()*1000))
+        if counts is None:
+            counts = {}
+            errors[str(day)] = err
+        history.append({
+            'date': str(day),
+            'start_at': start.isoformat(),
+            'end_at': end.isoformat(),
+            'event_counts': counts,
+            'funnels': build_funnel(FUNNEL_CONFIG, counts),
+            'summary': {
+                'page_view': counts.get('page_view', 0),
+                'geo_modal_show': counts.get('geo_modal_show', 0),
+                'marker_click': counts.get('marker_click', 0),
+                'list_item_exposure': counts.get('list_item_exposure', 0),
+                'list_item_click': counts.get('list_item_click', 0),
+                'news_open': counts.get('news_open', 0),
+            }
+        })
+    return {'days': days, 'timezone': 'America/Sao_Paulo', 'items': history, 'errors': errors}
 
 def build_funnel(config, counts):
     funnels = {}
@@ -310,9 +361,12 @@ def main():
         rss, meta, analytics, llm, infra, counts_24h, counts_7d, durations
     )
 
+    daily_history = build_daily_history(days=int(os.environ.get('DAILY_OPS_HISTORY_DAYS', '14')))
+
     out = {
         'generated_at': now_iso(),
         'date_tz': 'America/Sao_Paulo',
+        'daily_history': daily_history,
         'overview': overview,
         'pipeline': pipeline,
         'frontend': frontend,

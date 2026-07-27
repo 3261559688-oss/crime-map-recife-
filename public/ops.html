@@ -341,7 +341,10 @@
               <div class="font-bold">🧭 每日漏斗通晒 · Daily Funnel</div>
               <div class="text-xs text-slate-400 mt-1">地图路径和列表路径并行展示；数据来自 <code>health/daily_ops.json</code></div>
             </div>
-            <span class="pill pill-purple" id="daily-funnel-updated">加载中...</span>
+            <div class="flex items-center gap-2">
+              <select id="daily-funnel-date" class="text-xs rounded-xl border border-purple-100 px-3 py-2 bg-white text-slate-600 outline-none"></select>
+              <span class="pill pill-purple" id="daily-funnel-updated">加载中...</span>
+            </div>
           </div>
           <div id="daily-funnel-summary" class="grid grid-cols-4 gap-3 mb-4"></div>
           <div id="daily-funnel-grid" class="grid grid-cols-2 gap-4"></div>
@@ -864,6 +867,35 @@ function applyDailyOpsUnified(dailyOps){
   setText('pl-kpi-7d', fmtNum(pl.raw_7d_count));
   setText('pl-kpi-latest', pl.latest_pub_date||'--');
   setText('pl-published', fmtNum(pl.raw_7d_count));
+  // 数据抓取：从 daily_ops.pipeline 覆盖城市/类型/时效，避免 raw meta 缺字段显示 0
+  const dailyCities=(pl.top_cities||[]);
+  const dailyTypes=(pl.top_types||[]);
+  const dailyAge=pl.age_buckets||{};
+  setText('kpi-cities', fmtNum(dailyCities.length));
+  setText('kpi-states', '--');
+  setText('geo-cities', fmtNum(dailyCities.length));
+  setText('geo-total', fmtNum(pl.raw_7d_count));
+  const cityListEl2=document.getElementById('city-list');
+  if(cityListEl2 && dailyCities.length){
+    const max=Math.max(...dailyCities.map(x=>x.count||0),1);
+    const colors2=['#ff6b8a','#6b5be7','#4ecdc4','#ffab5c','#8a7cff','#ff8fb0','#8ee0d8','#ffcb87','#c8b8f5','#a8e6dd'];
+    cityListEl2.innerHTML=dailyCities.map((x,i)=>{const color=colors2[i%colors2.length];const pct=Math.round((x.count||0)/max*100);return `<div class="cursor-pointer p-3 rounded-2xl hover:shadow-md transition border border-slate-100"><div class="flex justify-between items-center mb-2"><div class="flex items-center gap-2 min-w-0"><span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span><span class="text-sm font-bold truncate">${x.name}</span></div><span class="text-lg font-bold" style="color:${color}">${fmtNum(x.count)}</span></div><div class="progress-bar" style="height:5px"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="text-[10px] text-slate-400 mt-1">raw 7d · daily_ops</div></div>`}).join('');
+  }
+  const typeEl2=document.getElementById('type-list');
+  if(typeEl2 && dailyTypes.length){
+    const totalT=dailyTypes.reduce((s,x)=>s+(x.count||0),0)||1;
+    typeEl2.innerHTML=dailyTypes.map(x=>`<div class="row"><span class="capitalize">${x.name}</span><span class="font-bold">${fmtNum(x.count)} <span class="text-slate-400 text-xs">(${Math.round((x.count||0)/totalT*100)}%)</span></span></div>`).join('');
+  }
+  const ageEl2=document.getElementById('age-list');
+  if(ageEl2 && Object.keys(dailyAge).length){
+    const totalA=Object.values(dailyAge).reduce((s,v)=>s+(v||0),0)||1;
+    ageEl2.innerHTML=Object.entries(dailyAge).map(([k,v])=>`<div class="mb-2"><div class="flex justify-between text-xs mb-1"><span>${k}</span><span class="font-bold">${fmtNum(v)} (${Math.round((v||0)/totalA*100)}%)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(v||0)/totalA*100}%;background:#6b5be7"></div></div></div>`).join('');
+  }
+  const rssListEl2=document.getElementById('rss-source-list');
+  if(rssListEl2){
+    rssListEl2.innerHTML=`<div class="row"><span>当前导出口径</span><span class="pill pill-amber">${pl.mode||'--'}</span></div><div class="row"><span>raw 7d 条数</span><span class="font-bold">${fmtNum(pl.raw_7d_count)}</span></div><div class="row"><span>LLM verified</span><span class="font-bold">${fmtNum(pl.llm_verified_count)} · ${fmtPct(pl.llm_verified_rate)}</span></div><div class="mt-2 text-[10px] text-slate-400 font-semibold uppercase">Top 城市供给</div>${dailyCities.slice(0,8).map(x=>`<div class="row"><span>${x.name}</span><span class="pill pill-green">${fmtNum(x.count)}</span></div>`).join('')}`;
+  }
+
   // 前端 tab：数据源、交互、错误、文件大小
   setText('fe-count', fmtNum(ds.count));
   setText('fe-latest', ds.latest_pub_date||'--');
@@ -907,11 +939,12 @@ function applyDailyOpsUnified(dailyOps){
   }
 }
 
-function renderDailyFunnel(dailyOps){
+function renderDailyFunnel(dailyOps, selectedDate){
   const updated=document.getElementById('daily-funnel-updated');
   const summary=document.getElementById('daily-funnel-summary');
   const grid=document.getElementById('daily-funnel-grid');
   const notes=document.getElementById('daily-funnel-notes');
+  const picker=document.getElementById('daily-funnel-date');
   if(!summary||!grid)return;
   if(!dailyOps){
     if(updated)updated.textContent='未生成';
@@ -919,20 +952,35 @@ function renderDailyFunnel(dailyOps){
     grid.innerHTML='';
     return;
   }
+  const hist=(dailyOps.daily_history&&dailyOps.daily_history.items)||[];
+  if(picker && hist.length && !picker.dataset.ready){
+    picker.innerHTML=hist.slice().reverse().map(d=>`<option value="${d.date}">${d.date}</option>`).join('');
+    picker.value=selectedDate || hist[hist.length-1].date;
+    picker.dataset.ready='1';
+    picker.onchange=()=>renderDailyFunnel(dailyOps,picker.value);
+  }
+  const selected = selectedDate || (picker&&picker.value) || (hist[hist.length-1]&&hist[hist.length-1].date) || '';
+  const day = hist.find(x=>x.date===selected);
+  const isHistory = !!day;
   if(updated){
     const dt=dailyOps.generated_at?new Date(dailyOps.generated_at).toLocaleString('zh-CN'):'--';
-    updated.textContent=`更新 ${dt}`;
+    updated.textContent=isHistory?`日期 ${selected}`:`更新 ${dt}`;
   }
   const ds=dailyOps.data_status||{};
   const an=dailyOps.analytics_summary||{};
   const dp=dailyOps.duration_percentiles||{};
+  const eventCounts = isHistory ? (day.event_counts||{}) : ((dailyOps.event_counts&&dailyOps.event_counts.last_24h)||{});
+  const pageView = eventCounts.page_view || 0;
+  const newsOpen = eventCounts.news_open || 0;
+  const markerClick = eventCounts.marker_click || 0;
+  const listExp = eventCounts.list_item_exposure || 0;
   summary.innerHTML=`
-    <div class="p-3 rounded-2xl" style="background:#f4f2fc"><div class="lbl">前端数据</div><div class="kpi mt-1">${fmtNum(ds.frontend_count)}</div><div class="text-xs text-slate-500 truncate">${ds.latest_pub_date||'--'}</div></div>
-    <div class="p-3 rounded-2xl" style="background:#dff5ee"><div class="lbl">今日 UV / PV</div><div class="text-2xl font-bold mt-1">${fmtNum(an.uv_24h)} / ${fmtNum(an.pv_24h)}</div><div class="text-xs text-slate-500">Sessions ${fmtNum(an.sessions_24h)}</div></div>
-    <div class="p-3 rounded-2xl" style="background:#fff2dc"><div class="lbl">跳出率</div><div class="kpi mt-1">${fmtPct(an.bounce_rate_24h)}</div><div class="text-xs text-slate-500">24h</div></div>
-    <div class="p-3 rounded-2xl" style="background:#ffe1ea"><div class="lbl">停留 P50/P80/P90</div><div class="text-xl font-bold mt-1">${fmtSec(dp.p50_sec)} / ${fmtSec(dp.p80_sec)} / ${fmtSec(dp.p90_sec)}</div><div class="text-xs text-slate-500">样本 ${fmtNum(dp.sample_size)}</div></div>
+    <div class="p-3 rounded-2xl" style="background:#f4f2fc"><div class="lbl">查看日期</div><div class="kpi mt-1">${isHistory?selected:'24h'}</div><div class="text-xs text-slate-500 truncate">巴西自然日</div></div>
+    <div class="p-3 rounded-2xl" style="background:#dff5ee"><div class="lbl">页面进入</div><div class="text-2xl font-bold mt-1">${fmtNum(pageView)}</div><div class="text-xs text-slate-500">page_view</div></div>
+    <div class="p-3 rounded-2xl" style="background:#fff2dc"><div class="lbl">内容触达</div><div class="kpi mt-1">${fmtPct(pageView?listExp/pageView*100:null)}</div><div class="text-xs text-slate-500">list exposure ${fmtNum(listExp)}</div></div>
+    <div class="p-3 rounded-2xl" style="background:#ffe1ea"><div class="lbl">打开原文</div><div class="text-xl font-bold mt-1">${fmtNum(newsOpen)} · ${fmtPct(pageView?newsOpen/pageView*100:null)}</div><div class="text-xs text-slate-500">marker ${fmtNum(markerClick)}</div></div>
   `;
-  const f24=(dailyOps.funnels&&dailyOps.funnels.last_24h)||{};
+  const f24=isHistory ? (day.funnels||{}) : ((dailyOps.funnels&&dailyOps.funnels.last_24h)||{});
   const f7=(dailyOps.funnels&&dailyOps.funnels.last_7d)||{};
   const order=['entry_geo','map_path','list_path','city_path','filter_path'];
   const colors=['#6b5be7','#ff6b8a','#4ecdc4','#ffab5c','#8a7cff'];
@@ -944,7 +992,7 @@ function renderDailyFunnel(dailyOps){
     const side=(f.side_steps||[]).filter(x=>x.count!==undefined);
     const future=(f.future_steps||[]).map(x=>`<span class="pill pill-purple">待补 ${x.label}</span>`).join(' ');
     return `<div class="rounded-3xl border border-slate-100 p-4 bg-white shadow-sm">
-      <div class="flex justify-between items-start mb-2"><div><div class="font-bold">${idx===1?'🗺️ ':idx===2?'📋 ':idx===0?'📍 ':idx===3?'🏙️ ':'🏷️ '}${f.title}</div><div class="text-[11px] text-slate-400 mt-1">${f.desc||''}</div></div><span class="pill ${idx===0?'pill-amber':'pill-green'}">24h</span></div>
+      <div class="flex justify-between items-start mb-2"><div><div class="font-bold">${idx===1?'🗺️ ':idx===2?'📋 ':idx===0?'📍 ':idx===3?'🏙️ ':'🏷️ '}${f.title}</div><div class="text-[11px] text-slate-400 mt-1">${f.desc||''}</div></div><span class="pill ${idx===0?'pill-amber':'pill-green'}">${isHistory?selected:'24h'}</span></div>
       <div class="space-y-2 mt-3">
         ${steps.map((st,i)=>{const w=Math.max(6,Math.round((st.count||0)/max*100)); const rate=i===0?'基准':`上步 ${fmtPct(st.from_prev_rate)}`; const rate7=(f7d.steps&&f7d.steps[i])?`7天 ${fmtNum(f7d.steps[i].count)}`:'7天 --'; return `<div>
           <div class="flex justify-between text-xs mb-1"><span class="font-semibold">${i+1}. ${st.label}</span><span>${fmtNum(st.count)} · ${rate}</span></div>
@@ -957,10 +1005,10 @@ function renderDailyFunnel(dailyOps){
   }).join('');
   if(notes){
     const errs=(dailyOps.event_counts&&dailyOps.event_counts.errors)||{};
-    notes.innerHTML=`${(dailyOps.notes||[]).map(n=>`<div>• ${n}</div>`).join('')} ${(errs['7d']?`<div>• 7天事件 API：${errs['7d']}</div>`:'')}`;
+    const historyErr=(dailyOps.daily_history&&dailyOps.daily_history.errors&&dailyOps.daily_history.errors[selected])||'';
+    notes.innerHTML=`${(dailyOps.notes||[]).map(n=>`<div>• ${n}</div>`).join('')} ${historyErr?`<div>• ${selected} API：${historyErr}</div>`:''} ${(errs['7d']?`<div>• 7天事件 API：${errs['7d']}</div>`:'')}`;
   }
 }
-
 // ========== 加载 health/* JSON ==========
 async function loadHealth(){
   const tryFetch=async(p)=>{try{const r=await fetch(p);return r.ok?await r.json():null}catch(e){return null}};
