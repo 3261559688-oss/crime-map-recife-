@@ -471,6 +471,9 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
   background: rgba(34,197,94,.9) !important;
   color: #fff !important;
 }
+#map-controls{position:absolute;right:12px;top:38%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:6px}
+.map-ctrl-btn{width:36px;height:36px;background:var(--bg-sheet);border:1px solid var(--border-soft);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);color:var(--text-main);user-select:none}
+.map-ctrl-btn:active{transform:scale(.94)}
 
 </style>
 </head>
@@ -541,9 +544,15 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     <div class="sheet-body" id="list"></div>
   </div>
 
+  <div id="map-controls">
+    <div class="map-ctrl-btn" id="ctrl-zoom-in">+</div>
+    <div class="map-ctrl-btn" id="ctrl-zoom-out">−</div>
+    <div class="map-ctrl-btn" id="ctrl-locate">⊕</div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
-  <!-- 居中定位授权弹窗（首次进入 1.5s 后弹出） -->
+  <!-- 居中定位授权弹窗（进入 5s 后弹出，7 天自动冷却） -->
   <div id="geo-modal" style="display:none;position:fixed;inset:0;z-index:5000;
     background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
     align-items:center;justify-content:center;padding:20px;">
@@ -654,6 +663,7 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     type_filter:         {type:'CLICK_EVENT', el:'CRIME_TYPE_FILTER'},
     marker_click:        {type:'CLICK_EVENT', el:'CRIME_MARKER'},
     list_item_click:     {type:'CLICK_EVENT', el:'CRIME_LIST_ITEM'},
+    map_control_click:   {type:'CLICK_EVENT', el:'MAP_CONTROL'},
     news_open:           {type:'CLICK_EVENT', el:'NEWS_OUTLINK'},
     sheet_toggle:        {type:'CLICK_EVENT', el:'LIST_SHEET_HANDLE'},
     // 任务事件
@@ -876,6 +886,28 @@ function fmtDist(km){
   return Math.round(km)+' km';
 }
 
+const GEO_PROMPT_COOLDOWN_MS=7*24*3600*1000;
+function savePreferredCity(city, source, extra={}){
+  if(!city)return;
+  localStorage.setItem('preferred_city', city);
+  localStorage.setItem('preferred_city_source', source);
+  localStorage.setItem('preferred_city_at', String(Date.now()));
+  localStorage.setItem('preferred_city_uid', window.__CM_UID||'');
+  if(extra.state)localStorage.setItem('preferred_city_state', extra.state);
+  if(extra.lat!=null)localStorage.setItem('user_lat', extra.lat);
+  if(extra.lng!=null)localStorage.setItem('user_lng', extra.lng);
+  if(extra.accuracy!=null)localStorage.setItem('user_geo_accuracy', extra.accuracy);
+}
+function getPreferredCity(){
+  const city=localStorage.getItem('preferred_city');
+  const uid=localStorage.getItem('preferred_city_uid');
+  return city && (!uid || uid===window.__CM_UID) ? city : '';
+}
+function shouldAutoShowGeoModal(){
+  const last=Number(localStorage.getItem('geo_prompt_last_at')||0);
+  return !last || Date.now()-last>GEO_PROMPT_COOLDOWN_MS;
+}
+
 // 时钟
 function updateClock(){
   const d=new Date();
@@ -928,6 +960,9 @@ function initMap(){
   });
   setTimeout(()=>map.invalidateSize(),200);
   window.addEventListener('resize',()=>map.invalidateSize());
+  document.getElementById('ctrl-zoom-in')?.addEventListener('click',()=>{map.zoomIn();track('map_control_click',{control:'zoom_in'});});
+  document.getElementById('ctrl-zoom-out')?.addEventListener('click',()=>{map.zoomOut();track('map_control_click',{control:'zoom_out'});});
+  document.getElementById('ctrl-locate')?.addEventListener('click',()=>{track('map_control_click',{control:'locate'});showGeoModal('manual');});
 }
 
 // ========== 用户位置 ==========
@@ -1032,7 +1067,7 @@ function renderTypeBar(){
   });
 }
 
-function switchCity(city){
+function switchCity(city, source='manual'){
   const from=curCity;
   if(geoMode && city!=='Brasil'){
     geoMode=false;
@@ -1073,8 +1108,9 @@ function switchCity(city){
   const doWork=()=>{ renderMarkersInView(); renderList(); };
   ('requestIdleCallback' in window) ? requestIdleCallback(doWork,{timeout:200}) : requestAnimationFrame(doWork);
   showToast(`📍 ${city}`);
+  if(source==='manual')savePreferredCity(city,'manual',{});
   __CM_COUNTERS.city_switch_count++;
-  track('city_switch',{from_city:from,city_name:city,result_count:getFilteredData().length});
+  track('city_switch',{from_city:from,city_name:city,result_count:getFilteredData().length,source,uid:window.__CM_UID||'',preferred_city_source:source==='manual'?'manual':''});
 }
 
 function switchType(t){
@@ -1426,53 +1462,71 @@ document.getElementById('citySearch').addEventListener('input',e=>{
 document.getElementById('cityClose').addEventListener('click',()=>{track('city_modal_cancel',{from_city:curCity});});
 
 // ========== 定位授权弹窗 ==========
-function showGeoModal(){
+function applyGeoPosition(p, phase){
+  const lat=p.coords.latitude, lng=p.coords.longitude;
+  const accuracy=Math.round(p.coords.accuracy||0);
+  localStorage.setItem('user_lat', lat);
+  localStorage.setItem('user_lng', lng);
+  localStorage.setItem('geo_asked','1');
+  placeUserLocationDot(lat, lng);
+  let nearestCity='Brasil', minDist=Infinity;
+  for(const [cName, coords] of Object.entries(CITY_COORDS)){
+    if(cName==='Brasil') continue;
+    const d=haversine(lat,lng,coords[0],coords[1]);
+    if(d<minDist){minDist=d; nearestCity=cName;}
+  }
+  if(minDist<=100 && nearestCity!=='Brasil'){
+    savePreferredCity(nearestCity,'geo',{lat,lng,accuracy});
+    switchCity(nearestCity,'geo');
+    showToast(`📍 Você está em ${nearestCity}`);
+  }else{
+    map.flyTo([lat,lng], 12, {duration:.8});
+    showToast(`📍 Localização definida`);
+  }
+  track('geo_granted',{uid:window.__CM_UID||'',lat,lng,accuracy,phase,nearest_city:nearestCity,dist_km:minDist.toFixed(1),preferred_city_source:'geo'});
+}
+function geoErrorPayload(err, phase, highAccuracy){
+  return {uid:window.__CM_UID||'',code:err&&err.code,message:(err&&err.message)||'',phase,high_accuracy:highAccuracy};
+}
+function requestUserLocation(trigger='auto'){
+  if(!navigator.geolocation){showToast('❌ GPS não suportado');track('geo_denied',{trigger,code:'unsupported'});return;}
+  showToast('📍 Buscando localização...');
+  navigator.geolocation.getCurrentPosition(
+    p=>applyGeoPosition(p,'low_accuracy'),
+    err1=>{
+      track('geo_denied',Object.assign({trigger},geoErrorPayload(err1,'low_accuracy',false)));
+      navigator.geolocation.getCurrentPosition(
+        p=>applyGeoPosition(p,'high_accuracy'),
+        err2=>{
+          const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
+          showToast(msgs[err2.code]||'❌ Erro de localização');
+          track('geo_denied',Object.assign({trigger},geoErrorPayload(err2,'high_accuracy',true)));
+        },
+        {enableHighAccuracy:true,timeout:15000,maximumAge:60000}
+      );
+    },
+    {enableHighAccuracy:false,timeout:8000,maximumAge:300000}
+  );
+}
+function showGeoModal(trigger='auto'){
   const modal=document.getElementById('geo-modal');
   if(!modal)return;
   modal.style.display='flex';
-  track('geo_modal_show',{});
+  localStorage.setItem('geo_prompt_last_at', String(Date.now()));
+  track('geo_modal_show',{trigger,cooldown_days:7});
 
   const allow=document.getElementById('geo-modal-allow');
   const deny=document.getElementById('geo-modal-deny');
 
   allow.onclick=()=>{
     hideGeoModal();
-    localStorage.setItem('geo_asked','1');
-    track('geo_modal_allow',{});
-    if(!navigator.geolocation){showToast('❌ GPS não suportado');return;}
-    showToast('📍 Buscando localização...');
-    navigator.geolocation.getCurrentPosition(p=>{
-      // ✅ 真实经纬度到手 → 放蓝色脉冲点 + 定位到最近城市（不启用圈选）
-      const lat=p.coords.latitude, lng=p.coords.longitude;
-      localStorage.setItem('user_lat', lat);
-      localStorage.setItem('user_lng', lng);
-      placeUserLocationDot(lat, lng);
-      // 找最近的城市
-      let nearestCity='Brasil', minDist=Infinity;
-      for(const [cName, coords] of Object.entries(CITY_COORDS)){
-        if(cName==='Brasil') continue;
-        const d=haversine(lat,lng,coords[0],coords[1]);
-        if(d<minDist){minDist=d; nearestCity=cName;}
-      }
-      // 只有 100km 内才切城市，否则只飞过去
-      if(minDist<=100 && nearestCity!=='Brasil'){
-        switchCity(nearestCity);
-        showToast(`📍 Você está em ${nearestCity}`);
-      }else{
-        map.flyTo([lat,lng], 12, {duration:.8});
-        showToast(`📍 Localização definida`);
-      }
-      track('geo_granted',{lat,lng,nearest_city:nearestCity,dist_km:minDist.toFixed(1)});
-    },err=>{
-      const msgs={1:'❌ Permissão negada',2:'❌ Localização indisponível',3:'❌ Tempo esgotado'};
-      showToast(msgs[err.code]||'❌ Erro de localização');
-      track('geo_denied',{code:err.code});
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+    track('geo_modal_allow',{trigger});
+    requestUserLocation(trigger);
   };
   deny.onclick=()=>{
     hideGeoModal();
     localStorage.setItem('geo_asked','1');
-    track('geo_modal_deny',{});
+    track('geo_modal_deny',{trigger});
   };
   // 点遮罩外部不关闭（强引导，避免误关）
 }
@@ -1504,14 +1558,25 @@ async function init(){
     const liteRes=await fetch('/rss_incidents_lite.json?_='+Date.now());
     allData=await liteRes.json();
     allData = filterRecent(allData);  // 🔒 客户端兜底：仅 7 天内
+    const preferredCity=getPreferredCity();
+    function applyPreferredCityIfAvailable(){
+      if(preferredCity && preferredCity!=='Brasil' && curCity==='Brasil' && allData.some(d=>d.city===preferredCity)){
+        curCity=preferredCity;
+        document.getElementById('cityBtnLabel').textContent=preferredCity;
+        return true;
+      }
+      return false;
+    }
+    applyPreferredCityIfAvailable();
     renderTypeBar();
     renderMarkers();
     renderList();
+    if(curCity!=='Brasil')setTimeout(()=>switchCity(curCity,'restore'),250);
     document.getElementById('loading').style.display='none';
     setTimeout(()=>map.invalidateSize(),300);
-    // 📍 首次进入：1.5 秒后弹出定位授权弹窗（地图先出来，再问授权）
-    if(!localStorage.getItem('geo_asked') && navigator.geolocation){
-      setTimeout(showGeoModal, 1500);
+    // 📍 低打扰定位引导：进入 5 秒后弹出，7 天最多自动弹一次
+    if(navigator.geolocation && shouldAutoShowGeoModal()){
+      setTimeout(()=>showGeoModal('auto'), 5000);
     }
     // 🔄 后台拉完整版（1920 条）—— Kwai WebView 上用 requestIdleCallback 避免阻塞首屏交互
     const loadFull = ()=>{
@@ -1519,9 +1584,11 @@ async function init(){
         .then(r=>r.json())
         .then(full=>{
           allData=filterRecent(full);
+          const restored=applyPreferredCityIfAvailable();
           renderTypeBar();
           renderMarkers();
           renderList();
+          if(restored)setTimeout(()=>switchCity(curCity,'restore'),120);
         }).catch(()=>{});
     };
     if('requestIdleCallback' in window){
