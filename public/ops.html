@@ -1297,6 +1297,13 @@ const ARCH_PHASES=[
     {h:'口径声明',type:'err',items:['这是临时过渡口径：<code>meta.mode=raw_7d_unverified_until_llm_ready</code>','其中 <code>llm_verified=true</code> 仅 <code>55</code> 条，其余为未完成 LLM A 严格确认的数据','正式严谨口径仍然是 <code>llm_a_is_crime=1</code>，不能把本次 raw 上线视为长期方案']},
     {h:'已采纳临时方案',type:'ok',items:['2026-07-27 决策：在 LLM 自动化修好前，产品可用性优先，GHA 每小时导出 raw 7d 到前端','新增 <code>scripts/export_raw_7d_for_frontend.py</code>，workflow Step 8 临时改用该脚本','每条保留 <code>llm_verified</code> 字段，避免把未验证数据伪装成已验证']},
     {h:'后续方案',type:'todo',items:['将 LLM job 迁到 Mac/self-hosted runner，保留万擎严谨口径','或使用本地 LLM worker 定时跑 A/B/C → refresh_published → export → push','LLM catch-up 完成后恢复 <code>export_from_published.py</code> / <code>incidents_published</code> 作为唯一前端数据源']}
+  ]},
+  {id:'p12',num:12,name:'留存+定位实验',date:'7/28',status:'ok',title:'📍 阶段 12 · 2026-07-28 D1 留存与定位体验实验',subtitle:'从“能看漏斗”升级到“能看留存 + 定位归因”',body:[
+    {h:'✅ D1 留存能力',type:'ok',items:['新增 <code>daily_active</code> 事件：每个 <code>cm_uid</code> 在巴西自然日内只上报一次','<code>scripts/gen_daily_ops.py</code> 新增 D1 cohort 计算：D0 活跃用户中 D1 回访用户 / D0 活跃用户','<code>ops.html</code> 业务 tab 与埋点 tab 展示 D1 次留、D0 cohort、D1 回访和最近 D1 历史']},
+    {h:'✅ 每日前一天日终快照',type:'ok',items:['修复每日漏斗历史口径：不再把未结束的当天放进日期选择器，避免 07-27 当天早上只显示 17 人的误导','<code>daily_history.last_complete_date</code> 固定为巴西自然日昨天','新增 <code>.github/workflows/update-daily-ops.yml</code>：每天 UTC 11:00 / 巴西 08:00 生成前一天完整看板快照']},
+    {h:'✅ 定位体验实验',type:'ok',items:['定位弹窗从 1.5s 改为进入 5s 后弹出，自动弹窗 7 天冷却一次','定位从单次高精度改为低精度优先 + 高精度兜底，降低 Android/Chrome 超时概率','定位成功写入 <code>preferred_city</code>、<code>preferred_city_source</code>、经纬度和 accuracy；下次进入恢复城市','手动切城市写入 <code>preferred_city_source=manual</code>，优先级高于历史定位城市']},
+    {h:'✅ 地图控件与埋点',type:'ok',items:['从 event-card 历史版本移植右侧控件，但不引入 event-card：<code>+</code> 放大、<code>−</code> 缩小、<code>⊕</code> 主动定位','新增 <code>map_control_click</code> 事件记录 zoom_in / zoom_out / locate','增强 <code>geo_denied</code>：记录 <code>code</code>、<code>message</code>、<code>phase=low_accuracy|high_accuracy</code>、<code>high_accuracy</code>，用于明天判断定位失败原因']},
+    {h:'观察项',type:'warn',items:['明天重点看 <code>geo_modal_allow → geo_granted</code> 是否提升','如果 <code>geo_denied.code=3</code> 多，继续优化 timeout/watchPosition；如果 <code>code=2</code> 多，可能是浏览器/系统定位不可用','D1 留存从 7/28 上线后开始积累，首个稳定 D1 需要次日数据']}
   ]}
 ];
 
@@ -1368,7 +1375,7 @@ const ARCH_LAYERS=[
       {h:'📁 文件',items:['<code>public/index.html</code>']},
       {h:'🗺️ 地图',items:['Leaflet + ArcGIS','普通 marker（cluster 已 revert）','marker 点击 → 底部列表联动']},
       {h:'📱 布局',items:['iOS 手机边框（桌面）','H5 全屏（移动）','底部 sheet 45%']},
-      {h:'📍 定位',items:['1.5s 弹窗','蓝色脉冲点 + 切最近城市']},
+      {h:'📍 定位',items:['5s 后低打扰弹窗 · 7 天自动冷却','低精度优先 + 高精度兜底','定位成功写 preferred_city，下次进入恢复城市','右侧 ⊕ 可主动定位']},
       {h:'🔄 更新',items:['5min 后台刷新 + 版本无感重载']}
     ]}},
     {name:'ops.html · 7 tabs',status:'ok'},
@@ -1379,7 +1386,7 @@ const ARCH_LAYERS=[
     {name:'Umami',status:'ok',detail:{title:'⑨ 埋点 · Umami',body:[
       {h:'🔗 配置',items:['website id: <code>61577869</code>','self-hosted']},
       {h:'🗄️ PostgreSQL',items:['<code>website_event</code> · 事件主表','<code>event_data</code> · K-V 参数','<code>session</code> · 会话表']},
-      {h:'📤 事件',items:['自动：pv / referrer / device','geo_modal_show/allow/deny','geo_granted {lat,lng,nearest_city,dist_km}','session_end（离开补发）']},
+      {h:'📤 事件',items:['自动：pv / referrer / device','daily_active · D1 留存 cohort 基础','geo_modal_show/allow/deny','geo_granted {lat,lng,accuracy,phase,nearest_city,dist_km}','geo_denied {code,message,phase,high_accuracy}','map_control_click {zoom_in,zoom_out,locate}','session_end（离开补发）']},
       {h:'🔍 查询',items:['Umami 后台看板','REST API','直连 PostgreSQL']}
     ]}},
     {name:'PostgreSQL 底表',status:'ok'}
