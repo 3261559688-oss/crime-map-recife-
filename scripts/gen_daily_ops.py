@@ -24,6 +24,7 @@ except Exception:
 
 EVENT_LABELS = {
     'page_view': '进入页面',
+    'daily_active': '每日活跃用户',
     'geo_modal_show': '弹出定位弹窗',
     'geo_modal_allow': '点击允许定位',
     'geo_modal_deny': '点击拒绝定位',
@@ -105,6 +106,76 @@ def event_counts_from_items(items):
         counts[name] = counts.get(name, 0) + 1
     return counts
 
+def event_props(e):
+    """兼容 Umami 不同版本的 event data 字段。"""
+    props = e.get('eventData') or e.get('data') or e.get('properties') or e.get('payload') or {}
+    if isinstance(props, str):
+        try:
+            props = json.loads(props)
+        except Exception:
+            props = {}
+    return props if isinstance(props, dict) else {}
+
+def event_name(e):
+    return e.get('eventName') or ('pageview' if e.get('eventType') == 1 else None)
+
+def event_user_id(e):
+    props = event_props(e)
+    return (
+        props.get('uid') or props.get('cm_uid') or props.get('user_id') or
+        e.get('visitorId') or e.get('visitor_id') or e.get('sessionId') or e.get('session_id')
+    )
+
+def build_d1_retention_from_events(day_events):
+    """基于 daily_active 优先、page_view 兜底的真实 D1 留存。
+    口径：D0 活跃用户中，D1 也活跃的用户数 / D0 活跃用户数。
+    """
+    users_by_date = {}
+    source_counts = {}
+    for day in day_events:
+        date = day.get('date')
+        users = set()
+        source = 'daily_active'
+        for e in day.get('items') or []:
+            if event_name(e) != 'daily_active':
+                continue
+            uid = event_user_id(e)
+            if uid:
+                users.add(str(uid))
+        if not users:
+            source = 'page_view_fallback'
+            for e in day.get('items') or []:
+                if event_name(e) != 'page_view':
+                    continue
+                uid = event_user_id(e)
+                if uid:
+                    users.add(str(uid))
+        users_by_date[date] = users
+        source_counts[date] = source
+
+    items = []
+    dates = [d.get('date') for d in day_events]
+    for i, date in enumerate(dates[:-1]):
+        next_date = dates[i+1]
+        cohort = users_by_date.get(date, set())
+        returned = cohort & users_by_date.get(next_date, set())
+        items.append({
+            'cohort_date': date,
+            'return_date': next_date,
+            'cohort_users': len(cohort),
+            'returned_next_day': len(returned),
+            'd1_rate': round(len(returned) / len(cohort) * 100, 1) if cohort else None,
+            'source': source_counts.get(date, 'missing'),
+        })
+    latest = items[-1] if items else None
+    return {
+        'timezone': 'America/Sao_Paulo',
+        'definition': 'D0 活跃用户中，D1 也活跃的用户数 / D0 活跃用户数；优先 daily_active，缺失时 page_view 兜底。',
+        'latest': latest,
+        'items': items,
+        'data_status': 'ok' if latest and latest.get('cohort_users', 0) > 0 else 'insufficient_data',
+    }
+
 def fetch_umami_events(hours):
     url = os.environ.get('UMAMI_URL')
     token = os.environ.get('UMAMI_TOKEN')
@@ -126,38 +197,44 @@ def fetch_umami_events(hours):
         return None, str(e)
 
 
-def fetch_umami_events_range(start_ms, end_ms):
+def fetch_umami_events_range(start_ms, end_ms, include_items=False):
     url = os.environ.get('UMAMI_URL')
     token = os.environ.get('UMAMI_TOKEN')
     wid = os.environ.get('UMAMI_WEBSITE_ID')
     if not (url and token and wid and requests):
-        return None, 'UMAMI env or requests missing'
+        return (None, None, 'UMAMI env or requests missing') if include_items else (None, 'UMAMI env or requests missing')
     try:
         r = requests.get(
             f'{url}/api/websites/{wid}/events',
             params={'startAt': start_ms, 'endAt': end_ms, 'unit': 'hour', 'timezone': 'America/Sao_Paulo', 'pageSize': 10000},
             headers={'Authorization': f'Bearer {token}'}, timeout=20)
         if not r.ok:
-            return None, f'HTTP {r.status_code}: {r.text[:120]}'
+            err = f'HTTP {r.status_code}: {r.text[:120]}'
+            return (None, None, err) if include_items else (None, err)
         j = r.json()
-        return event_counts_from_items(j.get('data') if isinstance(j, dict) else j), None
+        items = j.get('data') if isinstance(j, dict) else j
+        counts = event_counts_from_items(items)
+        return (counts, items or [], None) if include_items else (counts, None)
     except Exception as e:
-        return None, str(e)
+        return (None, None, str(e)) if include_items else (None, str(e))
 
 def build_daily_history(days=14):
-    """按 America/Sao_Paulo 自然日生成最近 N 天漏斗快照。"""
+    """按 America/Sao_Paulo 自然日生成最近 N 天漏斗快照和 D1 留存原始 cohort。"""
     tz = ZoneInfo('America/Sao_Paulo')
     today = datetime.now(tz).date()
     history = []
     errors = {}
+    day_events = []
     for i in range(days - 1, -1, -1):
         day = today - timedelta(days=i)
         start = datetime(day.year, day.month, day.day, tzinfo=tz)
         end = start + timedelta(days=1)
-        counts, err = fetch_umami_events_range(int(start.timestamp()*1000), int(end.timestamp()*1000))
+        counts, items, err = fetch_umami_events_range(int(start.timestamp()*1000), int(end.timestamp()*1000), include_items=True)
         if counts is None:
             counts = {}
+            items = []
             errors[str(day)] = err
+        day_events.append({'date': str(day), 'items': items})
         history.append({
             'date': str(day),
             'start_at': start.isoformat(),
@@ -173,7 +250,7 @@ def build_daily_history(days=14):
                 'news_open': counts.get('news_open', 0),
             }
         })
-    return {'days': days, 'timezone': 'America/Sao_Paulo', 'items': history, 'errors': errors}
+    return {'days': days, 'timezone': 'America/Sao_Paulo', 'items': history, 'errors': errors, 'retention': build_d1_retention_from_events(day_events)}
 
 def build_funnel(config, counts):
     funnels = {}
@@ -367,6 +444,7 @@ def main():
         'generated_at': now_iso(),
         'date_tz': 'America/Sao_Paulo',
         'daily_history': daily_history,
+        'retention': daily_history.get('retention', {}),
         'overview': overview,
         'pipeline': pipeline,
         'frontend': frontend,
@@ -375,6 +453,7 @@ def main():
             'duration_percentiles': duration_percentiles,
             'event_counts_24h': counts_24h,
             'event_counts_7d': counts_7d,
+            'retention': daily_history.get('retention', {}),
         },
         'business': business,
         'infra': infra_section,
@@ -408,6 +487,7 @@ def main():
         'notes': [
             '地图路径和列表路径是并行路径，不串成单链漏斗。',
             'geo_modal_show 已接入，但历史不可回溯；从修复后新用户开始计数。',
+            'D1 留存优先使用 daily_active 事件；该事件上线前的日期使用 page_view 用户标识兜底，拿不到用户标识时显示样本不足。',
             'event_card_show 是新版前端上线后的建议补充埋点。'
         ]
     }

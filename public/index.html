@@ -658,6 +658,7 @@ body{background:var(--bg-page);display:flex;align-items:center;justify-content:c
     sheet_toggle:        {type:'CLICK_EVENT', el:'LIST_SHEET_HANDLE'},
     // 任务事件
     session_end:         {type:'TASK_EVENT', task:'PAGE_DURATION'},
+    daily_active:        {type:'TASK_EVENT', task:'DAILY_ACTIVE_USER'},
     // 异常
     error:               {type:'CLICK_EVENT', el:'PAGE_ERROR'},
   };
@@ -1573,6 +1574,12 @@ async function init(){
       is_first_visit:!localStorage.getItem('cm_visited')?'TRUE':'FALSE',
       ...window.__CM_CTX,
     });
+    const _retentionDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const _retentionKey='cm_daily_active_'+_retentionDate;
+    if(!localStorage.getItem(_retentionKey)){
+      localStorage.setItem(_retentionKey,'1');
+      track('daily_active',{uid:window.__CM_UID,sid:window.__CM_SID,local_date:_retentionDate,tz:'America/Sao_Paulo',is_first_visit:!localStorage.getItem('cm_visited')?'TRUE':'FALSE'});
+    }
     localStorage.setItem('cm_visited','1');
 
     // 📊 元素曝光埋点

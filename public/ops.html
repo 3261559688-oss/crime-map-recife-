@@ -369,7 +369,7 @@
         <div class="grid grid-cols-4 gap-4 mb-4">
           <div class="card-purple"><div class="text-[11px] opacity-80">今日 UV</div><div class="text-3xl font-bold mt-1" id="biz-uv">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
           <div class="card-pink"><div class="text-[11px] opacity-80">今日 PV</div><div class="text-3xl font-bold mt-1" id="biz-pv">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
-          <div class="card-mint"><div class="text-[11px] opacity-80">7天 UV</div><div class="text-3xl font-bold mt-1" id="biz-uv-7d">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
+          <div class="card-mint"><div class="text-[11px] opacity-80">D1 次留</div><div class="text-3xl font-bold mt-1" id="biz-uv-7d">--</div><div class="text-[11px] opacity-80 mt-1">真实 cohort</div></div>
           <div class="card-amber"><div class="text-[11px] opacity-80">跳出率</div><div class="text-3xl font-bold mt-1" id="biz-bounce">--</div><div class="text-[11px] opacity-80 mt-1">Umami 真实</div></div>
         </div>
 
@@ -848,6 +848,9 @@ function applyDailyOpsUnified(dailyOps){
   const pl=dailyOps.pipeline||{};
   const fe=dailyOps.frontend||{};
   const biz=dailyOps.business||{};
+  const retention=dailyOps.retention||((dailyOps.analytics||{}).retention)||{};
+  const d1=retention.latest||{};
+  const d1Items=retention.items||[];
   const infra=dailyOps.infra||{};
   const arch=dailyOps.architecture||{};
   const ds=fe.data_source||{};
@@ -908,15 +911,21 @@ function applyDailyOpsUnified(dailyOps){
   // 业务 tab：产品视角 KPI
   setText('biz-uv', fmtNum(biz.uv_24h));
   setText('biz-pv', fmtNum(biz.pv_24h));
+  setText('biz-uv-7d', d1.d1_rate!==undefined&&d1.d1_rate!==null?fmtPct(d1.d1_rate):fmtNum((dailyOps.analytics_summary||{}).sessions_24h));
   setText('biz-bounce', fmtPct(biz.bounce_rate_24h));
   const bizDetail=document.getElementById('biz-umami-detail');
   if(bizDetail){
+    const recentD1=d1Items.slice(-5).reverse();
     bizDetail.innerHTML=`
       <div class="row"><span>今日 PV / UV / Sessions</span><span class="font-bold">${fmtNum(biz.pv_24h)} / ${fmtNum(biz.uv_24h)} / ${fmtNum(biz.sessions_24h)}</span></div>
+      <div class="row"><span>D1 次留</span><span class="font-bold">${fmtPct(d1.d1_rate)} <span class="text-xs text-slate-400">${d1.cohort_date||'--'} → ${d1.return_date||'--'}</span></span></div>
+      <div class="row"><span>D0 cohort / D1 回访</span><span class="font-bold">${fmtNum(d1.cohort_users)} / ${fmtNum(d1.returned_next_day)}</span></div>
       <div class="row"><span>跳出率</span><span class="font-bold">${fmtPct(biz.bounce_rate_24h)}</span></div>
       <div class="row"><span>内容触达率</span><span class="font-bold">${fmtPct(biz.content_touch_rate)}</span></div>
       <div class="row"><span>打开原文</span><span class="font-bold">${fmtNum(biz.news_open_count_24h)} · ${fmtPct(biz.news_open_rate_24h)}</span></div>
       <div class="row"><span>城市切换 / 类型筛选</span><span class="font-bold">${fmtNum(biz.city_switch_24h)} / ${fmtNum(biz.type_filter_24h)}</span></div>
+      ${recentD1.length?`<div class="mt-3 text-[10px] text-slate-400 font-semibold uppercase">最近 D1 留存</div>${recentD1.map(x=>`<div class="row"><span>${x.cohort_date} → ${x.return_date}</span><span class="font-bold">${fmtPct(x.d1_rate)} · ${fmtNum(x.returned_next_day)}/${fmtNum(x.cohort_users)}</span></div>`).join('')}`:''}
+      <div class="row"><span>留存口径</span><span class="text-xs text-slate-400">${retention.data_status||'--'} · ${d1.source||'--'}</span></div>
       <div class="row"><span>数据更新时间</span><span class="text-xs text-slate-400">${new Date(dailyOps.generated_at).toLocaleString('zh-CN')}</span></div>`;
   }
   // 基础设施 tab：GHA、文件大小、API 状态
@@ -1006,7 +1015,9 @@ function renderDailyFunnel(dailyOps, selectedDate){
   if(notes){
     const errs=(dailyOps.event_counts&&dailyOps.event_counts.errors)||{};
     const historyErr=(dailyOps.daily_history&&dailyOps.daily_history.errors&&dailyOps.daily_history.errors[selected])||'';
-    notes.innerHTML=`${(dailyOps.notes||[]).map(n=>`<div>• ${n}</div>`).join('')} ${historyErr?`<div>• ${selected} API：${historyErr}</div>`:''} ${(errs['7d']?`<div>• 7天事件 API：${errs['7d']}</div>`:'')}`;
+    const ret=dailyOps.retention||{};
+    const retNote=ret.definition?`<div>• D1 留存：${ret.definition}</div>`:'';
+    notes.innerHTML=`${(dailyOps.notes||[]).map(n=>`<div>• ${n}</div>`).join('')} ${retNote} ${historyErr?`<div>• ${selected} API：${historyErr}</div>`:''} ${(errs['7d']?`<div>• 7天事件 API：${errs['7d']}</div>`:'')}`;
   }
 }
 // ========== 加载 health/* JSON ==========
@@ -1111,9 +1122,8 @@ async function loadHealth(){
     const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
     setEl('biz-uv', analytics.uv_24h?.toLocaleString()||'--');
     setEl('biz-pv', analytics.pv_24h?.toLocaleString()||'--');
-    // 7天 UV：从 daily_pv.sessions 累加
-    const sessions7d=(analytics.daily_pv?.sessions||[]).reduce((s,d)=>s+(d.y||0),0);
-    setEl('biz-uv-7d', sessions7d>0?sessions7d.toLocaleString():'--');
+    // D1 次留由 daily_ops.retention 统一覆盖；daily_ops 缺失时保持 --，避免用 7天累计访客误代留存
+    setEl('biz-uv-7d', '--');
     // 跳出率
     const bounceRate=analytics.sessions_24h>0?Math.round(analytics.bounces_24h/analytics.sessions_24h*100):0;
     setEl('biz-bounce', bounceRate+'%');
@@ -1127,7 +1137,6 @@ async function loadHealth(){
         <div class="row"><span>今日 Sessions</span><span class="font-bold">${analytics.sessions_24h}</span></div>
         <div class="row"><span>跳出率</span><span class="font-bold">${bounceRate}%</span></div>
         <div class="row"><span>平均停留时长</span><span class="font-bold">${avgTime}s</span></div>
-        <div class="row"><span>7天累计访客</span><span class="font-bold">${sessions7d>0?sessions7d.toLocaleString():'--'}</span></div>
         <div class="row"><span>数据更新时间</span><span class="text-xs text-slate-400">${genDt.toLocaleString('zh-CN')}</span></div>`;
     }
     // analytics tab 的 Umami 数据
@@ -1150,6 +1159,19 @@ async function loadHealth(){
 
   renderDailyFunnel(dailyOps);
   applyDailyOpsUnified(dailyOps);
+  const retentionForAnalytics=dailyOps&&(dailyOps.retention||((dailyOps.analytics||{}).retention));
+  if(retentionForAnalytics){
+    const latest=retentionForAnalytics.latest||{};
+    const analyticsUmami=document.getElementById('analytics-umami-real');
+    if(analyticsUmami){
+      analyticsUmami.innerHTML+=`
+        <div class="mt-3 pt-3 border-t border-white/20">
+          <div class="row"><span>D1 次留</span><span class="font-bold text-white">${fmtPct(latest.d1_rate)}</span></div>
+          <div class="row"><span>D0 cohort / D1 回访</span><span class="font-bold text-white">${fmtNum(latest.cohort_users)} / ${fmtNum(latest.returned_next_day)}</span></div>
+          <div class="row"><span>cohort 日期</span><span class="font-bold text-white">${latest.cohort_date||'--'} → ${latest.return_date||'--'}</span></div>
+        </div>`;
+    }
+  }
   // ---- Infra ----
   if(infra && infra.gha_runs && infra.gha_runs.length){
     const last=infra.gha_runs[0];
