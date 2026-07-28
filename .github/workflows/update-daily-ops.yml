@@ -1,0 +1,72 @@
+name: 📊 Daily Ops Snapshot (previous Brazil day)
+
+on:
+  schedule:
+    # 08:00 America/Sao_Paulo = 11:00 UTC. Generate the previous complete Brazil day.
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: daily-ops-snapshot
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  daily_ops:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install deps
+        run: pip install requests python-dateutil pytz
+
+      - name: 📊 Generate previous-day ops snapshot
+        env:
+          UMAMI_URL: ${{ secrets.UMAMI_URL }}
+          UMAMI_TOKEN: ${{ secrets.UMAMI_TOKEN }}
+          UMAMI_WEBSITE_ID: ${{ secrets.UMAMI_WEBSITE_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          python3 scripts/gen_health.py --umami || echo "analytics skipped"
+          python3 scripts/gen_daily_ops.py
+          python3 - <<'PY'
+          import json
+          d=json.load(open('public/health/daily_ops.json'))
+          h=(d.get('daily_history') or {}).get('items') or []
+          print('generated_at:', d.get('generated_at'))
+          print('last_complete_date:', (d.get('daily_history') or {}).get('last_complete_date'))
+          print('latest_history_date:', h[-1].get('date') if h else None)
+          PY
+
+      - name: 💾 Commit & Push daily ops
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/health/analytics.json public/health/daily_ops.json
+          git commit --allow-empty -m "📊 daily ops snapshot: previous Brazil day"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: 🚀 Trigger Vercel Deploy
+        if: always()
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            curl -s -X POST "$VERCEL_DEPLOY_HOOK" -o /dev/null -w "Vercel deploy hook status: %{http_code}\n"
+          else
+            echo "VERCEL_DEPLOY_HOOK 未设置，跳过"
+          fi

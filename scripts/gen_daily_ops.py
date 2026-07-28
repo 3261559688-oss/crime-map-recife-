@@ -219,14 +219,18 @@ def fetch_umami_events_range(start_ms, end_ms, include_items=False):
         return (None, None, str(e)) if include_items else (None, str(e))
 
 def build_daily_history(days=14):
-    """按 America/Sao_Paulo 自然日生成最近 N 天漏斗快照和 D1 留存原始 cohort。"""
+    """按 America/Sao_Paulo 自然日生成最近 N 个完整自然日漏斗快照和 D1 留存。
+
+    注意：不纳入当天未结束数据，避免早上生成时当天只有部分用户（例如 17 人）误导判断。
+    每天固定刷新时，最新日期应是巴西自然日的昨天。
+    """
     tz = ZoneInfo('America/Sao_Paulo')
-    today = datetime.now(tz).date()
+    last_complete_day = datetime.now(tz).date() - timedelta(days=1)
     history = []
     errors = {}
     day_events = []
     for i in range(days - 1, -1, -1):
-        day = today - timedelta(days=i)
+        day = last_complete_day - timedelta(days=i)
         start = datetime(day.year, day.month, day.day, tzinfo=tz)
         end = start + timedelta(days=1)
         counts, items, err = fetch_umami_events_range(int(start.timestamp()*1000), int(end.timestamp()*1000), include_items=True)
@@ -250,7 +254,14 @@ def build_daily_history(days=14):
                 'news_open': counts.get('news_open', 0),
             }
         })
-    return {'days': days, 'timezone': 'America/Sao_Paulo', 'items': history, 'errors': errors, 'retention': build_d1_retention_from_events(day_events)}
+    return {
+        'days': days,
+        'timezone': 'America/Sao_Paulo',
+        'last_complete_date': str(last_complete_day),
+        'items': history,
+        'errors': errors,
+        'retention': build_d1_retention_from_events(day_events),
+    }
 
 def build_funnel(config, counts):
     funnels = {}
