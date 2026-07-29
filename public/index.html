@@ -907,6 +907,27 @@ function shouldAutoShowGeoModal(){
   const last=Number(localStorage.getItem('geo_prompt_last_at')||0);
   return !last || Date.now()-last>GEO_PROMPT_COOLDOWN_MS;
 }
+function restoreKnownLocationOrAsk(){
+  const lat=Number(localStorage.getItem('user_lat'));
+  const lng=Number(localStorage.getItem('user_lng'));
+  const city=getPreferredCity();
+  if(Number.isFinite(lat) && Number.isFinite(lng)){
+    if(city && city!=='Brasil' && curCity!==city) switchCity(city,'restore');
+    placeUserLocationDot(lat,lng);
+    map.flyTo([lat,lng],13,{duration:.8});
+    showToast(city && city!=='Brasil' ? `📍 ${city}` : '📍 Localização definida');
+    track('map_control_click',{control:'locate',mode:'restore_cached_location',city_name:city||'',uid:window.__CM_UID||''});
+    return;
+  }
+  if(city && city!=='Brasil'){
+    switchCity(city,'restore');
+    showToast(`📍 ${city}`);
+    track('map_control_click',{control:'locate',mode:'restore_preferred_city',city_name:city,uid:window.__CM_UID||''});
+    return;
+  }
+  track('map_control_click',{control:'locate',mode:'ask_permission',uid:window.__CM_UID||''});
+  showGeoModal('manual');
+}
 
 // 时钟
 function updateClock(){
@@ -962,7 +983,7 @@ function initMap(){
   window.addEventListener('resize',()=>map.invalidateSize());
   document.getElementById('ctrl-zoom-in')?.addEventListener('click',()=>{map.zoomIn();track('map_control_click',{control:'zoom_in'});});
   document.getElementById('ctrl-zoom-out')?.addEventListener('click',()=>{map.zoomOut();track('map_control_click',{control:'zoom_out'});});
-  document.getElementById('ctrl-locate')?.addEventListener('click',()=>{track('map_control_click',{control:'locate'});showGeoModal('manual');});
+  document.getElementById('ctrl-locate')?.addEventListener('click',restoreKnownLocationOrAsk);
 }
 
 // ========== 用户位置 ==========
