@@ -13,6 +13,7 @@ on:
       - 'scripts/fetch_all.py'
       - 'scripts/llm_call_v2.py'
       - 'scripts/gen_daily_ops.py'
+      - 'scripts/refresh_published.py'
       - '.github/workflows/update-data.yml'
 concurrency:
   group: update-data

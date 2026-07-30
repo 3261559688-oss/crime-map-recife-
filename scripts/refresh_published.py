@@ -54,6 +54,8 @@ with_neighbor = cur.execute("SELECT COUNT(*) FROM incidents_published WHERE neig
 
 print(f"📊 原始层: {total_raw} 条")
 print(f"📊 展示层: {old} → {new} 条 ({'+' if new>=old else ''}{new-old})")
-print(f"   ├─ LLM 校验: {verified} 条 ({verified/new*100:.0f}%)")
-print(f"   └─ 含街区:   {with_neighbor} 条 ({with_neighbor/new*100:.0f}%)")
+verified_rate = verified / new * 100 if new else 0
+neighbor_rate = with_neighbor / new * 100 if new else 0
+print(f"   ├─ LLM 校验: {verified} 条 ({verified_rate:.0f}%)")
+print(f"   └─ 含街区:   {with_neighbor} 条 ({neighbor_rate:.0f}%)")
 con.close()
