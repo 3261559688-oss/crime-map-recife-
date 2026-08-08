@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T05:37:50.582833+00:00",
+  "generated_at": "2026-08-08T06:35:40.631820+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3542,7 +3542,7 @@
     "data_status": "ok"
   },
   "overview": {
-    "generated_at": "2026-08-08T05:37:44.406340+00:00",
+    "generated_at": "2026-08-08T06:35:33.986258+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3551,33 +3551,33 @@
       "infra": "warn"
     },
     "kpis": {
-      "frontend_count": 5284,
-      "latest_pub_date": "2026-08-08T05:15:03+00:00",
+      "frontend_count": 5289,
+      "latest_pub_date": "2026-08-08T06:30:53+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
-      "uv_24h": 357,
-      "pv_24h": 432,
-      "sessions_24h": 370,
-      "bounce_rate_24h": 90.0,
+      "uv_24h": 363,
+      "pv_24h": 443,
+      "sessions_24h": 376,
+      "bounce_rate_24h": 89.4,
       "news_open_24h": 0,
       "news_open_rate_24h": 0.0
     }
   },
   "pipeline": {
-    "raw_7d_count": 5284,
-    "latest_pub_date": "2026-08-08T05:15:03+00:00",
+    "raw_7d_count": 5289,
+    "latest_pub_date": "2026-08-08T06:30:53+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
     "top_cities": [
       {
         "name": "São Paulo",
-        "count": 617
+        "count": 619
       },
       {
         "name": "Salvador",
-        "count": 450
+        "count": 451
       },
       {
         "name": "Campo Grande",
@@ -3585,7 +3585,7 @@
       },
       {
         "name": "Brasília",
-        "count": 391
+        "count": 392
       },
       {
         "name": "Rio de Janeiro",
@@ -3605,7 +3605,7 @@
       },
       {
         "name": "Curitiba",
-        "count": 148
+        "count": 147
       },
       {
         "name": "Goiânia",
@@ -3615,11 +3615,11 @@
     "top_types": [
       {
         "name": "homicidio",
-        "count": 2036
+        "count": 2038
       },
       {
         "name": "outros",
-        "count": 1281
+        "count": 1284
       },
       {
         "name": "roubo",
@@ -3627,15 +3627,15 @@
       },
       {
         "name": "violencia",
-        "count": 279
+        "count": 280
       },
       {
         "name": "trafico",
-        "count": 234
+        "count": 233
       },
       {
         "name": "policia",
-        "count": 228
+        "count": 227
       },
       {
         "name": "fraude",
@@ -3647,64 +3647,64 @@
       },
       {
         "name": "furto",
-        "count": 128
+        "count": 129
       },
       {
         "name": "veiculo",
-        "count": 91
+        "count": 92
       }
     ],
     "age_buckets": {
       "<1h": 6,
-      "1-6h": 49,
-      "6-24h": 825,
-      "1-3d": 1617,
-      "3-7d": 2787
+      "1-6h": 36,
+      "6-24h": 845,
+      "1-3d": 1614,
+      "3-7d": 2788
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 26669,
+        "in": 26679,
         "success": 12457,
-        "failed": 14212,
+        "failed": 14222,
         "rate": 46.7
       },
       "b": {
         "name": "LLM_B",
-        "in": 26669,
+        "in": 26679,
         "success": 7425,
-        "failed": 19244,
+        "failed": 19254,
         "rate": 27.8
       },
       "c": {
         "name": "LLM_C",
-        "in": 26669,
+        "in": 26679,
         "success": 3006,
-        "failed": 23663,
+        "failed": 23673,
         "rate": 11.3
       },
-      "total_rows": 26669
+      "total_rows": 26679
     }
   },
   "frontend": {
     "status": "ok",
     "data_source": {
-      "count": 5284,
+      "count": 5289,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-08T05:15:03+00:00",
+      "latest_pub_date": "2026-08-08T06:30:53+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
     },
     "interaction": {
-      "marker_click_rate": 2.6,
-      "list_exposure_rate": 20.6,
-      "list_click_rate": 5.8,
+      "marker_click_rate": 1.4,
+      "list_exposure_rate": 17.3,
+      "list_click_rate": 6.8,
       "news_open_rate": 0.0
     },
     "errors": {
       "count_24h": 11,
-      "error_rate_per_page_view": 2.64
+      "error_rate_per_page_view": 2.57
     },
     "performance": {
       "duration_percentiles_source": "sessions activity sample",
@@ -3714,24 +3714,24 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 2632836,
-      "public/rss_incidents_lite.json": 92754,
+      "public/rss_incidents.json": 2634936,
+      "public/rss_incidents_lite.json": 92724,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 138703,
-      "data/crime_map.db": 28438528
+      "public/health/daily_ops.json": 138707,
+      "data/crime_map.db": 28446720
     }
   },
   "analytics": {
     "summary": {
-      "frontend_count": 5284,
-      "latest_pub_date": "2026-08-08T05:15:03+00:00",
+      "frontend_count": 5289,
+      "latest_pub_date": "2026-08-08T06:30:53+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
-      "uv_24h": 357,
-      "pv_24h": 432,
-      "sessions_24h": 370,
-      "bounce_rate_24h": 90.0,
+      "uv_24h": 363,
+      "pv_24h": 443,
+      "sessions_24h": 376,
+      "bounce_rate_24h": 89.4,
       "news_open_24h": 0,
       "news_open_rate_24h": 0.0
     },
@@ -3745,14 +3745,14 @@
       "note": "后续可切到 session_end.duration_ms / active_ms 原始 event_data 分位数。"
     },
     "event_counts_24h": {
-      "session_end": 1235,
-      "daily_active": 286,
-      "city_button_show": 349,
-      "type_filter_show": 349,
-      "page_view": 417,
-      "pageview": 432,
-      "geo_modal_show": 156,
-      "list_item_exposure": 86,
+      "session_end": 1260,
+      "page_view": 428,
+      "type_filter_show": 356,
+      "city_button_show": 356,
+      "pageview": 443,
+      "daily_active": 288,
+      "geo_modal_show": 157,
+      "list_item_exposure": 74,
       "city_switch": 11,
       "list_item_click": 5,
       "city_modal_open": 19,
@@ -3760,20 +3760,20 @@
       "geo_denied": 28,
       "geo_modal_allow": 14,
       "type_filter": 38,
-      "geo_modal_deny": 26,
+      "geo_modal_deny": 25,
       "error": 11,
       "map_control_click": 42,
       "city_modal_cancel": 6,
-      "marker_click": 11
+      "marker_click": 6
     },
     "event_counts_7d": {
-      "session_end": 3301,
-      "daily_active": 874,
-      "city_button_show": 957,
-      "type_filter_show": 957,
-      "page_view": 1152,
-      "pageview": 1174,
-      "geo_modal_show": 471,
+      "session_end": 3303,
+      "page_view": 1153,
+      "type_filter_show": 959,
+      "city_button_show": 959,
+      "pageview": 1176,
+      "daily_active": 868,
+      "geo_modal_show": 469,
       "list_item_exposure": 240,
       "city_switch": 23,
       "list_item_click": 36,
@@ -3782,7 +3782,7 @@
       "geo_denied": 92,
       "geo_modal_allow": 46,
       "type_filter": 330,
-      "geo_modal_deny": 72,
+      "geo_modal_deny": 71,
       "error": 16,
       "map_control_click": 78,
       "city_modal_cancel": 9,
@@ -3910,17 +3910,17 @@
     }
   },
   "business": {
-    "uv_24h": 357,
-    "pv_24h": 432,
-    "sessions_24h": 370,
-    "bounce_rate_24h": 90.0,
+    "uv_24h": 363,
+    "pv_24h": 443,
+    "sessions_24h": 376,
+    "bounce_rate_24h": 89.4,
     "engagement": {
-      "marker_click_rate": 2.6,
-      "list_exposure_rate": 20.6,
-      "list_click_rate": 5.8,
+      "marker_click_rate": 1.4,
+      "list_exposure_rate": 17.3,
+      "list_click_rate": 6.8,
       "news_open_rate": 0.0
     },
-    "content_touch_rate": 20.6,
+    "content_touch_rate": 17.3,
     "news_open_count_24h": 0,
     "news_open_rate_24h": 0.0,
     "city_switch_24h": 11,
@@ -3942,14 +3942,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 2632836,
-      "public/rss_incidents_lite.json": 92754,
+      "public/rss_incidents.json": 2634936,
+      "public/rss_incidents_lite.json": 92724,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 138703,
-      "data/crime_map.db": 28438528
+      "public/health/daily_ops.json": 138707,
+      "data/crime_map.db": 28446720
     },
     "umami_api": "ok",
-    "db_size_bytes": 28438528
+    "db_size_bytes": 28446720
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3966,18 +3966,18 @@
     ]
   },
   "data_status": {
-    "frontend_count": 5284,
-    "latest_pub_date": "2026-08-08T05:15:03+00:00",
+    "frontend_count": 5289,
+    "latest_pub_date": "2026-08-08T06:30:53+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
   "analytics_summary": {
-    "pv_24h": 432,
-    "uv_24h": 357,
-    "sessions_24h": 370,
-    "bounces_24h": 333,
-    "bounce_rate_24h": 90.0,
-    "totaltime_24h": 15116
+    "pv_24h": 443,
+    "uv_24h": 363,
+    "sessions_24h": 376,
+    "bounces_24h": 336,
+    "bounce_rate_24h": 89.4,
+    "totaltime_24h": 16621
   },
   "duration_percentiles": {
     "source": "health/sessions.json activity duration_sec (recent sample)",
@@ -3990,14 +3990,14 @@
   },
   "event_counts": {
     "last_24h": {
-      "session_end": 1235,
-      "daily_active": 286,
-      "city_button_show": 349,
-      "type_filter_show": 349,
-      "page_view": 417,
-      "pageview": 432,
-      "geo_modal_show": 156,
-      "list_item_exposure": 86,
+      "session_end": 1260,
+      "page_view": 428,
+      "type_filter_show": 356,
+      "city_button_show": 356,
+      "pageview": 443,
+      "daily_active": 288,
+      "geo_modal_show": 157,
+      "list_item_exposure": 74,
       "city_switch": 11,
       "list_item_click": 5,
       "city_modal_open": 19,
@@ -4005,20 +4005,20 @@
       "geo_denied": 28,
       "geo_modal_allow": 14,
       "type_filter": 38,
-      "geo_modal_deny": 26,
+      "geo_modal_deny": 25,
       "error": 11,
       "map_control_click": 42,
       "city_modal_cancel": 6,
-      "marker_click": 11
+      "marker_click": 6
     },
     "last_7d": {
-      "session_end": 3301,
-      "daily_active": 874,
-      "city_button_show": 957,
-      "type_filter_show": 957,
-      "page_view": 1152,
-      "pageview": 1174,
-      "geo_modal_show": 471,
+      "session_end": 3303,
+      "page_view": 1153,
+      "type_filter_show": 959,
+      "city_button_show": 959,
+      "pageview": 1176,
+      "daily_active": 868,
+      "geo_modal_show": 469,
       "list_item_exposure": 240,
       "city_switch": 23,
       "list_item_click": 36,
@@ -4027,7 +4027,7 @@
       "geo_denied": 92,
       "geo_modal_allow": 46,
       "type_filter": 330,
-      "geo_modal_deny": 72,
+      "geo_modal_deny": 71,
       "error": 16,
       "map_control_click": 78,
       "city_modal_cancel": 9,
@@ -4048,7 +4048,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 417,
+            "count": 428,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4056,17 +4056,17 @@
           {
             "event": "geo_modal_show",
             "label": "弹出定位弹窗",
-            "count": 156,
-            "from_prev_rate": 37.4,
-            "from_start_rate": 37.4,
+            "count": 157,
+            "from_prev_rate": 36.7,
+            "from_start_rate": 36.7,
             "data_status": "ok"
           },
           {
             "event": "geo_modal_allow",
             "label": "点击允许定位",
             "count": 14,
-            "from_prev_rate": 9.0,
-            "from_start_rate": 3.4,
+            "from_prev_rate": 8.9,
+            "from_start_rate": 3.3,
             "data_status": "ok"
           },
           {
@@ -4082,7 +4082,7 @@
           {
             "event": "geo_modal_deny",
             "label": "点击拒绝定位",
-            "count": 26
+            "count": 25
           },
           {
             "event": "geo_denied",
@@ -4099,7 +4099,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 417,
+            "count": 428,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4107,9 +4107,9 @@
           {
             "event": "marker_click",
             "label": "点击地图点位",
-            "count": 11,
-            "from_prev_rate": 2.6,
-            "from_start_rate": 2.6,
+            "count": 6,
+            "from_prev_rate": 1.4,
+            "from_start_rate": 1.4,
             "data_status": "ok"
           },
           {
@@ -4136,7 +4136,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 417,
+            "count": 428,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4144,16 +4144,16 @@
           {
             "event": "list_item_exposure",
             "label": "列表内容曝光",
-            "count": 86,
-            "from_prev_rate": 20.6,
-            "from_start_rate": 20.6,
+            "count": 74,
+            "from_prev_rate": 17.3,
+            "from_start_rate": 17.3,
             "data_status": "ok"
           },
           {
             "event": "list_item_click",
             "label": "点击列表新闻",
             "count": 5,
-            "from_prev_rate": 5.8,
+            "from_prev_rate": 6.8,
             "from_start_rate": 1.2,
             "data_status": "ok"
           },
@@ -4176,7 +4176,7 @@
           {
             "event": "city_button_show",
             "label": "城市按钮曝光",
-            "count": 349,
+            "count": 356,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4185,8 +4185,8 @@
             "event": "city_modal_open",
             "label": "打开城市弹窗",
             "count": 19,
-            "from_prev_rate": 5.4,
-            "from_start_rate": 5.4,
+            "from_prev_rate": 5.3,
+            "from_start_rate": 5.3,
             "data_status": "ok"
           },
           {
@@ -4194,7 +4194,7 @@
             "label": "搜索城市",
             "count": 31,
             "from_prev_rate": 163.2,
-            "from_start_rate": 8.9,
+            "from_start_rate": 8.7,
             "data_status": "ok"
           },
           {
@@ -4202,7 +4202,7 @@
             "label": "成功切换城市",
             "count": 11,
             "from_prev_rate": 35.5,
-            "from_start_rate": 3.2,
+            "from_start_rate": 3.1,
             "data_status": "ok"
           }
         ],
@@ -4222,7 +4222,7 @@
           {
             "event": "type_filter_show",
             "label": "类型筛选曝光",
-            "count": 349,
+            "count": 356,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4231,8 +4231,8 @@
             "event": "type_filter",
             "label": "切换类型筛选",
             "count": 38,
-            "from_prev_rate": 10.9,
-            "from_start_rate": 10.9,
+            "from_prev_rate": 10.7,
+            "from_start_rate": 10.7,
             "data_status": "ok"
           }
         ],
@@ -4248,7 +4248,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 1152,
+            "count": 1153,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4256,9 +4256,9 @@
           {
             "event": "geo_modal_show",
             "label": "弹出定位弹窗",
-            "count": 471,
-            "from_prev_rate": 40.9,
-            "from_start_rate": 40.9,
+            "count": 469,
+            "from_prev_rate": 40.7,
+            "from_start_rate": 40.7,
             "data_status": "ok"
           },
           {
@@ -4282,7 +4282,7 @@
           {
             "event": "geo_modal_deny",
             "label": "点击拒绝定位",
-            "count": 72
+            "count": 71
           },
           {
             "event": "geo_denied",
@@ -4299,7 +4299,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 1152,
+            "count": 1153,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4336,7 +4336,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 1152,
+            "count": 1153,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4376,7 +4376,7 @@
           {
             "event": "city_button_show",
             "label": "城市按钮曝光",
-            "count": 957,
+            "count": 959,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4422,7 +4422,7 @@
           {
             "event": "type_filter_show",
             "label": "类型筛选曝光",
-            "count": 957,
+            "count": 959,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4431,8 +4431,8 @@
             "event": "type_filter",
             "label": "切换类型筛选",
             "count": 330,
-            "from_prev_rate": 34.5,
-            "from_start_rate": 34.5,
+            "from_prev_rate": 34.4,
+            "from_start_rate": 34.4,
             "data_status": "ok"
           }
         ],
