@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T11:18:33.529957+00:00",
+  "generated_at": "2026-08-17T12:24:38.752465+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-08-17T11:18:30.108014+00:00",
+    "generated_at": "2026-08-17T12:24:36.899487+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3268,8 +3268,8 @@
       "infra": "warn"
     },
     "kpis": {
-      "frontend_count": 6058,
-      "latest_pub_date": "2026-08-17T10:22:33+00:00",
+      "frontend_count": 6044,
+      "latest_pub_date": "2026-08-17T12:17:34+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3282,85 +3282,85 @@
     }
   },
   "pipeline": {
-    "raw_7d_count": 6058,
-    "latest_pub_date": "2026-08-17T10:22:33+00:00",
+    "raw_7d_count": 6044,
+    "latest_pub_date": "2026-08-17T12:17:34+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
     "top_cities": [
       {
         "name": "São Paulo",
-        "count": 968
+        "count": 970
       },
       {
         "name": "Brasília",
-        "count": 595
+        "count": 591
       },
       {
         "name": "Campo Grande",
-        "count": 537
+        "count": 534
       },
       {
         "name": "Salvador",
-        "count": 473
+        "count": 477
       },
       {
         "name": "Florianópolis",
-        "count": 331
+        "count": 339
       },
       {
         "name": "São Luís",
-        "count": 267
+        "count": 270
       },
       {
         "name": "Rio de Janeiro",
-        "count": 261
+        "count": 260
       },
       {
         "name": "Curitiba",
-        "count": 173
+        "count": 170
       },
       {
         "name": "Goiânia",
-        "count": 146
+        "count": 143
       },
       {
         "name": "Teresina",
-        "count": 119
+        "count": 121
       }
     ],
     "top_types": [
       {
         "name": "homicidio",
-        "count": 2379
+        "count": 2376
       },
       {
         "name": "outros",
-        "count": 1465
+        "count": 1466
       },
       {
         "name": "roubo",
-        "count": 626
+        "count": 622
       },
       {
         "name": "violencia",
-        "count": 377
+        "count": 375
       },
       {
         "name": "trafico",
-        "count": 259
-      },
-      {
-        "name": "fraude",
-        "count": 213
+        "count": 256
       },
       {
         "name": "policia",
-        "count": 209
+        "count": 211
+      },
+      {
+        "name": "fraude",
+        "count": 210
       },
       {
         "name": "estupro",
-        "count": 146
+        "count": 144
       },
       {
         "name": "furto",
@@ -3368,47 +3368,47 @@
       },
       {
         "name": "sequestro",
-        "count": 94
+        "count": 93
       }
     ],
     "age_buckets": {
-      "<1h": 1,
-      "1-6h": 61,
-      "6-24h": 421,
-      "1-3d": 1508,
-      "3-7d": 4067
+      "<1h": 40,
+      "1-6h": 122,
+      "6-24h": 399,
+      "1-3d": 1444,
+      "3-7d": 4039
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 34053,
+        "in": 34164,
         "success": 12457,
-        "failed": 21596,
-        "rate": 36.6
+        "failed": 21707,
+        "rate": 36.5
       },
       "b": {
         "name": "LLM_B",
-        "in": 34053,
+        "in": 34164,
         "success": 7425,
-        "failed": 26628,
-        "rate": 21.8
+        "failed": 26739,
+        "rate": 21.7
       },
       "c": {
         "name": "LLM_C",
-        "in": 34053,
+        "in": 34164,
         "success": 3006,
-        "failed": 31047,
+        "failed": 31158,
         "rate": 8.8
       },
-      "total_rows": 34053
+      "total_rows": 34164
     }
   },
   "frontend": {
     "status": "ok",
     "data_source": {
-      "count": 6058,
+      "count": 6044,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-17T10:22:33+00:00",
+      "latest_pub_date": "2026-08-17T12:17:34+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 3010545,
-      "public/rss_incidents_lite.json": 97097,
+      "public/rss_incidents.json": 2999637,
+      "public/rss_incidents_lite.json": 98862,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 131119,
-      "data/crime_map.db": 34750464
+      "public/health/daily_ops.json": 131118,
+      "data/crime_map.db": 34848768
     }
   },
   "analytics": {
     "summary": {
-      "frontend_count": 6058,
-      "latest_pub_date": "2026-08-17T10:22:33+00:00",
+      "frontend_count": 6044,
+      "latest_pub_date": "2026-08-17T12:17:34+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 3010545,
-      "public/rss_incidents_lite.json": 97097,
+      "public/rss_incidents.json": 2999637,
+      "public/rss_incidents_lite.json": 98862,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 131119,
-      "data/crime_map.db": 34750464
+      "public/health/daily_ops.json": 131118,
+      "data/crime_map.db": 34848768
     },
     "umami_api": "ok",
-    "db_size_bytes": 34750464
+    "db_size_bytes": 34848768
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3640,8 +3640,8 @@
     ]
   },
   "data_status": {
-    "frontend_count": 6058,
-    "latest_pub_date": "2026-08-17T10:22:33+00:00",
+    "frontend_count": 6044,
+    "latest_pub_date": "2026-08-17T12:17:34+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
