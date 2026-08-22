@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T04:25:16.037076+00:00",
+  "generated_at": "2026-08-22T05:20:18.260175+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-08-22T04:25:13.548324+00:00",
+    "generated_at": "2026-08-22T05:20:15.358289+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3269,7 +3269,7 @@
     },
     "kpis": {
       "frontend_count": 6225,
-      "latest_pub_date": "2026-08-22T04:00:16+00:00",
+      "latest_pub_date": "2026-08-22T05:00:25+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3283,7 +3283,7 @@
   },
   "pipeline": {
     "raw_7d_count": 6225,
-    "latest_pub_date": "2026-08-22T04:00:16+00:00",
+    "latest_pub_date": "2026-08-22T05:00:25+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
@@ -3332,7 +3332,7 @@
     "top_types": [
       {
         "name": "homicidio",
-        "count": 2625
+        "count": 2626
       },
       {
         "name": "outros",
@@ -3368,39 +3368,39 @@
       },
       {
         "name": "estupro",
-        "count": 97
+        "count": 96
       }
     ],
     "age_buckets": {
-      "<1h": 3,
-      "1-6h": 89,
-      "6-24h": 769,
-      "1-3d": 2082,
-      "3-7d": 3282
+      "<1h": 2,
+      "1-6h": 54,
+      "6-24h": 801,
+      "1-3d": 2079,
+      "3-7d": 3289
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 39309,
+        "in": 39311,
         "success": 12457,
-        "failed": 26852,
+        "failed": 26854,
         "rate": 31.7
       },
       "b": {
         "name": "LLM_B",
-        "in": 39309,
+        "in": 39311,
         "success": 7425,
-        "failed": 31884,
+        "failed": 31886,
         "rate": 18.9
       },
       "c": {
         "name": "LLM_C",
-        "in": 39309,
+        "in": 39311,
         "success": 3006,
-        "failed": 36303,
+        "failed": 36305,
         "rate": 7.6
       },
-      "total_rows": 39309
+      "total_rows": 39311
     }
   },
   "frontend": {
@@ -3408,7 +3408,7 @@
     "data_source": {
       "count": 6225,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-22T04:00:16+00:00",
+      "latest_pub_date": "2026-08-22T05:00:25+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 3088503,
-      "public/rss_incidents_lite.json": 100868,
+      "public/rss_incidents.json": 3088416,
+      "public/rss_incidents_lite.json": 100294,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 131116,
-      "data/crime_map.db": 39321600
+      "public/health/daily_ops.json": 131115,
+      "data/crime_map.db": 39325696
     }
   },
   "analytics": {
     "summary": {
       "frontend_count": 6225,
-      "latest_pub_date": "2026-08-22T04:00:16+00:00",
+      "latest_pub_date": "2026-08-22T05:00:25+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 3088503,
-      "public/rss_incidents_lite.json": 100868,
+      "public/rss_incidents.json": 3088416,
+      "public/rss_incidents_lite.json": 100294,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 131116,
-      "data/crime_map.db": 39321600
+      "public/health/daily_ops.json": 131115,
+      "data/crime_map.db": 39325696
     },
     "umami_api": "ok",
-    "db_size_bytes": 39321600
+    "db_size_bytes": 39325696
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3641,7 +3641,7 @@
   },
   "data_status": {
     "frontend_count": 6225,
-    "latest_pub_date": "2026-08-22T04:00:16+00:00",
+    "latest_pub_date": "2026-08-22T05:00:25+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
