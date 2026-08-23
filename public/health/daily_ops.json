@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T03:44:25.404440+00:00",
+  "generated_at": "2026-08-23T04:29:51.090557+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-08-23T03:44:22.500472+00:00",
+    "generated_at": "2026-08-23T04:29:48.552810+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3268,8 +3268,8 @@
       "infra": "warn"
     },
     "kpis": {
-      "frontend_count": 6282,
-      "latest_pub_date": "2026-08-23T03:00:21+00:00",
+      "frontend_count": 6286,
+      "latest_pub_date": "2026-08-23T04:00:19+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3282,15 +3282,15 @@
     }
   },
   "pipeline": {
-    "raw_7d_count": 6282,
-    "latest_pub_date": "2026-08-23T03:00:21+00:00",
+    "raw_7d_count": 6286,
+    "latest_pub_date": "2026-08-23T04:00:19+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
     "top_cities": [
       {
         "name": "São Paulo",
-        "count": 1067
+        "count": 1068
       },
       {
         "name": "Brasília",
@@ -3332,7 +3332,7 @@
     "top_types": [
       {
         "name": "homicidio",
-        "count": 2664
+        "count": 2665
       },
       {
         "name": "outros",
@@ -3340,7 +3340,7 @@
       },
       {
         "name": "roubo",
-        "count": 578
+        "count": 581
       },
       {
         "name": "violencia",
@@ -3373,42 +3373,42 @@
     ],
     "age_buckets": {
       "<1h": 2,
-      "1-6h": 66,
-      "6-24h": 473,
-      "1-3d": 1945,
+      "1-6h": 56,
+      "6-24h": 485,
+      "1-3d": 1947,
       "3-7d": 3796
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 39948,
+        "in": 39954,
         "success": 12457,
-        "failed": 27491,
+        "failed": 27497,
         "rate": 31.2
       },
       "b": {
         "name": "LLM_B",
-        "in": 39948,
+        "in": 39954,
         "success": 7425,
-        "failed": 32523,
+        "failed": 32529,
         "rate": 18.6
       },
       "c": {
         "name": "LLM_C",
-        "in": 39948,
+        "in": 39954,
         "success": 3006,
-        "failed": 36942,
+        "failed": 36948,
         "rate": 7.5
       },
-      "total_rows": 39948
+      "total_rows": 39954
     }
   },
   "frontend": {
     "status": "ok",
     "data_source": {
-      "count": 6282,
+      "count": 6286,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-23T03:00:21+00:00",
+      "latest_pub_date": "2026-08-23T04:00:19+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 3144588,
-      "public/rss_incidents_lite.json": 103141,
+      "public/rss_incidents.json": 3147719,
+      "public/rss_incidents_lite.json": 103242,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131117,
-      "data/crime_map.db": 39878656
+      "data/crime_map.db": 39882752
     }
   },
   "analytics": {
     "summary": {
-      "frontend_count": 6282,
-      "latest_pub_date": "2026-08-23T03:00:21+00:00",
+      "frontend_count": 6286,
+      "latest_pub_date": "2026-08-23T04:00:19+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 3144588,
-      "public/rss_incidents_lite.json": 103141,
+      "public/rss_incidents.json": 3147719,
+      "public/rss_incidents_lite.json": 103242,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131117,
-      "data/crime_map.db": 39878656
+      "data/crime_map.db": 39882752
     },
     "umami_api": "ok",
-    "db_size_bytes": 39878656
+    "db_size_bytes": 39882752
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3640,8 +3640,8 @@
     ]
   },
   "data_status": {
-    "frontend_count": 6282,
-    "latest_pub_date": "2026-08-23T03:00:21+00:00",
+    "frontend_count": 6286,
+    "latest_pub_date": "2026-08-23T04:00:19+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
