@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T04:29:51.090557+00:00",
+  "generated_at": "2026-08-23T05:22:25.706848+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-08-23T04:29:48.552810+00:00",
+    "generated_at": "2026-08-23T05:22:22.685621+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3269,7 +3269,7 @@
     },
     "kpis": {
       "frontend_count": 6286,
-      "latest_pub_date": "2026-08-23T04:00:19+00:00",
+      "latest_pub_date": "2026-08-23T05:00:56+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3283,7 +3283,7 @@
   },
   "pipeline": {
     "raw_7d_count": 6286,
-    "latest_pub_date": "2026-08-23T04:00:19+00:00",
+    "latest_pub_date": "2026-08-23T05:00:56+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
@@ -3294,7 +3294,7 @@
       },
       {
         "name": "Brasília",
-        "count": 586
+        "count": 584
       },
       {
         "name": "Campo Grande",
@@ -3318,7 +3318,7 @@
       },
       {
         "name": "Curitiba",
-        "count": 154
+        "count": 155
       },
       {
         "name": "Goiânia",
@@ -3340,19 +3340,19 @@
       },
       {
         "name": "roubo",
-        "count": 581
+        "count": 580
       },
       {
         "name": "violencia",
-        "count": 338
+        "count": 339
       },
       {
         "name": "trafico",
-        "count": 289
+        "count": 290
       },
       {
         "name": "policia",
-        "count": 212
+        "count": 211
       },
       {
         "name": "fraude",
@@ -3373,34 +3373,34 @@
     ],
     "age_buckets": {
       "<1h": 2,
-      "1-6h": 56,
-      "6-24h": 485,
+      "1-6h": 45,
+      "6-24h": 497,
       "1-3d": 1947,
-      "3-7d": 3796
+      "3-7d": 3795
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 39954,
+        "in": 39959,
         "success": 12457,
-        "failed": 27497,
+        "failed": 27502,
         "rate": 31.2
       },
       "b": {
         "name": "LLM_B",
-        "in": 39954,
+        "in": 39959,
         "success": 7425,
-        "failed": 32529,
+        "failed": 32534,
         "rate": 18.6
       },
       "c": {
         "name": "LLM_C",
-        "in": 39954,
+        "in": 39959,
         "success": 3006,
-        "failed": 36948,
+        "failed": 36953,
         "rate": 7.5
       },
-      "total_rows": 39954
+      "total_rows": 39959
     }
   },
   "frontend": {
@@ -3408,7 +3408,7 @@
     "data_source": {
       "count": 6286,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-23T04:00:19+00:00",
+      "latest_pub_date": "2026-08-23T05:00:56+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 3147719,
-      "public/rss_incidents_lite.json": 103242,
+      "public/rss_incidents.json": 3148324,
+      "public/rss_incidents_lite.json": 103216,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131117,
-      "data/crime_map.db": 39882752
+      "data/crime_map.db": 39886848
     }
   },
   "analytics": {
     "summary": {
       "frontend_count": 6286,
-      "latest_pub_date": "2026-08-23T04:00:19+00:00",
+      "latest_pub_date": "2026-08-23T05:00:56+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 3147719,
-      "public/rss_incidents_lite.json": 103242,
+      "public/rss_incidents.json": 3148324,
+      "public/rss_incidents_lite.json": 103216,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131117,
-      "data/crime_map.db": 39882752
+      "data/crime_map.db": 39886848
     },
     "umami_api": "ok",
-    "db_size_bytes": 39882752
+    "db_size_bytes": 39886848
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3641,7 +3641,7 @@
   },
   "data_status": {
     "frontend_count": 6286,
-    "latest_pub_date": "2026-08-23T04:00:19+00:00",
+    "latest_pub_date": "2026-08-23T05:00:56+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
