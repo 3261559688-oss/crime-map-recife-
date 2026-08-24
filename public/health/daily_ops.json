@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T04:38:08.879847+00:00",
+  "generated_at": "2026-08-24T05:32:44.097683+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-08-24T04:38:05.472084+00:00",
+    "generated_at": "2026-08-24T05:32:42.422282+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3269,7 +3269,7 @@
     },
     "kpis": {
       "frontend_count": 6280,
-      "latest_pub_date": "2026-08-24T04:23:06+00:00",
+      "latest_pub_date": "2026-08-24T05:00:22+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3283,7 +3283,7 @@
   },
   "pipeline": {
     "raw_7d_count": 6280,
-    "latest_pub_date": "2026-08-24T04:23:06+00:00",
+    "latest_pub_date": "2026-08-24T05:00:22+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
@@ -3294,7 +3294,7 @@
       },
       {
         "name": "Brasília",
-        "count": 575
+        "count": 576
       },
       {
         "name": "Campo Grande",
@@ -3372,35 +3372,35 @@
       }
     ],
     "age_buckets": {
-      "<1h": 2,
-      "1-6h": 50,
-      "6-24h": 380,
-      "1-3d": 1514,
-      "3-7d": 4334
+      "<1h": 1,
+      "1-6h": 35,
+      "6-24h": 394,
+      "1-3d": 1511,
+      "3-7d": 4339
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 40479,
+        "in": 40482,
         "success": 12457,
-        "failed": 28022,
+        "failed": 28025,
         "rate": 30.8
       },
       "b": {
         "name": "LLM_B",
-        "in": 40479,
+        "in": 40482,
         "success": 7425,
-        "failed": 33054,
+        "failed": 33057,
         "rate": 18.3
       },
       "c": {
         "name": "LLM_C",
-        "in": 40479,
+        "in": 40482,
         "success": 3006,
-        "failed": 37473,
+        "failed": 37476,
         "rate": 7.4
       },
-      "total_rows": 40479
+      "total_rows": 40482
     }
   },
   "frontend": {
@@ -3408,7 +3408,7 @@
     "data_source": {
       "count": 6280,
       "lite_count": 200,
-      "latest_pub_date": "2026-08-24T04:23:06+00:00",
+      "latest_pub_date": "2026-08-24T05:00:22+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 3144805,
-      "public/rss_incidents_lite.json": 97466,
+      "public/rss_incidents.json": 3143697,
+      "public/rss_incidents_lite.json": 97514,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131113,
-      "data/crime_map.db": 40329216
+      "data/crime_map.db": 40333312
     }
   },
   "analytics": {
     "summary": {
       "frontend_count": 6280,
-      "latest_pub_date": "2026-08-24T04:23:06+00:00",
+      "latest_pub_date": "2026-08-24T05:00:22+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 3144805,
-      "public/rss_incidents_lite.json": 97466,
+      "public/rss_incidents.json": 3143697,
+      "public/rss_incidents_lite.json": 97514,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131113,
-      "data/crime_map.db": 40329216
+      "data/crime_map.db": 40333312
     },
     "umami_api": "ok",
-    "db_size_bytes": 40329216
+    "db_size_bytes": 40333312
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3641,7 +3641,7 @@
   },
   "data_status": {
     "frontend_count": 6280,
-    "latest_pub_date": "2026-08-24T04:23:06+00:00",
+    "latest_pub_date": "2026-08-24T05:00:22+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
