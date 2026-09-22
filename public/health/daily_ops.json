@@ -1,246 +1,11 @@
 {
-  "generated_at": "2026-09-22T00:25:25.439995+00:00",
+  "generated_at": "2026-09-22T05:38:58.382711+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
     "timezone": "America/Sao_Paulo",
-    "last_complete_date": "2026-09-20",
+    "last_complete_date": "2026-09-21",
     "items": [
-      {
-        "date": "2026-09-07",
-        "start_at": "2026-09-07T00:00:00-03:00",
-        "end_at": "2026-09-08T00:00:00-03:00",
-        "event_counts": {
-          "session_end": 1396,
-          "geo_modal_show": 188,
-          "daily_active": 375,
-          "page_view": 475,
-          "pageview": 485,
-          "type_filter_show": 395,
-          "city_button_show": 395,
-          "error": 8,
-          "list_item_exposure": 98,
-          "map_control_click": 44,
-          "list_item_click": 126,
-          "marker_click": 24,
-          "city_switch": 11,
-          "geo_denied": 38,
-          "geo_modal_allow": 19,
-          "type_filter": 120,
-          "geo_modal_deny": 18,
-          "city_modal_open": 70,
-          "city_modal_cancel": 3,
-          "city_search": 6
-        },
-        "funnels": {
-          "entry_geo": {
-            "title": "进入与定位",
-            "desc": "首次进入后的定位授权路径；geo 事件从 2026-07-27 修复后开始积累，历史不可回溯。",
-            "steps": [
-              {
-                "event": "page_view",
-                "label": "进入页面",
-                "count": 475,
-                "from_prev_rate": null,
-                "from_start_rate": 100.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "geo_modal_show",
-                "label": "弹出定位弹窗",
-                "count": 188,
-                "from_prev_rate": 39.6,
-                "from_start_rate": 39.6,
-                "data_status": "ok"
-              },
-              {
-                "event": "geo_modal_allow",
-                "label": "点击允许定位",
-                "count": 19,
-                "from_prev_rate": 10.1,
-                "from_start_rate": 4.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "geo_granted",
-                "label": "系统定位成功",
-                "count": 0,
-                "from_prev_rate": 0.0,
-                "from_start_rate": 0.0,
-                "data_status": "zero_or_missing"
-              }
-            ],
-            "side_steps": [
-              {
-                "event": "geo_modal_deny",
-                "label": "点击拒绝定位",
-                "count": 18
-              },
-              {
-                "event": "geo_denied",
-                "label": "系统定位失败/拒绝",
-                "count": 38
-              }
-            ],
-            "future_steps": []
-          },
-          "map_path": {
-            "title": "地图路径",
-            "desc": "用户直接点地图 marker 的消费路径；event_card_show 待新版前端上线后补入。",
-            "steps": [
-              {
-                "event": "page_view",
-                "label": "进入页面",
-                "count": 475,
-                "from_prev_rate": null,
-                "from_start_rate": 100.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "marker_click",
-                "label": "点击地图点位",
-                "count": 24,
-                "from_prev_rate": 5.1,
-                "from_start_rate": 5.1,
-                "data_status": "ok"
-              },
-              {
-                "event": "news_open",
-                "label": "打开原文",
-                "count": 0,
-                "from_prev_rate": 0.0,
-                "from_start_rate": 0.0,
-                "data_status": "zero_or_missing"
-              }
-            ],
-            "side_steps": [],
-            "future_steps": [
-              {
-                "event": "event_card_show",
-                "label": "事件卡片曝光"
-              }
-            ]
-          },
-          "list_path": {
-            "title": "列表路径",
-            "desc": "用户上滑/看到列表后点击新闻的消费路径。",
-            "steps": [
-              {
-                "event": "page_view",
-                "label": "进入页面",
-                "count": 475,
-                "from_prev_rate": null,
-                "from_start_rate": 100.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "list_item_exposure",
-                "label": "列表内容曝光",
-                "count": 98,
-                "from_prev_rate": 20.6,
-                "from_start_rate": 20.6,
-                "data_status": "ok"
-              },
-              {
-                "event": "list_item_click",
-                "label": "点击列表新闻",
-                "count": 126,
-                "from_prev_rate": 128.6,
-                "from_start_rate": 26.5,
-                "data_status": "ok"
-              },
-              {
-                "event": "news_open",
-                "label": "打开原文",
-                "count": 0,
-                "from_prev_rate": 0.0,
-                "from_start_rate": 0.0,
-                "data_status": "zero_or_missing"
-              }
-            ],
-            "side_steps": [],
-            "future_steps": []
-          },
-          "city_path": {
-            "title": "城市切换",
-            "desc": "城市选择弹窗的发现、搜索和切换路径。",
-            "steps": [
-              {
-                "event": "city_button_show",
-                "label": "城市按钮曝光",
-                "count": 395,
-                "from_prev_rate": null,
-                "from_start_rate": 100.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "city_modal_open",
-                "label": "打开城市弹窗",
-                "count": 70,
-                "from_prev_rate": 17.7,
-                "from_start_rate": 17.7,
-                "data_status": "ok"
-              },
-              {
-                "event": "city_search",
-                "label": "搜索城市",
-                "count": 6,
-                "from_prev_rate": 8.6,
-                "from_start_rate": 1.5,
-                "data_status": "ok"
-              },
-              {
-                "event": "city_switch",
-                "label": "成功切换城市",
-                "count": 11,
-                "from_prev_rate": 183.3,
-                "from_start_rate": 2.8,
-                "data_status": "ok"
-              }
-            ],
-            "side_steps": [
-              {
-                "event": "city_modal_cancel",
-                "label": "取消城市弹窗",
-                "count": 3
-              }
-            ],
-            "future_steps": []
-          },
-          "filter_path": {
-            "title": "类型筛选",
-            "desc": "顶部犯罪类型筛选曝光到主动切换。",
-            "steps": [
-              {
-                "event": "type_filter_show",
-                "label": "类型筛选曝光",
-                "count": 395,
-                "from_prev_rate": null,
-                "from_start_rate": 100.0,
-                "data_status": "ok"
-              },
-              {
-                "event": "type_filter",
-                "label": "切换类型筛选",
-                "count": 120,
-                "from_prev_rate": 30.4,
-                "from_start_rate": 30.4,
-                "data_status": "ok"
-              }
-            ],
-            "side_steps": [],
-            "future_steps": []
-          }
-        },
-        "summary": {
-          "page_view": 475,
-          "geo_modal_show": 188,
-          "marker_click": 24,
-          "list_item_exposure": 98,
-          "list_item_click": 126,
-          "news_open": 0
-        }
-      },
       {
         "date": "2026-09-08",
         "start_at": "2026-09-08T00:00:00-03:00",
@@ -3224,6 +2989,226 @@
           "list_item_click": 0,
           "news_open": 0
         }
+      },
+      {
+        "date": "2026-09-21",
+        "start_at": "2026-09-21T00:00:00-03:00",
+        "end_at": "2026-09-22T00:00:00-03:00",
+        "event_counts": {
+          "page_view": 5,
+          "session_end": 7,
+          "pageview": 5,
+          "daily_active": 5,
+          "city_button_show": 1
+        },
+        "funnels": {
+          "entry_geo": {
+            "title": "进入与定位",
+            "desc": "首次进入后的定位授权路径；geo 事件从 2026-07-27 修复后开始积累，历史不可回溯。",
+            "steps": [
+              {
+                "event": "page_view",
+                "label": "进入页面",
+                "count": 5,
+                "from_prev_rate": null,
+                "from_start_rate": 100.0,
+                "data_status": "ok"
+              },
+              {
+                "event": "geo_modal_show",
+                "label": "弹出定位弹窗",
+                "count": 0,
+                "from_prev_rate": 0.0,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "geo_modal_allow",
+                "label": "点击允许定位",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "geo_granted",
+                "label": "系统定位成功",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              }
+            ],
+            "side_steps": [
+              {
+                "event": "geo_modal_deny",
+                "label": "点击拒绝定位",
+                "count": 0
+              },
+              {
+                "event": "geo_denied",
+                "label": "系统定位失败/拒绝",
+                "count": 0
+              }
+            ],
+            "future_steps": []
+          },
+          "map_path": {
+            "title": "地图路径",
+            "desc": "用户直接点地图 marker 的消费路径；event_card_show 待新版前端上线后补入。",
+            "steps": [
+              {
+                "event": "page_view",
+                "label": "进入页面",
+                "count": 5,
+                "from_prev_rate": null,
+                "from_start_rate": 100.0,
+                "data_status": "ok"
+              },
+              {
+                "event": "marker_click",
+                "label": "点击地图点位",
+                "count": 0,
+                "from_prev_rate": 0.0,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "news_open",
+                "label": "打开原文",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              }
+            ],
+            "side_steps": [],
+            "future_steps": [
+              {
+                "event": "event_card_show",
+                "label": "事件卡片曝光"
+              }
+            ]
+          },
+          "list_path": {
+            "title": "列表路径",
+            "desc": "用户上滑/看到列表后点击新闻的消费路径。",
+            "steps": [
+              {
+                "event": "page_view",
+                "label": "进入页面",
+                "count": 5,
+                "from_prev_rate": null,
+                "from_start_rate": 100.0,
+                "data_status": "ok"
+              },
+              {
+                "event": "list_item_exposure",
+                "label": "列表内容曝光",
+                "count": 0,
+                "from_prev_rate": 0.0,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "list_item_click",
+                "label": "点击列表新闻",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "news_open",
+                "label": "打开原文",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              }
+            ],
+            "side_steps": [],
+            "future_steps": []
+          },
+          "city_path": {
+            "title": "城市切换",
+            "desc": "城市选择弹窗的发现、搜索和切换路径。",
+            "steps": [
+              {
+                "event": "city_button_show",
+                "label": "城市按钮曝光",
+                "count": 1,
+                "from_prev_rate": null,
+                "from_start_rate": 100.0,
+                "data_status": "ok"
+              },
+              {
+                "event": "city_modal_open",
+                "label": "打开城市弹窗",
+                "count": 0,
+                "from_prev_rate": 0.0,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "city_search",
+                "label": "搜索城市",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "city_switch",
+                "label": "成功切换城市",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": 0.0,
+                "data_status": "zero_or_missing"
+              }
+            ],
+            "side_steps": [
+              {
+                "event": "city_modal_cancel",
+                "label": "取消城市弹窗",
+                "count": 0
+              }
+            ],
+            "future_steps": []
+          },
+          "filter_path": {
+            "title": "类型筛选",
+            "desc": "顶部犯罪类型筛选曝光到主动切换。",
+            "steps": [
+              {
+                "event": "type_filter_show",
+                "label": "类型筛选曝光",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": null,
+                "data_status": "zero_or_missing"
+              },
+              {
+                "event": "type_filter",
+                "label": "切换类型筛选",
+                "count": 0,
+                "from_prev_rate": null,
+                "from_start_rate": null,
+                "data_status": "zero_or_missing"
+              }
+            ],
+            "side_steps": [],
+            "future_steps": []
+          }
+        },
+        "summary": {
+          "page_view": 5,
+          "geo_modal_show": 0,
+          "marker_click": 0,
+          "list_item_exposure": 0,
+          "list_item_click": 0,
+          "news_open": 0
+        }
       }
     ],
     "errors": {},
@@ -3231,22 +3216,14 @@
       "timezone": "America/Sao_Paulo",
       "definition": "D0 活跃用户中，D1 也活跃的用户数 / D0 活跃用户数；优先 daily_active，缺失时 page_view 兜底。",
       "latest": {
-        "cohort_date": "2026-09-19",
-        "return_date": "2026-09-20",
+        "cohort_date": "2026-09-20",
+        "return_date": "2026-09-21",
         "cohort_users": 3,
         "returned_next_day": 0,
         "d1_rate": 0.0,
         "source": "daily_active"
       },
       "items": [
-        {
-          "cohort_date": "2026-09-07",
-          "return_date": "2026-09-08",
-          "cohort_users": 375,
-          "returned_next_day": 0,
-          "d1_rate": 0.0,
-          "source": "daily_active"
-        },
         {
           "cohort_date": "2026-09-08",
           "return_date": "2026-09-09",
@@ -3342,6 +3319,14 @@
           "returned_next_day": 0,
           "d1_rate": 0.0,
           "source": "daily_active"
+        },
+        {
+          "cohort_date": "2026-09-20",
+          "return_date": "2026-09-21",
+          "cohort_users": 3,
+          "returned_next_day": 0,
+          "d1_rate": 0.0,
+          "source": "daily_active"
         }
       ],
       "data_status": "ok"
@@ -3351,22 +3336,14 @@
     "timezone": "America/Sao_Paulo",
     "definition": "D0 活跃用户中，D1 也活跃的用户数 / D0 活跃用户数；优先 daily_active，缺失时 page_view 兜底。",
     "latest": {
-      "cohort_date": "2026-09-19",
-      "return_date": "2026-09-20",
+      "cohort_date": "2026-09-20",
+      "return_date": "2026-09-21",
       "cohort_users": 3,
       "returned_next_day": 0,
       "d1_rate": 0.0,
       "source": "daily_active"
     },
     "items": [
-      {
-        "cohort_date": "2026-09-07",
-        "return_date": "2026-09-08",
-        "cohort_users": 375,
-        "returned_next_day": 0,
-        "d1_rate": 0.0,
-        "source": "daily_active"
-      },
       {
         "cohort_date": "2026-09-08",
         "return_date": "2026-09-09",
@@ -3462,12 +3439,20 @@
         "returned_next_day": 0,
         "d1_rate": 0.0,
         "source": "daily_active"
+      },
+      {
+        "cohort_date": "2026-09-20",
+        "return_date": "2026-09-21",
+        "cohort_users": 3,
+        "returned_next_day": 0,
+        "d1_rate": 0.0,
+        "source": "daily_active"
       }
     ],
     "data_status": "ok"
   },
   "overview": {
-    "generated_at": "2026-09-22T00:25:13.439734+00:00",
+    "generated_at": "2026-09-22T05:38:50.812458+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3476,8 +3461,8 @@
       "infra": "warn"
     },
     "kpis": {
-      "frontend_count": 5210,
-      "latest_pub_date": "2026-09-22T00:18:26+00:00",
+      "frontend_count": 5212,
+      "latest_pub_date": "2026-09-22T05:03:20+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3490,61 +3475,61 @@
     }
   },
   "pipeline": {
-    "raw_7d_count": 5210,
-    "latest_pub_date": "2026-09-22T00:18:26+00:00",
+    "raw_7d_count": 5212,
+    "latest_pub_date": "2026-09-22T05:03:20+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
     "top_cities": [
       {
         "name": "São Paulo",
-        "count": 592
+        "count": 593
       },
       {
         "name": "Salvador",
-        "count": 484
+        "count": 480
       },
       {
         "name": "Campo Grande",
-        "count": 438
+        "count": 437
       },
       {
         "name": "São Luís",
-        "count": 314
+        "count": 313
       },
       {
         "name": "Rio de Janeiro",
-        "count": 290
+        "count": 294
       },
       {
         "name": "Brasília",
-        "count": 250
+        "count": 253
       },
       {
         "name": "Florianópolis",
-        "count": 204
+        "count": 205
       },
       {
         "name": "Goiânia",
-        "count": 163
+        "count": 162
       },
       {
         "name": "Curitiba",
-        "count": 144
+        "count": 145
       },
       {
         "name": "João Pessoa",
-        "count": 118
+        "count": 120
       }
     ],
     "top_types": [
       {
         "name": "homicidio",
-        "count": 1876
+        "count": 1866
       },
       {
         "name": "outros",
-        "count": 1442
+        "count": 1444
       },
       {
         "name": "roubo",
@@ -3552,15 +3537,15 @@
       },
       {
         "name": "trafico",
-        "count": 265
+        "count": 271
       },
       {
         "name": "violencia",
-        "count": 263
+        "count": 264
       },
       {
         "name": "policia",
-        "count": 237
+        "count": 240
       },
       {
         "name": "fraude",
@@ -3568,55 +3553,55 @@
       },
       {
         "name": "faccao",
-        "count": 144
+        "count": 143
       },
       {
         "name": "estupro",
-        "count": 109
+        "count": 106
       },
       {
         "name": "furto",
-        "count": 94
+        "count": 98
       }
     ],
     "age_buckets": {
-      "<1h": 14,
-      "1-6h": 231,
-      "6-24h": 503,
-      "1-3d": 875,
-      "3-7d": 3587
+      "<1h": 4,
+      "1-6h": 49,
+      "6-24h": 735,
+      "1-3d": 850,
+      "3-7d": 3574
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 61960,
+        "in": 62021,
         "success": 12457,
-        "failed": 49503,
+        "failed": 49564,
         "rate": 20.1
       },
       "b": {
         "name": "LLM_B",
-        "in": 61960,
+        "in": 62021,
         "success": 7425,
-        "failed": 54535,
+        "failed": 54596,
         "rate": 12.0
       },
       "c": {
         "name": "LLM_C",
-        "in": 61960,
+        "in": 62021,
         "success": 3006,
-        "failed": 58954,
-        "rate": 4.9
+        "failed": 59015,
+        "rate": 4.8
       },
-      "total_rows": 61960
+      "total_rows": 62021
     }
   },
   "frontend": {
     "status": "ok",
     "data_source": {
-      "count": 5210,
+      "count": 5212,
       "lite_count": 200,
-      "latest_pub_date": "2026-09-22T00:18:26+00:00",
+      "latest_pub_date": "2026-09-22T05:03:20+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3639,17 +3624,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 2655323,
-      "public/rss_incidents_lite.json": 99104,
+      "public/rss_incidents.json": 2656938,
+      "public/rss_incidents_lite.json": 97069,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 135996,
-      "data/crime_map.db": 59994112
+      "public/health/daily_ops.json": 135692,
+      "data/crime_map.db": 60051456
     }
   },
   "analytics": {
     "summary": {
-      "frontend_count": 5210,
-      "latest_pub_date": "2026-09-22T00:18:26+00:00",
+      "frontend_count": 5212,
+      "latest_pub_date": "2026-09-22T05:03:20+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3677,41 +3662,32 @@
       "city_button_show": 1
     },
     "event_counts_7d": {
-      "page_view": 55,
-      "session_end": 119,
-      "pageview": 59,
-      "daily_active": 44,
-      "city_button_show": 36,
-      "type_filter_show": 34,
+      "page_view": 52,
+      "session_end": 113,
+      "pageview": 57,
+      "daily_active": 41,
+      "city_button_show": 33,
+      "type_filter_show": 32,
       "list_item_exposure": 10,
       "marker_click": 1,
-      "geo_denied": 6,
-      "geo_modal_allow": 3,
-      "geo_modal_show": 16,
-      "city_modal_open": 3,
-      "geo_modal_deny": 2,
-      "city_switch": 1
+      "geo_denied": 4,
+      "geo_modal_allow": 2,
+      "geo_modal_show": 15,
+      "city_modal_open": 2,
+      "geo_modal_deny": 2
     },
     "retention": {
       "timezone": "America/Sao_Paulo",
       "definition": "D0 活跃用户中，D1 也活跃的用户数 / D0 活跃用户数；优先 daily_active，缺失时 page_view 兜底。",
       "latest": {
-        "cohort_date": "2026-09-19",
-        "return_date": "2026-09-20",
+        "cohort_date": "2026-09-20",
+        "return_date": "2026-09-21",
         "cohort_users": 3,
         "returned_next_day": 0,
         "d1_rate": 0.0,
         "source": "daily_active"
       },
       "items": [
-        {
-          "cohort_date": "2026-09-07",
-          "return_date": "2026-09-08",
-          "cohort_users": 375,
-          "returned_next_day": 0,
-          "d1_rate": 0.0,
-          "source": "daily_active"
-        },
         {
           "cohort_date": "2026-09-08",
           "return_date": "2026-09-09",
@@ -3807,6 +3783,14 @@
           "returned_next_day": 0,
           "d1_rate": 0.0,
           "source": "daily_active"
+        },
+        {
+          "cohort_date": "2026-09-20",
+          "return_date": "2026-09-21",
+          "cohort_users": 3,
+          "returned_next_day": 0,
+          "d1_rate": 0.0,
+          "source": "daily_active"
         }
       ],
       "data_status": "ok"
@@ -3845,14 +3829,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 2655323,
-      "public/rss_incidents_lite.json": 99104,
+      "public/rss_incidents.json": 2656938,
+      "public/rss_incidents_lite.json": 97069,
       "public/meta.json": 276,
-      "public/health/daily_ops.json": 135996,
-      "data/crime_map.db": 59994112
+      "public/health/daily_ops.json": 135692,
+      "data/crime_map.db": 60051456
     },
     "umami_api": "ok",
-    "db_size_bytes": 59994112
+    "db_size_bytes": 60051456
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3869,8 +3853,8 @@
     ]
   },
   "data_status": {
-    "frontend_count": 5210,
-    "latest_pub_date": "2026-09-22T00:18:26+00:00",
+    "frontend_count": 5212,
+    "latest_pub_date": "2026-09-22T05:03:20+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
@@ -3900,20 +3884,19 @@
       "city_button_show": 1
     },
     "last_7d": {
-      "page_view": 55,
-      "session_end": 119,
-      "pageview": 59,
-      "daily_active": 44,
-      "city_button_show": 36,
-      "type_filter_show": 34,
+      "page_view": 52,
+      "session_end": 113,
+      "pageview": 57,
+      "daily_active": 41,
+      "city_button_show": 33,
+      "type_filter_show": 32,
       "list_item_exposure": 10,
       "marker_click": 1,
-      "geo_denied": 6,
-      "geo_modal_allow": 3,
-      "geo_modal_show": 16,
-      "city_modal_open": 3,
-      "geo_modal_deny": 2,
-      "city_switch": 1
+      "geo_denied": 4,
+      "geo_modal_allow": 2,
+      "geo_modal_show": 15,
+      "city_modal_open": 2,
+      "geo_modal_deny": 2
     },
     "errors": {
       "24h": null,
@@ -4129,7 +4112,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 55,
+            "count": 52,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4137,17 +4120,17 @@
           {
             "event": "geo_modal_show",
             "label": "弹出定位弹窗",
-            "count": 16,
-            "from_prev_rate": 29.1,
-            "from_start_rate": 29.1,
+            "count": 15,
+            "from_prev_rate": 28.8,
+            "from_start_rate": 28.8,
             "data_status": "ok"
           },
           {
             "event": "geo_modal_allow",
             "label": "点击允许定位",
-            "count": 3,
-            "from_prev_rate": 18.8,
-            "from_start_rate": 5.5,
+            "count": 2,
+            "from_prev_rate": 13.3,
+            "from_start_rate": 3.8,
             "data_status": "ok"
           },
           {
@@ -4168,7 +4151,7 @@
           {
             "event": "geo_denied",
             "label": "系统定位失败/拒绝",
-            "count": 6
+            "count": 4
           }
         ],
         "future_steps": []
@@ -4180,7 +4163,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 55,
+            "count": 52,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4189,8 +4172,8 @@
             "event": "marker_click",
             "label": "点击地图点位",
             "count": 1,
-            "from_prev_rate": 1.8,
-            "from_start_rate": 1.8,
+            "from_prev_rate": 1.9,
+            "from_start_rate": 1.9,
             "data_status": "ok"
           },
           {
@@ -4217,7 +4200,7 @@
           {
             "event": "page_view",
             "label": "进入页面",
-            "count": 55,
+            "count": 52,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4226,8 +4209,8 @@
             "event": "list_item_exposure",
             "label": "列表内容曝光",
             "count": 10,
-            "from_prev_rate": 18.2,
-            "from_start_rate": 18.2,
+            "from_prev_rate": 19.2,
+            "from_start_rate": 19.2,
             "data_status": "ok"
           },
           {
@@ -4257,7 +4240,7 @@
           {
             "event": "city_button_show",
             "label": "城市按钮曝光",
-            "count": 36,
+            "count": 33,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
@@ -4265,9 +4248,9 @@
           {
             "event": "city_modal_open",
             "label": "打开城市弹窗",
-            "count": 3,
-            "from_prev_rate": 8.3,
-            "from_start_rate": 8.3,
+            "count": 2,
+            "from_prev_rate": 6.1,
+            "from_start_rate": 6.1,
             "data_status": "ok"
           },
           {
@@ -4281,10 +4264,10 @@
           {
             "event": "city_switch",
             "label": "成功切换城市",
-            "count": 1,
+            "count": 0,
             "from_prev_rate": null,
-            "from_start_rate": 2.8,
-            "data_status": "ok"
+            "from_start_rate": 0.0,
+            "data_status": "zero_or_missing"
           }
         ],
         "side_steps": [
@@ -4303,7 +4286,7 @@
           {
             "event": "type_filter_show",
             "label": "类型筛选曝光",
-            "count": 34,
+            "count": 32,
             "from_prev_rate": null,
             "from_start_rate": 100.0,
             "data_status": "ok"
