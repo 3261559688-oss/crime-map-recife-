@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-28T22:22:51.577620+00:00",
+  "generated_at": "2026-09-29T02:26:33.634774+00:00",
   "date_tz": "America/Sao_Paulo",
   "daily_history": {
     "days": 14,
@@ -3259,7 +3259,7 @@
     "data_status": "insufficient_data"
   },
   "overview": {
-    "generated_at": "2026-09-28T22:22:48.838477+00:00",
+    "generated_at": "2026-09-29T02:26:31.159004+00:00",
     "health": {
       "data_freshness": "ok",
       "frontend": "ok",
@@ -3268,8 +3268,8 @@
       "infra": "warn"
     },
     "kpis": {
-      "frontend_count": 4938,
-      "latest_pub_date": "2026-09-28T22:15:18+00:00",
+      "frontend_count": 4962,
+      "latest_pub_date": "2026-09-29T02:08:07+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3282,73 +3282,73 @@
     }
   },
   "pipeline": {
-    "raw_7d_count": 4938,
-    "latest_pub_date": "2026-09-28T22:15:18+00:00",
+    "raw_7d_count": 4962,
+    "latest_pub_date": "2026-09-29T02:08:07+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0,
     "llm_verified_rate": 0.0,
     "top_cities": [
       {
         "name": "São Paulo",
-        "count": 586
+        "count": 582
       },
       {
         "name": "Salvador",
-        "count": 460
+        "count": 471
       },
       {
         "name": "Campo Grande",
-        "count": 368
+        "count": 375
       },
       {
         "name": "São Luís",
-        "count": 298
+        "count": 299
       },
       {
         "name": "Rio de Janeiro",
-        "count": 270
+        "count": 275
       },
       {
         "name": "Brasília",
-        "count": 238
+        "count": 241
       },
       {
         "name": "Florianópolis",
-        "count": 190
+        "count": 184
       },
       {
         "name": "Curitiba",
-        "count": 166
+        "count": 163
       },
       {
         "name": "Goiânia",
-        "count": 155
+        "count": 156
       },
       {
-        "name": "João Pessoa",
-        "count": 101
+        "name": "Cuiabá",
+        "count": 105
       }
     ],
     "top_types": [
       {
         "name": "homicidio",
-        "count": 2054
+        "count": 2080
       },
       {
         "name": "outros",
-        "count": 1271
+        "count": 1275
       },
       {
         "name": "roubo",
-        "count": 460
+        "count": 462
       },
       {
         "name": "trafico",
-        "count": 239
+        "count": 241
       },
       {
         "name": "violencia",
-        "count": 230
+        "count": 228
       },
       {
         "name": "policia",
@@ -3356,11 +3356,11 @@
       },
       {
         "name": "fraude",
-        "count": 126
+        "count": 125
       },
       {
         "name": "furto",
-        "count": 106
+        "count": 103
       },
       {
         "name": "estupro",
@@ -3368,47 +3368,47 @@
       },
       {
         "name": "faccao",
-        "count": 70
+        "count": 68
       }
     ],
     "age_buckets": {
-      "<1h": 23,
-      "1-6h": 191,
-      "6-24h": 416,
-      "1-3d": 926,
-      "3-7d": 3382
+      "<1h": 16,
+      "1-6h": 155,
+      "6-24h": 531,
+      "1-3d": 872,
+      "3-7d": 3388
     },
     "llm_stages": {
       "a": {
         "name": "LLM_A",
-        "in": 66935,
+        "in": 67053,
         "success": 12457,
-        "failed": 54478,
+        "failed": 54596,
         "rate": 18.6
       },
       "b": {
         "name": "LLM_B",
-        "in": 66935,
+        "in": 67053,
         "success": 7425,
-        "failed": 59510,
+        "failed": 59628,
         "rate": 11.1
       },
       "c": {
         "name": "LLM_C",
-        "in": 66935,
+        "in": 67053,
         "success": 3006,
-        "failed": 63929,
+        "failed": 64047,
         "rate": 4.5
       },
-      "total_rows": 66935
+      "total_rows": 67053
     }
   },
   "frontend": {
     "status": "ok",
     "data_source": {
-      "count": 4938,
+      "count": 4962,
       "lite_count": 200,
-      "latest_pub_date": "2026-09-28T22:15:18+00:00",
+      "latest_pub_date": "2026-09-29T02:08:07+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0
@@ -3431,17 +3431,17 @@
       "todo": "接入 page_view.load_ms event_data 后填充"
     },
     "files": {
-      "public/rss_incidents.json": 2484321,
-      "public/rss_incidents_lite.json": 97182,
+      "public/rss_incidents.json": 2501167,
+      "public/rss_incidents_lite.json": 95589,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131119,
-      "data/crime_map.db": 64667648
+      "data/crime_map.db": 64778240
     }
   },
   "analytics": {
     "summary": {
-      "frontend_count": 4938,
-      "latest_pub_date": "2026-09-28T22:15:18+00:00",
+      "frontend_count": 4962,
+      "latest_pub_date": "2026-09-29T02:08:07+00:00",
       "mode": "raw_7d_unverified_until_llm_ready",
       "llm_verified_count": 0,
       "llm_verified_rate": 0.0,
@@ -3616,14 +3616,14 @@
       "deployments": []
     },
     "data_files": {
-      "public/rss_incidents.json": 2484321,
-      "public/rss_incidents_lite.json": 97182,
+      "public/rss_incidents.json": 2501167,
+      "public/rss_incidents_lite.json": 95589,
       "public/meta.json": 276,
       "public/health/daily_ops.json": 131119,
-      "data/crime_map.db": 64667648
+      "data/crime_map.db": 64778240
     },
     "umami_api": "ok",
-    "db_size_bytes": 64667648
+    "db_size_bytes": 64778240
   },
   "architecture": {
     "current_mode": "raw_7d_unverified_until_llm_ready",
@@ -3640,8 +3640,8 @@
     ]
   },
   "data_status": {
-    "frontend_count": 4938,
-    "latest_pub_date": "2026-09-28T22:15:18+00:00",
+    "frontend_count": 4962,
+    "latest_pub_date": "2026-09-29T02:08:07+00:00",
     "mode": "raw_7d_unverified_until_llm_ready",
     "llm_verified_count": 0
   },
